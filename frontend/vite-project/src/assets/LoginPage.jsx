@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast"; // ✅ import toast
-
+import { Link } from "react-router-dom";
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -80,6 +80,15 @@ function LoginPage() {
             Login
           </button>
         </form>
+        <p className="text-center text-gray-400 mt-6">
+  Don’t have an account?{" "}
+  <Link
+    to="/signup"
+    className="text-fuchsia-500 neno-button hover:text-fuchsia-600 font-semibold"
+  >
+    Signup
+  </Link>
+</p>
       </div>
     </div>
   );

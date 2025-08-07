@@ -10,7 +10,7 @@ function Home() {
       <nav className="flex justify-between items-center px-6 md:px-12 py-4 fixed top-0 left-0 right-0 z-50 bg-slate-800">
         <h1 className="text-3xl font-extrabold tracking-wide">Flytant</h1>
         <div className="space-x-4">
-         <Link to="/signup"> <button className="neno-button shadow-x1 hover:shadow-fuchsia-800/50 text-white border-2 hover:bg-fuchsia-800 border-fuchsia-800 rounded-4xl py-4 px-8 uppercase relative overflow-hiddene">
+         <Link to="/login"> <button className="neno-button shadow-x1 hover:shadow-fuchsia-800/50 text-white border-2 hover:bg-fuchsia-800 border-fuchsia-800 rounded-4xl py-4 px-8 uppercase relative overflow-hiddene">
             Login | Signup
           </button></Link>
         </div>
