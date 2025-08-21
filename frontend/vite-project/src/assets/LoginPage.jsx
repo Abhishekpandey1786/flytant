@@ -1,8 +1,8 @@
 // Login.jsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Toaster, toast } from "react-hot-toast"; // ✅ import toast
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { Toaster, toast } from "react-hot-toast";
+
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,10 +14,7 @@ function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    const loginData = {
-      email,
-      password,
-    };
+    const loginData = { email, password };
 
     try {
       const res = await fetch("http://localhost:5000/api/auth/login", {
@@ -29,24 +26,30 @@ function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        toast.success(data.msg || "Login successful!"); // ✅ show success toast
-        setTimeout(() => navigate("/dashboard"), 1500);  // wait for toast
+        // ✅ Token + User ko localStorage me store karo
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        toast.success(data.msg || "Login successful!");
+
+        setTimeout(() => navigate("/dashboard"), 1500); // ✅ Dashboard par redirect
       } else {
-        toast.error(data.msg || "Login failed."); // ✅ show error toast
+        toast.error(data.msg || "Login failed.");
       }
     } catch (error) {
       console.error("Login Error:", error);
-      toast.error("Login failed. Please check credentials."); // ✅ fallback toast
+      toast.error("Login failed. Please check credentials.");
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4 py-8 font-inter">
-      
-      <Toaster position="top-center" reverseOrder={false} /> {/* ✅ Toaster added */}
+      <Toaster position="top-center" reverseOrder={false} />
 
       <div className="w-full max-w-md bg-gray-800 text-white p-8 rounded-2xl shadow-2xl border border-gray-700">
-        <h2 className="text-4xl font-extrabold text-center mb-6 text-white">Login</h2>
+        <h2 className="text-4xl font-extrabold text-center mb-6 text-white">
+          Login
+        </h2>
 
         <form className="space-y-5" onSubmit={handleLogin}>
           <div>
@@ -80,15 +83,16 @@ function LoginPage() {
             Login
           </button>
         </form>
+
         <p className="text-center text-gray-400 mt-6">
-  Don’t have an account?{" "}
-  <Link
-    to="/signup"
-    className="text-fuchsia-500 neno-button hover:text-fuchsia-600 font-semibold"
-  >
-    Signup
-  </Link>
-</p>
+          Don’t have an account?{" "}
+          <Link
+            to="/signup"
+            className="text-fuchsia-500 neno-button hover:text-fuchsia-600 font-semibold"
+          >
+            Signup
+          </Link>
+        </p>
       </div>
     </div>
   );

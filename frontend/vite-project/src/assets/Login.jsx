@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
 
-function Login() {
+function Signup() {
   const [userType, setUserType] = useState("advertiser");
   const navigate = useNavigate();
 
@@ -307,4 +307,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default Signup;
