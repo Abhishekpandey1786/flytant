@@ -35,7 +35,7 @@ const Dashboard = () => {
 
   const handleMenuItemClick = (key) => {
     setActivePage(key);
-    setDropdownOpen(false); // ✅ Dropdown बंद करो
+    setDropdownOpen(false);
   };
 
   return (
