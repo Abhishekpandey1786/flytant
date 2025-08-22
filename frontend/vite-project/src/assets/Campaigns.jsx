@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaExternalLinkAlt, FaTag, FaBullhorn, FaUsers, FaPlusCircle } from 'react-icons/fa'; // FaPlusCircle icon import karein
-import { useNavigate } from 'react-router-dom'; // useNavigate hook import karein
+import { FaExternalLinkAlt, FaTag, FaBullhorn, FaUsers, FaPlusCircle } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 function Campaigns() {
     const [campaigns, setCampaigns] = useState([]);
     const [loading, setLoading] = useState(true);
-    const navigate = useNavigate(); // useNavigate hook ka upyog karein
+    const navigate = useNavigate();
 
-    // Campaigns fetch karne ka function
     const fetchCampaigns = async () => {
-        // ... (Baaki code same rahega)
         try {
             const res = await axios.get('http://localhost:5000/api/campaigns/public');
             setCampaigns(res.data);
@@ -24,10 +22,8 @@ function Campaigns() {
     useEffect(() => {
         fetchCampaigns();
     }, []);
-
-    // Apply button ka handler
     const handleApply = async (campaignId) => {
-        // ... (Baaki code same rahega)
+       
         try {
             const token = localStorage.getItem('token');
             if (!token) {
@@ -55,7 +51,7 @@ function Campaigns() {
         if (!token) {
             alert("Please log in to create a campaign.");
         } else {
-            navigate('/create-campaign'); // CreateCampaign page par redirect karein
+            navigate('/create-campaign');
         }
     };
 
@@ -66,14 +62,14 @@ function Campaigns() {
     return (
         <div className="bg-slate-900 min-h-screen text-gray-100 p-8">
             <div className="max-w-7xl mx-auto">
-                {/* ✅ Yahan par "Create Campaign" button jodein */}
+               
                 <div className="flex justify-between items-center mb-10">
                     <h2 className="text-4xl font-extrabold text-white">
                         All Public Campaigns
                     </h2>
                     <button
                         onClick={handleCreateCampaign}
-                        className="py-2 px-4 text-white font-semibold rounded-lg flex items-center space-x-2 bg-fuchsia-600 hover:bg-fuchsia-700 transition-colors"
+                        className="py-2 px-4 text-white font-semibold rounded-lg flex items-center space-x-2 bg-fuchsia-600 hover:bg-fuchsia-700 transition-colors neno-button shadow-x1 hover:shadow-fuchsia-800/50"
                     >
                         <FaPlusCircle />
                         <span>Create Campaign</span>
@@ -85,13 +81,13 @@ function Campaigns() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {campaigns.map((campaign) => (
-                            <div key={campaign._id} className="bg-slate-800 rounded-2xl shadow-xl border border-fuchsia-800 p-6 flex flex-col items-start transition-transform duration-300 hover:scale-105">
-                                {/* ... baaki campaign card ka code same rahega */}
+                            <div key={campaign._id} className="bg-slate-800 rounded-2xl shadow-xl border border-fuchsia-800 p-6 flex flex-col items-start transition-transform duration-300 hover:scale-105 neno-button shadow-x1 hover:shadow-fuchsia-800/50x">
+                            
                                 {campaign.imagePath && (
                                     <img
                                         src={`http://localhost:5000/${campaign.imagePath}`}
                                         alt={campaign.name}
-                                        className="w-full h-48 object-cover rounded-xl mb-4"
+                                        className="w-full h-48 object-cover rounded-xl mb-4 neno-button shadow-x1 hover:shadow-fuchsia-800/50"
                                     />
                                 )}
                                 <h3 className="text-2xl font-bold text-fuchsia-400 mb-2">{campaign.name}</h3>
@@ -114,7 +110,7 @@ function Campaigns() {
                                 
                                 <button
                                     onClick={() => handleApply(campaign._id)}
-                                    className="mt-4 w-full py-2 bg-fuchsia-600 text-white rounded-lg font-semibold hover:bg-fuchsia-700 transition-colors"
+                                    className="mt-4 w-full py-2 bg-fuchsia-600 text-white rounded-lg font-semibold hover:bg-fuchsia-700 transition-colors active:scale-75 neno-button shadow-xl hover:shadow-fuchsia-800/50  border-fuchsia-800"
                                 >
                                     Apply Now
                                 </button>

@@ -3,6 +3,7 @@ import img3 from "./image/s1.png";
 import { TiContacts } from "react-icons/ti";
 import { Link } from "react-router-dom";
 import Profile from "./Profile";
+import Campaigns from "./Campaigns";
 import {
   FaUser,
   FaBullhorn,
@@ -27,7 +28,11 @@ const Dashboard = () => {
         ]
       : [
           { name: "Social Profile", icon: <FaUser />, key: "profile" },
-          { name: "Applied Campaigns", icon: <FaClipboardList />, key: "applied" },
+          {
+            name: "Applied Campaigns",
+            icon: <FaClipboardList />,
+            key: "campaigns",
+          },
           { name: "My Orders", icon: <FaShoppingCart />, key: "orders" },
           { name: "Subscription", icon: <FaDollarSign />, key: "subscription" },
           { name: "Logout", icon: <FaPowerOff />, key: "logout", danger: true },
@@ -91,7 +96,12 @@ const Dashboard = () => {
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
             </svg>
             <span>Create</span>
           </button>
@@ -118,7 +128,7 @@ const Dashboard = () => {
             </div>
 
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-slate-800 rounded-xl shadow-lg p-4 space-y-3">
+              <div className="absolute right-0 mt-2 w-64 bg-slate-800 rounded-xl shadow-lg p-4 space-y-3 neno-button shadow-x1 hover:shadow-fuchsia-800/50">
                 <p className="text-sm text-white">I'm a</p>
                 <div className="flex rounded-full border border-gray-600 overflow-hidden">
                   <Link to="/dashboard/brand" className="flex-1">
@@ -145,7 +155,7 @@ const Dashboard = () => {
                       }`}
                       onClick={() => {
                         setRole("Influencer");
-                        setDropdownOpen(false); // ✅ Dropdown बंद करो
+                        setDropdownOpen(false);
                       }}
                     >
                       Influencer
@@ -183,6 +193,7 @@ const Dashboard = () => {
             <p className="text-gray-500 text-xl font-medium">No post found</p>
           )}
           {activePage === "profile" && <Profile />}
+          {activePage === "campaigns" && <Campaigns />}
         </div>
       </main>
     </div>

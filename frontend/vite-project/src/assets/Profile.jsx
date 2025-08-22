@@ -65,15 +65,11 @@ const Profile = () => {
     };
 
     fetchProfile();
-  }, [token, setUser, defaultAvatar]); // 'user' को dependency array से हटा दिया है
-
-  // 🔹 Input change
+  }, [token, setUser, defaultAvatar]);
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-
-  // 🔹 File change + compression
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -91,8 +87,6 @@ const Profile = () => {
       }
     }
   };
-
-  // 🔹 Profile update
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -118,8 +112,6 @@ const Profile = () => {
       }
 
       let updatedUser = textUpdateData.user;
-
-      // ✅ Upload avatar if present
       if (avatarFile) {
         const avatarFormData = new FormData();
         avatarFormData.append("avatar", avatarFile);
@@ -141,14 +133,12 @@ const Profile = () => {
           );
         }
 
-        // ✅ यह लाइन बदलें
         updatedUser = {
           ...updatedUser,
           avatar: `http://localhost:5000${avatarUpdateData.user.avatar}`,
         };
       }
 
-      // ✅ Update context
       setUser(updatedUser);
       setFormData(updatedUser);
       toast.success("Profile updated successfully! ✨");
@@ -168,13 +158,13 @@ const Profile = () => {
       <Toaster position="top-center" reverseOrder={false} />
 
       <div className="w-full max-w-4xl bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700 mt-10">
-        <h1 className="text-3xl font-extrabold text-center mb-8 text-fuchsia-400">
+        <h1 className="text-3xl font-extrabold text-center mb-8 text-white">
           User Profile
         </h1>
 
         {isLoading && (
           <div className="flex flex-col items-center justify-center h-40">
-            <div className="w-12 h-12 border-4 border-fuchsia-500 border-dotted rounded-full animate-spin mb-4"></div>
+            <div className="w-12 h-12 border-4 border-fuchsia-500 border-dotted rounded-full animate-spin mb-4 "></div>
             <p className="ml-4 text-gray-400">Loading profile...</p>
           </div>
         )}
@@ -189,7 +179,7 @@ const Profile = () => {
           <div className="space-y-8">
             {isEditing ? (
               <form onSubmit={handleProfileUpdate} className="space-y-8">
-                <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8 pb-6 border-b border-gray-600">
+                <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8 pb-6 border-b border-gray-600 ">
                   <div className="relative flex-shrink-0">
                     <img
                       src={
@@ -198,11 +188,11 @@ const Profile = () => {
                           : formData.avatar
                       }
                       alt="User Avatar"
-                      className="w-32 h-32 rounded-full border-4 border-fuchsia-500 shadow-lg object-cover"
+                      className="w-32 h-32 rounded-full border-4 border-fuchsia-500 shadow-lg object-cover neno-button shadow-x1 hover:shadow-fuchsia-800/50"
                     />
                     <label
                       htmlFor="avatar-upload"
-                      className="absolute bottom-0 right-0 p-2 bg-fuchsia-600 rounded-full cursor-pointer hover:bg-fuchsia-700 transition"
+                      className="absolute bottom-0 right-0 p-2 bg-fuchsia-600 rounded-full cursor-pointer hover:bg-fuchsia-700 transition "
                     >
                       <FaEdit className="text-white" />
                       <input
@@ -230,7 +220,7 @@ const Profile = () => {
                 <div className="flex justify-end space-x-4">
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-fuchsia-600 text-white font-semibold rounded-full shadow-lg hover:bg-fuchsia-700 transition duration-300 flex items-center space-x-2"
+                    className="px-6 py-2 bg-fuchsia-600 text-white font-semibold rounded-full shadow-lg hover:bg-fuchsia-700 transition duration-300 flex items-center space-x-2 "
                   >
                     <FaSave />
                     <span>Save Changes</span>
@@ -252,7 +242,7 @@ const Profile = () => {
                     <img
                       src={formData.avatar || defaultAvatar}
                       alt="User Avatar"
-                      className="w-32 h-32 rounded-full border-4 border-fuchsia-500 shadow-lg object-cover"
+                      className="w-32 h-32 rounded-full border-4 border-fuchsia-500 shadow-lg object-cover neno-button shadow-x1 hover:shadow-fuchsia-800/50"
                     />
                   </div>
                   <div className="text-center md:text-left">
@@ -269,7 +259,7 @@ const Profile = () => {
                   <div className="flex-grow flex justify-center md:justify-end mt-4 md:mt-0">
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="px-6 py-2 bg-fuchsia-600 text-white font-semibold rounded-full shadow-lg hover:bg-fuchsia-700 transition duration-300 flex items-center space-x-2"
+                      className="px-6 py-2 bg-fuchsia-600 text-white font-semibold rounded-full shadow-lg hover:bg-fuchsia-700 transition duration-300 flex items-center space-x-2 neno-button shadow-x1 hover:shadow-fuchsia-800/50"
                     >
                       <FaEdit />
                       <span>Edit Profile</span>
@@ -279,7 +269,7 @@ const Profile = () => {
 
                 {/* Extra Info */}
                 <div className="bg-gray-700 p-6 rounded-xl shadow-inner border border-gray-600">
-                  <h2 className="text-xl font-semibold mb-4 text-fuchsia-400">
+                  <h2 className="text-xl font-semibold mb-4 text-white">
                     Basic Information
                   </h2>
                   <div className="grid md:grid-cols-2 gap-4">
@@ -304,7 +294,7 @@ const Profile = () => {
 
                 {user.userType === "influencer" && (
                   <div className="bg-gray-700 p-6 rounded-xl shadow-inner border border-gray-600">
-                    <h2 className="text-xl font-semibold mb-4 text-fuchsia-400">
+                    <h2 className="text-xl font-semibold mb-4 text-white">
                       Influencer Profile
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -340,7 +330,7 @@ const Profile = () => {
 
                 {user.userType === "advertiser" && (
                   <div className="bg-gray-700 p-6 rounded-xl shadow-inner border border-gray-600">
-                    <h2 className="text-xl font-semibold mb-4 text-fuchsia-400">
+                    <h2 className="text-xl font-semibold mb-4 text-white">
                       Advertiser Profile
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

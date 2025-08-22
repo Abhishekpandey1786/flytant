@@ -9,7 +9,7 @@ function LoginPage() {
   const navigate = useNavigate();
 
   const inputStyle =
-    "w-full p-3 bg-slate-700 border border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-fuchsia-500 transition-all duration-200 text-white placeholder-gray-400";
+    "w-full p-3 bg-slate-700 border border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-fuchsia-500 transition-all duration-200 text-white placeholder-gray-400 neno-button shadow-x1 hover:shadow-fuchsia-800/50";
 
   const handleLogin = async (e) => {
     e.preventDefault();
