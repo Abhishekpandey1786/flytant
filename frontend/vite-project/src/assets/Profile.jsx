@@ -26,9 +26,7 @@ const Profile = () => {
   const defaultAvatar =
     "https://placehold.co/150x150/5B21B6/ffffff?text=User";
 
-  // 🔹 Fetch user profile - UPDATED CODE
   useEffect(() => {
-    // अगर token नहीं है, तो तुरंत बाहर निकल जाएँ
     if (!token) {
       setIsLoading(false);
       setError("User not authenticated. Please log in.");
@@ -46,7 +44,7 @@ const Profile = () => {
           const fetchedUser = {
             ...data.user,
             avatar: data.user.avatar
-              ? `http://localhost:5000${data.user.avatar}` // Fix: Simply prepend the base URL
+              ? `http://localhost:5000${data.user.avatar}` 
               : defaultAvatar,
             bio: data.user.bio || "",
             description: data.user.description || "A leading brand...",
@@ -75,7 +73,7 @@ const Profile = () => {
     if (file) {
       try {
         const options = {
-          maxSizeMB: 1, // max 1MB
+          maxSizeMB: 1, 
           maxWidthOrHeight: 800,
           useWebWorker: true,
         };
@@ -92,7 +90,6 @@ const Profile = () => {
     setIsLoading(true);
 
     try {
-      // ✅ Update text data
       const textUpdateResponse = await fetch(
         "http://localhost:5000/api/users/me",
         {

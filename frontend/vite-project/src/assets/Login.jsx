@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
+import { AuthContext } from "./AuthContext";
 
 function Signup() {
   const [userType, setUserType] = useState("advertiser");
   const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
 
   const [businessName, setBusinessName] = useState("");
   const [name, setName] = useState("");
@@ -25,25 +27,22 @@ function Signup() {
     setUserType(e.target.value);
   };
 
-  const isValidEmail = (email) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Email validation
+    // Validations
     if (!isValidEmail(email)) {
       toast.error("Please enter a valid email address.");
       return;
     }
 
-    // Password validation
     if (password.length < 6) {
       toast.error("Password must be at least 6 characters long.");
       return;
     }
 
-    // Advertiser-specific validations
     if (userType === "advertiser") {
       if (!businessName || businessName.length < 2) {
         toast.error("Please enter a valid business name.");
@@ -63,7 +62,6 @@ function Signup() {
       }
     }
 
-    // Influencer-specific validations
     if (userType === "influencer") {
       if (!name || name.length < 2) {
         toast.error("Please enter your name.");
@@ -112,8 +110,17 @@ function Signup() {
       const data = await res.json();
 
       if (res.ok) {
-        toast.success(data.msg || "Signup successful!");
-        setTimeout(() => navigate("/login"), 1500); // Wait for toast then redirect
+        toast.success("Signup Successful! 🎉");
+
+        // ✅ Wait for 2 seconds before redirecting
+        setTimeout(() => {
+          if (data.user && data.token) {
+            login(data.user, data.token);
+            navigate("/dashboard");
+          } else {
+            navigate("/login");
+          }
+        }, 2000); // 2000ms = 2 seconds
       } else {
         toast.error(data.msg || "Signup failed.");
       }
@@ -124,7 +131,6 @@ function Signup() {
   };
 
   return (
-    
     <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4 py-8 font-inter">
       <Toaster position="top-center" reverseOrder={false} />
       <div className="w-full max-w-md bg-gray-800 text-white p-8 rounded-2xl shadow-2xl border border-gray-700 relative">
@@ -150,6 +156,7 @@ function Signup() {
         </div>
 
         <form className="space-y-5" onSubmit={handleSubmit}>
+          {/* naam/business */}
           <div>
             <label className="block mb-1 text-gray-300">
               {userType === "advertiser" ? "Business Name" : "Name"}
@@ -172,6 +179,7 @@ function Signup() {
             />
           </div>
 
+          {/* advertiser fields */}
           {userType === "advertiser" && (
             <>
               <div>
@@ -187,7 +195,9 @@ function Signup() {
               </div>
 
               <div>
-                <label className="block mb-1 text-gray-300">Industry/Niche</label>
+                <label className="block mb-1 text-gray-300">
+                  Industry/Niche
+                </label>
                 <input
                   type="text"
                   required
@@ -212,10 +222,13 @@ function Signup() {
             </>
           )}
 
+          {/* influencer fields */}
           {userType === "influencer" && (
             <>
               <div>
-                <label className="block mb-1 text-gray-300">Instagram Handle</label>
+                <label className="block mb-1 text-gray-300">
+                  Instagram Handle
+                </label>
                 <input
                   type="text"
                   required
@@ -226,7 +239,9 @@ function Signup() {
                 />
               </div>
               <div>
-                <label className="block mb-1 text-gray-300">YouTube Channel</label>
+                <label className="block mb-1 text-gray-300">
+                  YouTube Channel
+                </label>
                 <input
                   type="text"
                   required
@@ -261,6 +276,7 @@ function Signup() {
             </>
           )}
 
+          {/* email */}
           <div>
             <label className="block mb-1 text-gray-300">Email</label>
             <input
@@ -273,6 +289,7 @@ function Signup() {
             />
           </div>
 
+          {/* password */}
           <div>
             <label className="block mb-1 text-gray-300">Password</label>
             <input

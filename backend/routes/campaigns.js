@@ -5,7 +5,6 @@ const path = require('path');
 const Campaign = require('../models/Campaign');
 const auth = require('../middleware/authMiddleware');
 
-// Multer configuration for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'upload/campaign_images/');
@@ -15,6 +14,8 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage: storage });
+
+
 router.post('/', auth, upload.single('image'), async (req, res) => {
     try {
         const { name, description, budget, platforms, requiredNiche, cta, endDate } = req.body;
@@ -27,7 +28,7 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
             requiredNiche: Array.isArray(requiredNiche) ? requiredNiche : [requiredNiche],
             cta,
             endDate,
-            imagePath: req.file ? req.file.path.replace(/\\/g, '/') : null, // Path ko sahi format mein save karna
+            imagePath: req.file ? req.file.path.replace(/\\/g, '/') : null,
             createdBy: req.user.id,
         });
 
@@ -38,17 +39,13 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
         res.status(500).send('Server Error');
     }
 });
-
-// @route   GET /api/campaigns/public
-// @desc    Get all public campaigns (everyone can see)
-// @access  Public
 router.get('/public', async (req, res) => {
     try {
-        // Find saare campaigns aur uske applicants ki user information populate karna
         const campaigns = await Campaign.find()
-            .populate('applicants.user', 'name') // 'name' field ko populate karega
+            .populate('createdBy', 'name email') 
+            .populate('applicants.user', 'name email ') 
             .sort({ createdAt: -1 });
-            
+
         res.json(campaigns);
     } catch (err) {
         console.error(err.message);
@@ -62,19 +59,14 @@ router.post('/:campaignId/apply', auth, async (req, res) => {
         if (!campaign) {
             return res.status(404).json({ msg: 'Campaign not found' });
         }
-
-        // Check if the user has already applied
         if (campaign.applicants.some(applicant => applicant.user.toString() === req.user.id)) {
             return res.status(400).json({ msg: 'You have already applied for this campaign' });
         }
-
-        // Add the new applicant
         campaign.applicants.unshift({ user: req.user.id });
-        
         await campaign.save();
-
-        // Updated campaign return karna
-        const updatedCampaign = await Campaign.findById(req.params.campaignId).populate('applicants.user', 'name');
+        const updatedCampaign = await Campaign.findById(req.params.campaignId)
+            .populate('createdBy', 'name email ')
+            .populate('applicants.user', 'name email ');
 
         res.json({ msg: 'Applied successfully!', campaign: updatedCampaign });
 
