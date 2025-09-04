@@ -24,10 +24,9 @@ const upload = multer({ storage, fileFilter });
 
 // ✅ Get my profile
 router.get("/me", protect, async (req, res) => {
-  res.json({ user: req.user }); // req.user already without password
+  res.json({ user: req.user }); 
 });
 
-// ✅ Update my profile (text fields)
 router.put("/me", protect, async (req, res) => {
   const allowedFields = [
     "businessName","contactPerson","industry","budget",
@@ -42,7 +41,7 @@ router.put("/me", protect, async (req, res) => {
   res.json({ msg: "Profile updated", user: updated });
 });
 
-// ✅ Upload/Replace avatar
+
 router.post("/me/avatar", protect, upload.single("avatar"), async (req, res) => {
   if (!req.file) return res.status(400).json({ msg: "No file uploaded" });
 

@@ -286,7 +286,7 @@ function CreateCampaign() {
             <div className="pt-4">
               <button
                 type="submit"
-                className="w-full py-3 text-white font-bold rounded-xl flex items-center justify-center space-x-2 neno-button shadow-xl hover:shadow-fuchsia-800/50 border-2 hover:bg-fuchsia-800 border-fuchsia-800 transition-all duration-300"
+                className="w-full py-3 text-white font-bold rounded-xl flex items-center justify-center space-x-2 neno-button shadow-xl hover:shadow-fuchsia-800/50 border-2 bg-fuchsia-800 border-fuchsia-800 transition-all duration-300"
               >
                 <FaPlusCircle className="text-lg" />
                 <span>Create Campaign</span>

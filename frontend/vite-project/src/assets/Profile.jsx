@@ -44,7 +44,7 @@ const Profile = () => {
           const fetchedUser = {
             ...data.user,
             avatar: data.user.avatar
-              ? `http://localhost:5000${data.user.avatar}` 
+              ? `http://localhost:5000${data.user.avatar}`
               : defaultAvatar,
             bio: data.user.bio || "",
             description: data.user.description || "A leading brand...",
@@ -64,16 +64,18 @@ const Profile = () => {
 
     fetchProfile();
   }, [token, setUser, defaultAvatar]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
+
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       try {
         const options = {
-          maxSizeMB: 1, 
+          maxSizeMB: 1,
           maxWidthOrHeight: 800,
           useWebWorker: true,
         };
@@ -85,6 +87,7 @@ const Profile = () => {
       }
     }
   };
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -151,17 +154,17 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-black flex flex-col items-center p-6 font-sans text-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-black flex flex-col items-center p-4 sm:p-6 font-sans text-gray-100 neno-button  hover:shadow-fuchsia-800/50  transition">
       <Toaster position="top-center" reverseOrder={false} />
 
-      <div className="w-full max-w-4xl bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700 mt-10">
-        <h1 className="text-3xl font-extrabold text-center mb-8 text-white">
+      <div className="w-full max-w-4xl bg-gray-800 p-4 sm:p-8 rounded-2xl shadow-2xl  mt-6 sm:mt-10   neno-button  hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800 transition">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-center mb-6 sm:mb-8 text-white">
           User Profile
         </h1>
 
         {isLoading && (
-          <div className="flex flex-col items-center justify-center h-40">
-            <div className="w-12 h-12 border-4 border-fuchsia-500 border-dotted rounded-full animate-spin mb-4 "></div>
+          <div className="flex flex-col items-center justify-center h-40 ">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-fuchsia-500 border-dotted rounded-full animate-spin mb-4 "></div>
             <p className="ml-4 text-gray-400">Loading profile...</p>
           </div>
         )}
@@ -173,10 +176,10 @@ const Profile = () => {
         )}
 
         {user && !isLoading && (
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             {isEditing ? (
-              <form onSubmit={handleProfileUpdate} className="space-y-8">
-                <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8 pb-6 border-b border-gray-600 ">
+              <form onSubmit={handleProfileUpdate} className="space-y-6 sm:space-y-8">
+                <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6 pb-6 border-b border-gray-600">
                   <div className="relative flex-shrink-0">
                     <img
                       src={
@@ -185,13 +188,13 @@ const Profile = () => {
                           : formData.avatar
                       }
                       alt="User Avatar"
-                      className="w-32 h-32 rounded-full border-4 border-fuchsia-500 shadow-lg object-cover neno-button shadow-x1 hover:shadow-fuchsia-800/50"
+                      className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 shadow-lg object-cover neno-button  hover:shadow-fuchsia-800/50  border-fuchsia-800 transition"
                     />
                     <label
                       htmlFor="avatar-upload"
                       className="absolute bottom-0 right-0 p-2 bg-fuchsia-600 rounded-full cursor-pointer hover:bg-fuchsia-700 transition "
                     >
-                      <FaEdit className="text-white" />
+                      <FaEdit className="text-white text-sm sm:text-base" />
                       <input
                         id="avatar-upload"
                         type="file"
@@ -210,22 +213,22 @@ const Profile = () => {
                       name="name"
                       value={formData.name || ""}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-fuchsia-500 focus:border-fuchsia-500"
+                      className="mt-1 block w-full bg-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-fuchsia-500 focus:border-fuchsia-500 neno-button  hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800 transition"
                     />
                   </div>
                 </div>
-                <div className="flex justify-end space-x-4">
+                <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-fuchsia-600 text-white font-semibold rounded-full shadow-lg hover:bg-fuchsia-700 transition duration-300 flex items-center space-x-2 "
+                    className="px-5 sm:px-6 py-2 bg-fuchsia-600 text-white font-semibold rounded-full shadow-lg  flex items-center justify-center space-x-2 neno-button  hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800 transition"
                   >
                     <FaSave />
-                    <span>Save Changes</span>
+                    <span>Save</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsEditing(false)}
-                    className="px-6 py-2 bg-gray-600 text-white font-semibold rounded-full shadow-lg hover:bg-gray-700 transition duration-300 flex items-center space-x-2"
+                    className="px-5 sm:px-6 py-2 bg-gray-600 text-white font-semibold rounded-full shadow-lg hover:bg-gray-700 transition flex items-center justify-center space-x-2"
                   >
                     <FaTimes />
                     <span>Cancel</span>
@@ -234,49 +237,49 @@ const Profile = () => {
               </form>
             ) : (
               <>
-                <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8 pb-6 border-b border-gray-600">
+                <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 pb-6 border-b border-gray-600 ">
                   <div className="relative flex-shrink-0">
                     <img
                       src={formData.avatar || defaultAvatar}
                       alt="User Avatar"
-                      className="w-32 h-32 rounded-full border-4 border-fuchsia-500 shadow-lg object-cover neno-button shadow-x1 hover:shadow-fuchsia-800/50"
+                      className="w-52 h-62 sm:w-52 sm:h-62 border-4  shadow-lg object-cover neno-button  hover:shadow-fuchsia-800/50 border-fuchsia-800 transition"
                     />
                   </div>
-                  <div className="text-center md:text-left">
-                    <h2 className="text-3xl font-bold mb-1 capitalize text-gray-100">
+                  <div className="text-center md:text-left flex-1">
+                    <h2 className="text-2xl sm:text-3xl font-bold mb-1 capitalize text-gray-100">
                       {user.name || user.businessName || "User"}
                     </h2>
-                    <p className="text-fuchsia-400">{user.email}</p>
+                    <p className="text-fuchsia-400 break-all">{user.email}</p>
                     <p className="mt-2 text-gray-400">
                       {user.userType === "influencer"
                         ? user.bio
                         : user.description}
                     </p>
                   </div>
-                  <div className="flex-grow flex justify-center md:justify-end mt-4 md:mt-0">
+                  <div className="flex justify-center md:justify-end w-full md:w-auto">
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="px-6 py-2 bg-fuchsia-600 text-white font-semibold rounded-full shadow-lg hover:bg-fuchsia-700 transition duration-300 flex items-center space-x-2 neno-button shadow-x1 hover:shadow-fuchsia-800/50"
+                      className="px-5 sm:px-6 py-2 bg-fuchsia-600 text-white font-semibold rounded-full shadow-lg  transition flex items-center space-x-2 neno-button  hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800 "
                     >
                       <FaEdit />
-                      <span>Edit Profile</span>
+                      <span>Edit</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Extra Info */}
-                <div className="bg-gray-700 p-6 rounded-xl shadow-inner border border-gray-600">
-                  <h2 className="text-xl font-semibold mb-4 text-white">
+                {/* Basic Info */}
+                <div className="bg-gray-700 p-4 sm:p-6 rounded-xl shadow-inner border border-gray-600">
+                  <h2 className="text-lg sm:text-xl font-semibold mb-4 text-white">
                     Basic Information
                   </h2>
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex items-center space-x-3">
                       <FaUser className="text-fuchsia-500" />
                       <span className="font-medium capitalize">
                         {user.name || user.businessName}
                       </span>
                     </div>
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-3 break-all">
                       <FaEnvelope className="text-fuchsia-500" />
                       <span>{user.email}</span>
                     </div>
@@ -289,26 +292,27 @@ const Profile = () => {
                   </div>
                 </div>
 
+                {/* Influencer */}
                 {user.userType === "influencer" && (
-                  <div className="bg-gray-700 p-6 rounded-xl shadow-inner border border-gray-600">
-                    <h2 className="text-xl font-semibold mb-4 text-white">
+                  <div className="bg-gray-700 p-4 sm:p-6 rounded-xl shadow-inner border border-gray-600">
+                    <h2 className="text-lg sm:text-xl font-semibold mb-4 text-white">
                       Influencer Profile
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {user.instagram && (
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-3 break-all">
                           <FaInstagram className="text-fuchsia-500" />
                           <span>{user.instagram}</span>
                         </div>
                       )}
                       {user.youtube && (
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-3 break-all">
                           <FaYoutube className="text-fuchsia-500" />
                           <span>{user.youtube}</span>
                         </div>
                       )}
                       {user.facebook && (
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-3 break-all">
                           <FaFacebook className="text-fuchsia-500" />
                           <span>{user.facebook}</span>
                         </div>
@@ -325,12 +329,13 @@ const Profile = () => {
                   </div>
                 )}
 
+                {/* Advertiser */}
                 {user.userType === "advertiser" && (
-                  <div className="bg-gray-700 p-6 rounded-xl shadow-inner border border-gray-600">
-                    <h2 className="text-xl font-semibold mb-4 text-white">
+                  <div className="bg-gray-700 p-4 sm:p-6 rounded-xl shadow-inner border border-gray-600">
+                    <h2 className="text-lg sm:text-xl font-semibold mb-4 text-white">
                       Advertiser Profile
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {user.businessName && (
                         <div className="flex items-center space-x-3">
                           <FaBuilding className="text-fuchsia-500" />

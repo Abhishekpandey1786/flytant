@@ -1,7 +1,6 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "./NotificationContext.jsx";
-import { useContext } from "react";
 import { AuthContext } from "./AuthContext.jsx";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MessageSquare } from "lucide-react";
@@ -14,7 +13,9 @@ export default function GlobalNotifications() {
   const handleNotificationClick = (alert) => {
     const [_, campId, user1, user2] = alert.roomId.split(":");
     const newOtherUserId = user1 === user._id ? user2 : user1;
-    navigate(`/chats/campaign/${campId}/user/${newOtherUserId}`);
+
+    navigate();
+
     removeNotification(alert.id);
   };
 
@@ -62,7 +63,10 @@ export default function GlobalNotifications() {
             {/* Footer */}
             <div className="text-xs text-right text-gray-500 opacity-75">
               {a.timestamp instanceof Date
-                ? a.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                ? a.timestamp.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
                 : a.timestamp}
             </div>
           </motion.div>

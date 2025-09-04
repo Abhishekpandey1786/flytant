@@ -74,6 +74,7 @@ router.post('/:campaignId/apply', auth, async (req, res) => {
         console.error(err.message);
         res.status(500).send('Server Error');
     }
+    
 });
 
 module.exports = router;
