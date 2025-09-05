@@ -82,7 +82,7 @@ function CreateCampaign() {
         },
       });
       alert("Campaign created successfully!");
-      navigate("/campaigns");
+      navigate("/dashboard/brand");
     } catch (error) {
       console.error(
         "Error creating campaign:",

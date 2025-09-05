@@ -13,7 +13,7 @@ function Home() {
         </h1>
         <div className="space-x-2 md:space-x-4">
           <Link to="/login">
-            <button className="neno-button shadow-x1 hover:shadow-fuchsia-800/50  bg-fuchsia-800 text-white border-2 hover:bg-fuchsia-800 border-fuchsia-800 rounded-4xl py-2 md:py-4 px-4 md:px-8 text-sm md:text-base uppercase relative overflow-hidden">
+            <button className="neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2 hover:bg-fuchsia-800 border-fuchsia-800 rounded-4xl py-2 md:py-4 px-4 md:px-8 text-sm md:text-base uppercase relative overflow-hidden">
               Login | Signup
             </button>
           </Link>
@@ -34,10 +34,10 @@ function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-3 sm:gap-4">
-              <button className="neno-button bg-fuchsia-800 shadow-x1 hover:shadow-fuchsia-800/50 text-white border-2 hover:bg-fuchsia-800 border-fuchsia-800 rounded-4xl py-2 md:py-4 px-4 md:px-8 text-sm md:text-base uppercase relative overflow-hidden">
+              <button className="neno-button shadow-x1 hover:shadow-fuchsia-800/50 text-white border-2 hover:bg-fuchsia-800 border-fuchsia-800 rounded-4xl py-2 md:py-4 px-4 md:px-8 text-sm md:text-base uppercase relative overflow-hidden">
                 Advitiser
               </button>
-              <button className="neno-button  bg-fuchsia-800 shadow-x1 hover:shadow-fuchsia-800/50 text-white border-2 hover:bg-fuchsia-800 border-fuchsia-800 rounded-4xl py-2 md:py-4 px-4 md:px-8 text-sm md:text-base uppercase relative overflow-hidden">
+              <button className="neno-button shadow-x1 hover:shadow-fuchsia-800/50 text-white border-2 hover:bg-fuchsia-800 border-fuchsia-800 rounded-4xl py-2 md:py-4 px-4 md:px-8 text-sm md:text-base uppercase relative overflow-hidden">
                 Influencer
               </button>
             </div>

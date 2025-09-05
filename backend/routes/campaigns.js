@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const Campaign = require('../models/Campaign');
 const auth = require('../middleware/authMiddleware');
+const roleMiddleware = require('../middleware/roleMiddleware'); // 👈 New middleware import
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -16,7 +17,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 
-router.post('/', auth, upload.single('image'), async (req, res) => {
+router.post('/', auth,roleMiddleware("advertiser"), upload.single('image'), async (req, res) => {
     try {
         const { name, description, budget, platforms, requiredNiche, cta, endDate } = req.body;
 

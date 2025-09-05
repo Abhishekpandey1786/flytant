@@ -50,8 +50,8 @@ function Campaigns() {
         }
       );
 
-      alert("Applied successfully! Redirecting to your applications page.");
-      navigate("/applied-campaigns");
+      alert("Applied successfully!");
+      navigate("/dashboard/brand");
     } catch (error) {
       console.error(
         "Error applying:",
@@ -107,7 +107,7 @@ function Campaigns() {
             {campaigns.map((campaign) => (
               <div
                 key={campaign._id}
-                className="bg-slate-800 rounded-2xl shadow-xl border border-fuchsia-800 p-4 sm:p-6 flex flex-col items-start transition-transform duration-300 hover:scale-105 neno-button  hover:shadow-fuchsia-800/50"
+                className="bg-slate-800 rounded-2xl shadow-xl border border-fuchsia-800 p-4 sm:p-6 flex flex-col items-start transition-transform duration-300 hover:scale-105 neno-button hover:shadow-fuchsia-800/50"
               >
                 {campaign.imagePath && (
                   <img
@@ -125,16 +125,12 @@ function Campaigns() {
                 <div className="w-full space-y-2 mt-auto">
                   <p className="text-xs sm:text-sm text-gray-400 flex items-center gap-2">
                     <FaBullhorn className="text-fuchsia-400" />
-                    <span className="font-semibold text-white">
-                      Platforms:
-                    </span>{" "}
+                    <span className="font-semibold text-white">Platforms:</span>{" "}
                     {campaign.platforms.join(", ")}
                   </p>
                   <p className="text-xs sm:text-sm text-gray-400 flex items-center gap-2">
                     <FaTag className="text-fuchsia-400" />
-                    <span className="font-semibold text-white">
-                      Niches:
-                    </span>{" "}
+                    <span className="font-semibold text-white">Niches:</span>{" "}
                     {campaign.requiredNiche.join(", ")}
                   </p>
                   <p className="text-xs sm:text-sm text-gray-400 flex items-center gap-2">
@@ -144,12 +140,16 @@ function Campaigns() {
                   </p>
                 </div>
 
-                <button
-                  onClick={() => handleApply(campaign._id)}
-                  className="mt-4 w-full py-2 bg-fuchsia-600 text-white rounded-lg font-semibold hover:bg-fuchsia-700 transition-colors active:scale-95 neno-button shadow-xl hover:shadow-fuchsia-800/50 border-fuchsia-800"
-                >
-                  Apply Now
-                </button>
+                {/* ✅ Only show Apply button if user is influencer and not the campaign creator */}
+                {campaign.createdBy._id !== currentUserId &&
+                  user?.userType === "influencer" && (
+                    <button
+                      onClick={() => handleApply(campaign._id)}
+                      className="mt-4 w-full py-2 bg-fuchsia-600 text-white rounded-lg font-semibold hover:bg-fuchsia-700 transition-colors active:scale-95 neno-button shadow-xl hover:shadow-fuchsia-800/50 border-fuchsia-800"
+                    >
+                      Apply Now
+                    </button>
+                  )}
 
                 {campaign.applicants && campaign.applicants.length > 0 && (
                   <div className="mt-4 border-t border-slate-700 pt-4 w-full">
