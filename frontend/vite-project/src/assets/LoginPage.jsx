@@ -54,7 +54,7 @@ function LoginPage() {
 
       <div className="w-full max-w-md bg-gray-800 text-white p-8 rounded-2xl shadow-2xl border border-gray-700">
         <h2 className="text-4xl font-extrabold text-center mb-6 text-white">
-          Login
+        <Link to="/">Login</Link>  
         </h2>
 
         <form className="space-y-5" onSubmit={handleLogin}>

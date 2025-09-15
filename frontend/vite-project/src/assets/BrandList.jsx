@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaMapMarkerAlt, FaLink } from "react-icons/fa";
-import { motion } from "framer-motion";
+import { FaMapMarkerAlt, FaLink, FaIndustry, FaEnvelope } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
 
 const BrandList = () => {
   const [brands, setBrands] = useState([]);
   const [expanded, setExpanded] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
   const defaultLogo =
-    "https://placehold.co/150x150/5B21B6/FFFFFF?text=Brand";
+    "https://placehold.co/600x400/9333EA/FFFFFF?text=Brand+Image";
 
   useEffect(() => {
     const fetchBrands = async () => {
@@ -24,8 +25,7 @@ const BrandList = () => {
         }));
         setBrands(processedData);
       } catch (err) {
-        console.error("Brands fetch error:", err);
-        setError("Failed to connect to the server. Please ensure the backend is running.");
+        setError("⚠️ Failed to connect to the server. Please ensure the backend is running.");
       } finally {
         setIsLoading(false);
       }
@@ -38,77 +38,64 @@ const BrandList = () => {
     setExpanded(expanded === id ? null : id);
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 },
-  };
-
   if (isLoading) {
     return (
-      <div className="flex flex-col justify-center items-center h-64 bg-gray-900 rounded-lg shadow-inner">
-        <div className="w-16 h-16 border-t-4 border-b-4 border-purple-500 rounded-full animate-spin mb-4"></div>
-        <p className="text-xl font-medium text-purple-400">Fetching amazing brands...</p>
+      <div className="flex flex-col justify-center items-center h-64">
+        <div className="w-14 h-14 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-purple-400 mt-4 text-lg">Loading brands...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center text-red-400 p-6 bg-red-900 rounded-lg shadow-md border border-red-700">
-        <p className="text-xl font-semibold mb-2">Error Loading Brands!</p>
+      <div className="text-center text-red-400 p-6 bg-red-900/40 rounded-xl shadow-md border border-red-700 ">
+        <p className="text-xl font-semibold mb-2">Error Loading Brands</p>
         <p>{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-12 ">
       <motion.h2
-        className="text-3xl md:text-4xl font-extrabold mb-10 text-center text-white leading-tight"
-        initial={{ y: -50, opacity: 0 }}
+        className="text-4xl font-extrabold mb-12 text-center bg-white bg-clip-text text-transparent "
+        initial={{ y: -40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
       >
-        <span className="bg-clip-text text-transparent bg-white">
-          Top Brands
-        </span>
+         Our Top Brands
       </motion.h2>
 
-      <motion.div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 ">
         {brands.length > 0 ? (
           brands.map((brand) => (
             <motion.div
               key={brand._id}
-              className="relative bg-gray-800 p-6 sm:p-8 rounded-3xl transform hover:scale-105 duration-400 ease-in-out group shadow-xl hover:shadow-fuchsia-800/50 neno-button text-white border-2 border-fuchsia-800 transition"
-              variants={itemVariants}
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ scale: 1.03 }}
+              transition={{ duration: 0.3 }}
+              className="relative bg-gray-900/70 backdrop-blur-xl rounded-3xl border-2 overflow-hidden group neno-button shadow-xl hover:shadow-fuchsia-800/50  border-fuchsia-800  text-white font-semibold   transition"
             >
-              <div className="flex flex-col items-center text-center">
-                <img
-                  src={brand.logo}
-                  alt={brand.name}
-                  className="w-32 h-32 md:w-40 md:h-40 object-cover rounded-xl shadow-xl border-2 border-fuchsia-800 hover:shadow-fuchsia-800/50 transition"
-                />
-                <h3 className="text-xl md:text-2xl font-bold text-white mt-4 capitalize">
+              {/* Full width cover image */}
+              <motion.img
+                src={brand.logo}
+                alt={brand.name}
+                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+
+              <div className="p-6">
+                {/* Brand Name */}
+                <h3 className="text-xl font-bold text-white mt-2 group-hover:text-fuchsia-400 transition text-center">
                   {brand.name}
                 </h3>
-                
 
-                <div className="flex flex-wrap justify-center gap-3 text-purple-500 mt-3">
+                {/* Location + Website */}
+                <div className="flex flex-wrap justify-center gap-3 mt-4">
                   {brand.location && (
-                    <div className="flex items-center space-x-1 text-sm md:text-base">
-                      <FaMapMarkerAlt size={16} className="text-fuchsia-400" />
-                      <span className="text-gray-400">{brand.location}</span>
-                    </div>
+                    <span className="flex items-center gap-1 text-sm bg-purple-800/40 text-fuchsia-300 px-3 py-1 rounded-full">
+                      <FaMapMarkerAlt size={14} /> {brand.location}
+                    </span>
                   )}
                   {brand.website && (
                     <a
@@ -119,35 +106,52 @@ const BrandList = () => {
                       }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-fuchsia-300 text-sm md:text-base"
+                      className="flex items-center gap-1 text-sm bg-purple-800/40 text-fuchsia-300 px-3 py-1 rounded-full hover:bg-purple-700/50"
                     >
-                      <FaLink size={16} />
+                      <FaLink size={14} /> Visit
                     </a>
                   )}
                 </div>
 
-                {expanded === brand._id && (
-                  <div className="mt-6 p-4 bg-gray-700 rounded-lg text-gray-300 text-xs md:text-sm space-y-2 w-full">
-                    <p><strong>Email:</strong> {brand.email || "Not provided"}</p>
-                    <p><strong>Industry:</strong> {brand.industry || "N/A"}</p>
-                  </div>
-                )}
+                {/* Expandable Details */}
+                <AnimatePresence>
+                  {expanded === brand._id && (
+                    <motion.div
+                      className="mt-6 bg-gray-800/80 rounded-xl p-4 text-gray-300 text-sm space-y-3"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <p className="flex items-center gap-2">
+                        <FaEnvelope className="text-fuchsia-400" />{" "}
+                        {brand.email || "Not provided"}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <FaIndustry className="text-fuchsia-400" />{" "}
+                        {brand.industry || "N/A"}
+                      </p>
+                    
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
+                {/* Button */}
                 <button
                   onClick={() => toggleExpand(brand._id)}
-                  className="mt-6 px-4 py-2 md:px-5 md:py-2 bg-fuchsia-700 text-white font-semibold rounded-full shadow-md neno-button hover:shadow-fuchsia-800/50 border-2 hover:bg-fuchsia-800 border-fuchsia-800 transition text-sm md:text-base"
+                  className="mt-6 w-full py-2 bg-fuchsia-800 neno-button shadow-xl hover:shadow-fuchsia-800/50  hover:bg-fuchsia-800 border-fuchsia-800  text-white font-semibold rounded-full  hover:from-fuchsia-700 transition"
                 >
-                  {expanded === brand._id ? "Show Less" : "View More"}
+                  {expanded === brand._id ? "Hide Details" : "View More"}
                 </button>
               </div>
             </motion.div>
           ))
         ) : (
-          <p className="col-span-full text-center text-gray-400 text-lg md:text-xl p-6 md:p-8 bg-gray-800 rounded-lg shadow-inner">
-            No brands have created their profiles yet.
+          <p className="col-span-full text-center text-gray-400 text-lg">
+            No brands registered yet.
           </p>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 };

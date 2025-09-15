@@ -242,7 +242,7 @@ const Profile = () => {
                     <img
                       src={formData.avatar || defaultAvatar}
                       alt="User Avatar"
-                      className="w-52 h-62 sm:w-52 sm:h-62 border-4  shadow-lg object-cover neno-button  hover:shadow-fuchsia-800/50 border-fuchsia-800 transition"
+                      className="w-32 h-32 sm:w-32 sm:h-32 border-4 rounded-full  shadow-lg object-cover neno-button  hover:shadow-fuchsia-800/50 border-fuchsia-800 transition"
                     />
                   </div>
                   <div className="text-center md:text-left flex-1">

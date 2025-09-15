@@ -1,6 +1,4 @@
-// index.js or server.js
 
-// 1. All imports at the very top.
 const http = require('http');
 const { Server } = require('socket.io');
 const express = require("express");
@@ -12,14 +10,18 @@ const connectDB = require("./config/db");
 const chatRoutes = require('./routes/chatRoutes');
 const Chat = require('./models/Chat');
 const User = require('./models/User'); 
+const newsRoutes = require("./routes/news");
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const campaignRoutes = require("./routes/campaigns");
+const adminRoutes = require('./routes/admin');
+
 
 const usersRoutes = require('./routes/users');
 const advertiserRoutes = require('./routes/advertiser');
 const appliedRoutes = require("./routes/appliedcampaigns");
+const paymentRoutes = require("./routes/payment");
 
 dotenv.config();
 
@@ -45,6 +47,7 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 // Serve static files (uploads and campaign images).
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/upload/campaign_images", express.static(path.join(__dirname, "upload/campaign_images")));
+app.use("/uploads/Notifications", express.static(path.join(__dirname, "uploads", "Notifications"))); 
 
 // 5. All API routes go here.
 app.get("/", (req, res) => {
@@ -57,6 +60,9 @@ app.use('/api/campaigns', campaignRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/advertiser', advertiserRoutes); // ✅ Correctly placed AFTER `const app = express()`
+app.use("/api/payment", paymentRoutes);
+app.use("/api/news", newsRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 6. Socket.io logic.
 const connectedUsers = new Map();

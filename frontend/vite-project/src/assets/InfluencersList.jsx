@@ -34,9 +34,7 @@ const InfluencersList = () => {
         }
       } catch (err) {
         console.error("Influencers fetch error:", err);
-        setError(
-          "Failed to connect to the server. Please ensure the backend is running."
-        );
+        setError("Server connection failed. Please check backend.");
       } finally {
         setIsLoading(false);
       }
@@ -45,33 +43,11 @@ const InfluencersList = () => {
     fetchInfluencers();
   }, []);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-    },
-  };
-
-  const handleChatClick = (id) => {
-    navigate(`/influencer/${id}`);
-  };
-
   if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center h-64 bg-gray-900 rounded-lg shadow-inner">
-        <div className="w-16 h-16 border-t-4 border-b-4 border-purple-500 rounded-full animate-spin mb-4"></div>
-        <p className="text-xl font-medium text-purple-400">
+        <div className="w-12 h-12 md:w-16 md:h-16 border-t-4 border-b-4 border-fuchsia-500 rounded-full animate-spin mb-4"></div>
+        <p className="text-lg md:text-xl font-medium text-fuchsia-400 text-center px-4">
           Fetching amazing influencers...
         </p>
       </div>
@@ -80,32 +56,28 @@ const InfluencersList = () => {
 
   if (error) {
     return (
-      <div className="text-center text-red-400 p-6 bg-red-900 rounded-lg shadow-md border border-red-700">
-        <p className="text-xl font-semibold mb-2">Error Loading Influencers!</p>
-        <p>{error}</p>
-        <p className="text-sm mt-3">
-          Please check your network connection or try again later.
+      <div className="text-center text-red-400 p-4 md:p-6 bg-red-900 rounded-lg shadow-md border border-red-700">
+        <p className="text-lg md:text-xl font-semibold mb-2">
+          Error Loading Influencers!
         </p>
+        <p className="text-sm md:text-base">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-12 py-8 sm:py-12">
       <motion.h2
-        className="text-3xl md:text-4xl font-extrabold mb-10 text-center text-white leading-tight"
+        className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-10 md:mb-16 text-center bg-white bg-clip-text text-transparent drop-shadow-lg"
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.6 }}
       >
-        <span className="bg-clip-text hover:shadow-fuchsia-800/50 text-white">
-          Top Influencers
-        </span>
+        Meet Our Top Influencers
       </motion.h2>
 
       <motion.div
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8"
-        variants={containerVariants}
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8 lg:gap-12"
         initial="hidden"
         animate="visible"
       >
@@ -113,38 +85,32 @@ const InfluencersList = () => {
           influencers.map((influencer) => (
             <motion.div
               key={influencer._id}
-              className="relative bg-gray-800 p-6 sm:p-8 rounded-3xl border
-                         transform hover:scale-105 
-                         transition-all duration-400 ease-in-out group neno-button shadow-xl hover:shadow-fuchsia-800/50 border-fuchsia-800"
-              variants={itemVariants}
+              whileHover={{ scale: 1.05, rotateY: 5 }}
+              className="relative group rounded-2xl md:rounded-3xl bg-gradient-to-br from-gray-900/80 to-gray-800/40 backdrop-blur-xl border shadow-xl md:shadow-2xl overflow-hidden transition-all duration-500 neno-button hover:shadow-fuchsia-800/50 text-white border-fuchsia-800"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-900/10 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-              <div className="flex flex-col items-center text-center z-10 relative">
-                <div className="relative mb-4 md:mb-6">
-                  <img
-                    src={influencer.avatar}
-                    alt={influencer.name}
-                    className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-fuchsia-600 object-cover 
-                                 shadow-lg transition-all duration-300 group-hover:border-fuchsia-400 group-hover:shadow-fuchsia-500/30"
-                  />
-                </div>
-
-                <h3 className="text-lg md:text-2xl font-bold text-white mb-2 capitalize group-hover:text-purple-300 transition-colors duration-300">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-fuchsia-500 via-purple-500 to-indigo-500"></div>
+              <div className="flex flex-col items-center p-6 md:p-8">
+                <img
+                  src={influencer.avatar}
+                  alt={influencer.name}
+                  className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full border-4 border-fuchsia-500 object-cover shadow-lg group-hover:shadow-fuchsia-500/60 transition-all duration-500"
+                />
+                <h3 className="mt-3 sm:mt-4 text-lg sm:text-xl font-bold text-white capitalize group-hover:text-fuchsia-300 transition-colors text-center">
                   {influencer.name}
                 </h3>
-               
+              </div>
 
-                <div className="flex justify-center space-x-3 md:space-x-4 text-purple-500 mt-2 md:mt-3">
+              {/* Socials + Button */}
+              <div className="absolute inset-x-0 bottom-0 translate-y-0 sm:translate-y-full sm:group-hover:translate-y-0 transition-all duration-500 bg-black/60 p-4 sm:p-6 flex flex-col items-center space-y-3 sm:space-y-4">
+                <div className="flex space-x-4 sm:space-x-5 text-white">
                   {influencer.instagram && (
                     <a
                       href={`https://instagram.com/${influencer.instagram}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-fuchsia-300 transform hover:-translate-y-1 transition-all duration-200"
-                      title="Instagram Profile"
+                      className="hover:text-pink-500 transition"
                     >
-                      <FaInstagram size={22} className="md:w-7 md:h-7" />
+                      <FaInstagram size={22} className="sm:w-6 sm:h-6" />
                     </a>
                   )}
                   {influencer.youtube && (
@@ -152,10 +118,9 @@ const InfluencersList = () => {
                       href={`https://youtube.com/${influencer.youtube}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-fuchsia-300 transform hover:-translate-y-1 transition-all duration-200"
-                      title="YouTube Channel"
+                      className="hover:text-red-500 transition"
                     >
-                      <FaYoutube size={22} className="md:w-7 md:h-7" />
+                      <FaYoutube size={22} className="sm:w-6 sm:h-6" />
                     </a>
                   )}
                   {influencer.facebook && (
@@ -163,28 +128,18 @@ const InfluencersList = () => {
                       href={`https://facebook.com/${influencer.facebook}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-fuchsia-300 transform hover:-translate-y-1 transition-all duration-200"
-                      title="Facebook Page"
+                      className="hover:text-blue-500 transition"
                     >
-                      <FaFacebook size={22} className="md:w-7 md:h-7" />
+                      <FaFacebook size={22} className="sm:w-6 sm:h-6" />
                     </a>
                   )}
                 </div>
-                <button
-                  
-                  className="mt-6 md:mt-8 px-4 py-2 md:px-6 md:py-3 bg-fuchsia-700 text-white font-semibold rounded-full 
-                             neno-button shadow-xl hover:shadow-fuchsia-800/50 border-fuchsia-800
-                             focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75 text-sm md:text-base"
-                >
-                  View more
-                </button>
               </div>
             </motion.div>
           ))
         ) : (
-          <p className="col-span-full text-center text-gray-400 text-lg md:text-xl p-6 md:p-8 bg-gray-800 rounded-lg shadow-inner">
-            No influencers have created their profiles yet. <br /> Be the first
-            to join our community!
+          <p className="col-span-full text-center text-gray-400 text-base sm:text-lg bg-gray-800 p-4 sm:p-6 rounded-xl">
+            No influencers have joined yet. Be the first to shine! ✨
           </p>
         )}
       </motion.div>

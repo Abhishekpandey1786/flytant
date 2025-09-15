@@ -81,8 +81,6 @@ export default function Chats() {
       socket.off("message_received", onMsg);
     };
   }, [activeChat, user]);
-
-  // Scroll to bottom on new message
   useEffect(() => {
     if (boxRef.current) {
       boxRef.current.scrollTo({
@@ -141,7 +139,7 @@ export default function Chats() {
   };
 
   return (
-    <div className="flex h-screen md:h-[85vh] rounded-2xl bg-slate-900 overflow-hidden neno-button shadow-xl hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800 transition">
+    <div className="flex h-screen  md:h-[85vh] rounded-2xl bg-slate-900 overflow-hidden neno-button shadow-xl hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800 transition">
       <div
         className={`flex flex-col border-r border-slate-800 w-full md:w-1/3 ${
           activeChat ? "hidden md:flex" : "flex"
@@ -189,14 +187,14 @@ export default function Chats() {
 
       {/* Chat Window */}
       <div
-        className={`flex flex-col flex-1 neno-button shadow-xl hover:shadow-fuchsia-800/50 border-fuchsia-800 transition ${
+        className={`flex flex-col w-1.5 flex-1 neno-button shadow-xl hover:shadow-fuchsia-800/50 border-fuchsia-800 transition ${
           activeChat ? "flex" : "hidden md:flex"
         }`}
       >
         {activeChat ? (
           <>
             {/* Header */}
-            <div className="p-4 border-b border-slate-800 flex items-center gap-3 bg-slate-800 sticky top-0 z-10">
+            <div className="p-4 border-b  border-slate-800 flex items-center gap-3 bg-slate-800 sticky top-0 z-10">
               <button
                 className="md:hidden text-white mr-2"
                 onClick={() => setActiveChat(null)}

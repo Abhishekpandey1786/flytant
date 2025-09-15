@@ -14,15 +14,21 @@ export default function GlobalNotifications() {
     const [_, campId, user1, user2] = alert.roomId.split(":");
     const newOtherUserId = user1 === user._id ? user2 : user1;
 
-    navigate();
-
+    navigate(); // aap yaha route pass karoge jaise `/chats/${campId}?user=${newOtherUserId}`
     removeNotification(alert.id);
   };
 
   if (notifications.length === 0) return null;
 
   return (
-    <div className="fixed top-6 right-6 z-[100] space-y-4 pointer-events-none">
+    <div
+      className="
+        fixed z-[100] space-y-4 pointer-events-none
+        sm:top-6 sm:right-6 
+        sm:w-auto
+        bottom-4 left-1/2 -translate-x-1/2 w-[95%] sm:translate-x-0
+      "
+    >
       <AnimatePresence>
         {notifications.map((a) => (
           <motion.div
@@ -31,7 +37,13 @@ export default function GlobalNotifications() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.9 }}
             transition={{ duration: 0.25 }}
-            className="relative max-w-sm w-[320px] backdrop-blur-lg bg-white/80 border border-gray-300 shadow-2xl rounded-2xl p-4 flex flex-col space-y-2 pointer-events-auto cursor-pointer hover:shadow-3xl hover:scale-[1.02] transition-all"
+            className="
+              relative w-full sm:max-w-sm sm:w-[320px]
+              backdrop-blur-lg bg-white/80 border border-gray-300 
+              shadow-2xl rounded-2xl p-4 flex flex-col space-y-2 
+              pointer-events-auto cursor-pointer
+              hover:shadow-3xl hover:scale-[1.02] transition-all
+            "
             onClick={() => handleNotificationClick(a)}
           >
             {/* Header */}

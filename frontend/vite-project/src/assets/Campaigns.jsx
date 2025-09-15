@@ -33,33 +33,60 @@ function Campaigns() {
   }, []);
 
   const handleApply = async (campaignId) => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("Please log in to apply for campaigns.");
-        return;
-      }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Please log in to apply for campaigns.");
+      return;
+    }
 
+    // Subscription info
+    const plan = user?.subscription?.plan || "Free";
+    const maxApplications = user?.subscription?.maxApplications || 3; // Free users = 3
+
+    const appliedCampaignsCount = campaigns.filter((c) =>
+      c.applicants?.some((a) => a.user._id === currentUserId)
+    ).length;
+
+    if (appliedCampaignsCount >= maxApplications) {
+      alert(
+        `Your ${plan} plan allows only ${maxApplications} applications. Upgrade to apply more.`
+      );
+      navigate("/SubscriptionPlans");
+      return;
+    }
+
+    try {
       await axios.post(
         `http://localhost:5000/api/campaigns/${campaignId}/apply`,
         {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       alert("Applied successfully!");
-      navigate("/dashboard/brand");
-    } catch (error) {
-      console.error(
-        "Error applying:",
-        error.response?.data?.msg || error.message
+      setCampaigns((prev) =>
+        prev.map((c) =>
+          c._id === campaignId
+            ? {
+                ...c,
+                applicants: [
+                  ...(c.applicants || []),
+                  {
+                    user: {
+                      _id: currentUserId,
+                      name: user.name,
+                      email: user.email,
+                      avatar: user.avatar,
+                    },
+                  },
+                ],
+              }
+            : c
+        )
       );
+    } catch (error) {
+      console.error("Error applying:", error.response?.data?.msg || error.message);
       alert(
-        error.response?.data?.msg ||
-          "Failed to apply. You may have already applied."
+        error.response?.data?.msg || "Failed to apply. You may have already applied."
       );
     }
   };
@@ -140,7 +167,7 @@ function Campaigns() {
                   </p>
                 </div>
 
-                {/* ✅ Only show Apply button if user is influencer and not the campaign creator */}
+                {/* Apply Button with subscription check */}
                 {campaign.createdBy._id !== currentUserId &&
                   user?.userType === "influencer" && (
                     <button

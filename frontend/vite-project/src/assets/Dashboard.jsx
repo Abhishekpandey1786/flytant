@@ -7,7 +7,6 @@ import Profile from "./Profile";
 import Subscription from "./Subscription";
 import InfluencersList from "./InfluencersList";
 import Chats from "./Chats";
-
 import {
   FaUser,
   FaBullhorn,
@@ -19,6 +18,7 @@ import {
 import { AuthContext } from "./AuthContext";
 import AppliedCampaigns from "./AppliedCampaigns";
 import Campaigns from "./Campaigns";
+import UserNotifications from "./UserNotifications";
 
 const Dashboard = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -61,7 +61,7 @@ const Dashboard = () => {
   const handleMenuItemClick = (key) => {
     if (key === "logout") {
       logout();
-      navigate("/login");
+      navigate("/",);
       setDropdownOpen(false);
       return;
     }
@@ -234,10 +234,14 @@ const Dashboard = () => {
           {activePage === "Chats" && <Chats />}
           {activePage === "subscription" && <Subscription />}
           {activePage === "campaigns" && <Campaigns />}
+          {activePage === "notifications" && <UserNotifications/>}
         </div>
       </main>
     </div>
   );
 };
+
+ 
+
 
 export default Dashboard;
