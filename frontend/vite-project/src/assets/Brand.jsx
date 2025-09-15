@@ -272,7 +272,7 @@ const Brand = () => {
         {/* Influencers avatars */}
         <div className="mt-20 sm:mt-28 w-full text-center">
           <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-8 sm:mb-12 text-white drop-shadow-lg">
-            100K+ Influencers already taking the advantages
+            100K+ Influencers And Brands already taking the advantages
           </h3>
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-10">
             {influencers.map((src, idx) => (

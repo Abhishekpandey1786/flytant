@@ -1,8 +1,39 @@
-import React from "react";
+import React, { useState } from "react";
 import PageHeader from "./PageHeader";
 import { FaEnvelope, FaHeadset, FaPhoneAlt, FaFacebook, FaInstagram, FaLinkedin } from "react-icons/fa";
+import axios from "axios";
 
 const Contact = () => {
+  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSuccess("");
+    setError("");
+
+    if (!formData.name || !formData.email || !formData.message) {
+      setError("Please fill in all fields.");
+      return;
+    }
+
+    try {
+      const res = await axios.post("http://localhost:5000/api/contact/send", formData);
+      if (res.data.success) {
+        setSuccess("Message sent successfully!");
+        setFormData({ name: "", email: "", message: "" });
+      }
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+      console.error(err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white relative overflow-hidden">
       <PageHeader />
@@ -76,12 +107,22 @@ const Contact = () => {
           </div>
 
           {/* Contact Form */}
-          <form className="bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-xl border border-fuchsia-500/40 space-y-6">
+          <form
+            onSubmit={handleSubmit}
+            className="bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-xl border border-fuchsia-500/40 space-y-6"
+          >
             <h3 className="text-2xl font-bold mb-4 text-fuchsia-400">Send Us a Message</h3>
+
+            {success && <p className="text-green-400 font-medium">{success}</p>}
+            {error && <p className="text-red-400 font-medium">{error}</p>}
+
             <div>
               <label className="block text-sm mb-2">Your Name</label>
               <input
                 type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
                 placeholder="Enter your name"
                 className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-gray-600 text-white focus:border-fuchsia-400 outline-none"
               />
@@ -90,6 +131,9 @@ const Contact = () => {
               <label className="block text-sm mb-2">Your Email</label>
               <input
                 type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
                 placeholder="Enter your email"
                 className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-gray-600 text-white focus:border-fuchsia-400 outline-none"
               />
@@ -97,6 +141,9 @@ const Contact = () => {
             <div>
               <label className="block text-sm mb-2">Message</label>
               <textarea
+                name="message"
+                value={formData.message}
+                onChange={handleChange}
                 rows="4"
                 placeholder="Type your message..."
                 className="w-full px-4 py-3 rounded-lg bg-slate-900 border border-gray-600 text-white focus:border-fuchsia-400 outline-none"

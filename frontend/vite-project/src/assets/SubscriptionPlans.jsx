@@ -13,7 +13,7 @@ import p6 from "./image/p6.png";
 import p7 from "./image/p7.png";
 import p8 from "./image/p8.png";
 
-const stripePromise = loadStripe("pk_test_51S53C2F5Veqs61Iyz7n4PxQatL9SeqipE3kvqyZ0l0s3TtwDnzjiL64p4iQ8rMEC6tu1PRJBQKVwdOwGyKkQr54100QYVAwSX2"); // apni publishable key dalna
+const stripePromise = loadStripe(""); // apni publishable key dalna
 
 const plans = [
   { id: 1, title: "Billed Yearly", price: 500000, oldPrice: 3600, discount: "Extra 20% Off" },
@@ -36,7 +36,7 @@ function CheckoutForm({ selectedPlan }) {
     setLoading(true);
     try {
       // 1. Backend API hit karo
-      const { data } = await axios.post("http://localhost:5000/api/payment/create-payment-intent", {
+      const { data } = await axios.post("", {
         amount: selectedPlan.price, // paisa in INR cents (₹28 = 2800)
         currency: "inr",
       });

@@ -86,7 +86,7 @@ const BrandList = () => {
 
               <div className="p-6">
                 {/* Brand Name */}
-                <h3 className="text-xl font-bold text-white mt-2 group-hover:text-fuchsia-400 transition text-center">
+                <h3 className="text-xl font-bold text-white mt-2 group-hover:text-white transition text-center">
                   {brand.name}
                 </h3>
 

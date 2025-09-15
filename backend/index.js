@@ -21,7 +21,7 @@ const adminRoutes = require('./routes/admin');
 const usersRoutes = require('./routes/users');
 const advertiserRoutes = require('./routes/advertiser');
 const appliedRoutes = require("./routes/appliedcampaigns");
-const paymentRoutes = require("./routes/payment");
+const contactRoutes = require("./routes/contact");
 
 dotenv.config();
 
@@ -60,9 +60,9 @@ app.use('/api/campaigns', campaignRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/advertiser', advertiserRoutes); // ✅ Correctly placed AFTER `const app = express()`
-app.use("/api/payment", paymentRoutes);
 app.use("/api/news", newsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use("/api/contact", contactRoutes);
 
 // 6. Socket.io logic.
 const connectedUsers = new Map();

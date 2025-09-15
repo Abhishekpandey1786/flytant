@@ -26,7 +26,7 @@ import PrivacyPolicy from "./assets/PrivacyPolicy.jsx";
 import TermsOfService from "./assets/TermsOfService.jsx";
 import AdminLogin from "./assets/AdminLogin.jsx";
 import AdminDashboard from "./assets/AdminDashboard.jsx";
-import UserNotifications from "./assets/UserNotifications.jsx"
+import UserNotifications from "./assets/UserNotifications.jsx";
 function App() {
   return (
     <BrowserRouter>
@@ -40,6 +40,11 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/contact" element={<Contact />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/blogs" element={<Blog />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route element={<PrivateRoutes />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/dashboard/brand" element={<Brand />} />
@@ -59,12 +64,11 @@ function App() {
                 path="/SubscriptionPlans"
                 element={<SubscriptionPlans />}
               />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/blogs" element={<Blog />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/terms-of-service" element={<TermsOfService />} />
-              <Route path="/UserNotifications" element={<UserNotifications />} />
+              
+              <Route
+                path="/UserNotifications"
+                element={<UserNotifications />}
+              />
             </Route>
           </Routes>
         </AuthProvider>
