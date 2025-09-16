@@ -101,7 +101,7 @@ function Signup() {
     };
 
     try {
-      const res = await fetch("https://abhifly11786.vercel.app/api/auth/signup", {
+      const res = await fetch("http://localhost:5000/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
