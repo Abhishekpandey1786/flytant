@@ -95,7 +95,7 @@ const PrivacyPolicy = () => {
             href="mailto:privacy@flytant.com"
             className="text-fuchsia-400 hover:underline"
           >
-            privacy@flytant.com
+            privacy@InfluZone.com
           </a>
         </footer>
       </div>

@@ -12,7 +12,7 @@ const TermsOfService = () => {
             Terms of Service
           </h2>
           <p className="mt-3 text-gray-400 text-base md:text-lg max-w-2xl mx-auto">
-            Please read these Terms carefully before using Flytant. By
+            Please read these Terms carefully before using InfluZone. By
             accessing or using our platform, you agree to be bound by them.
           </p>
         </header>
@@ -90,7 +90,7 @@ const TermsOfService = () => {
             href="mailto:terms@flytant.com"
             className="text-fuchsia-400 hover:underline"
           >
-            terms@flytant.com
+            terms@InfluZone.com
           </a>
         </footer>
       </div>

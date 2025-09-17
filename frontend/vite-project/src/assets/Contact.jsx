@@ -66,7 +66,7 @@ const Contact = () => {
               <p className="text-gray-300">
                 Email us at{" "}
                 <a href="mailto:info@flytant.com" className="text-fuchsia-400 hover:underline">
-                  info@flytant.com
+                  info@InfluZone.com
                 </a>
               </p>
             </div>
@@ -79,7 +79,7 @@ const Contact = () => {
               <p className="text-gray-300">
                 For technical issues:{" "}
                 <a href="mailto:support@flytant.com" className="text-fuchsia-400 hover:underline">
-                  support@flytant.com
+                  support@InfluZone.com
                 </a>
               </p>
             </div>

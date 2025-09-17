@@ -168,7 +168,7 @@ export default function Subscription() {
             href="mailto:influencers@flytant.com"
             className="text-fuchsia-400 underline font-medium"
           >
-            influencers@flytant.com
+            influencers@InfluZone.com
           </a>
         </p>
       </div>

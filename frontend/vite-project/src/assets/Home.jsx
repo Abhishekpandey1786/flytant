@@ -12,7 +12,7 @@ function Home() {
       {/* Navbar - Your existing code */}
       <nav className="flex justify-between items-center px-4 md:px-12 py-4 fixed top-0 left-0 right-0 z-50 bg-slate-800">
         <h1 className="text-2xl md:text-3xl font-extrabold tracking-wide">
-          Flytant
+          InfluZone 
         </h1>
         <div className="space-x-2 md:space-x-4">
           <Link to="/login">
@@ -61,9 +61,9 @@ function Home() {
       {/* About Section - Your existing code */}
       <section className="bg-slate-900 py-16 px-4 md:px-16 text-center">
         <div className="max-w-4xl mx-auto">
-          <h3 className="text-3xl md:text-4xl font-bold mb-6">What is Flytant?</h3>
+          <h3 className="text-3xl md:text-4xl font-bold mb-6">What is InfluZone?</h3>
           <p className="text-gray-300 text-lg md:text-xl leading-relaxed">
-            Flytant is a dynamic platform that connects brands with the right influencers and helps influencers find brand deals that align with their passion. Our goal is to help you find the perfect partner to achieve your goals.
+            InfluZone  is a dynamic platform that connects brands with the right influencers and helps influencers find brand deals that align with their passion. Our goal is to help you find the perfect partner to achieve your goals.
           </p>
         </div>
       </section>
@@ -96,7 +96,7 @@ function Home() {
           <div className="flex-1 lg:order-2">
             <h3 className="text-3xl md:text-4xl font-bold mb-4">For Influencers</h3>
             <p className="text-gray-300 text-lg mb-6">
-              Turn your passion into profit! Flytant connects you with brands that are a perfect fit for your audience.
+              Turn your passion into profit! InfluZone connects you with brands that are a perfect fit for your audience.
             </p>
             <ul className="text-gray-200 text-base space-y-3 mb-6 list-disc list-inside text-left">
               <li>Collaborate with your favorite brands.</li>
@@ -156,12 +156,12 @@ function Home() {
         <h3 className="text-3xl md:text-4xl font-bold mb-12">What Our Users Say</h3>
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-slate-800 p-8 rounded-xl shadow-lg neno-button shadow-x1 hover:shadow-fuchsia-800/50 transition text-left">
-            <p className="text-lg italic mb-4">"Flytant has made working with brands incredibly easy. I found so many campaigns I love, and my earnings have grown significantly."</p>
+            <p className="text-lg italic mb-4">"InfluZone has made working with brands incredibly easy. I found so many campaigns I love, and my earnings have grown significantly."</p>
             <p className="font-bold">- Priya, Fashion Influencer</p>
           </div>
           <div className="bg-slate-800 p-8 rounded-xl shadow-lg neno-button shadow-x1 hover:shadow-fuchsia-800/50 transition text-left">
-            <p className="text-lg italic mb-4">"With Flytant, we found the right influencers for our brand, which reduced our marketing costs and led to a huge increase in sales."</p>
-            <p className="font-bold">- Rahul, Marketing Manager, XYZ Brands</p>
+            <p className="text-lg italic mb-4">"With InfluZone, we found the right influencers for our brand, which reduced our marketing costs and led to a huge increase in sales."</p>
+            <p className="font-bold">- Rahul, Marketing Manager,  Brands</p>
           </div>
         </div>
       </section>
@@ -170,10 +170,10 @@ function Home() {
       <section className="bg-slate-800 py-16 px-4 md:px-16 text-center">
         <div className="max-w-4xl mx-auto">
           <h3 className="text-3xl md:text-4xl font-bold mb-6 text-white">
-            Join Flytant Today!
+            Join InfluZone Today!
           </h3>
           <p className="text-white text-lg md:text-xl mb-8">
-            Whether you're a brand or an influencer, Flytant provides the tools you need for success.
+            Whether you're a brand or an influencer, InfluZone provides the tools you need for success.
           </p>
           <Link to="/signup">
             <button className="neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2 border-fuchsia-800 rounded-4xl py-2 md:py-4 px-4 md:px-8  md:text-base  relative overflow-hidden text-xl uppercase hover:bg-fuchsia-800 transition duration-300">

@@ -79,7 +79,7 @@ const Dashboard = () => {
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >
         <div className="flex items-center justify-between mb-10">
-          <span className="text-2xl font-bold text-white">Abhifly</span>
+          <span className="text-2xl font-bold text-white">InfluZone </span>
           {/* Close button for mobile */}
           <button
             className="md:hidden text-white text-xl"

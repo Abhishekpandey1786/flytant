@@ -13,7 +13,7 @@ const About = () => {
             Our Story, Our Mission
           </h2>
           <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-            Flytant is where <span className="text-fuchsia-400">creativity meets opportunity</span>.  
+            InfluZone  is where <span className="text-fuchsia-400">creativity meets opportunity</span>.  
             We empower meaningful connections between brands and influencers, building bridges that matter.
           </p>
         </header>
@@ -27,7 +27,7 @@ const About = () => {
               <h3 className="text-3xl font-bold">Our Mission</h3>
             </div>
             <p className="text-gray-300 leading-relaxed text-base md:text-lg">
-              Flytant was founded with a simple mission: to{" "}
+              InfluZone  was founded with a simple mission: to{" "}
               <span className="text-fuchsia-400 font-semibold">empower creators and brands</span>{" "}
               by providing a seamless platform to connect, collaborate, and grow.  
               We believe in the power of authentic partnerships that drive{" "}
@@ -58,7 +58,7 @@ const About = () => {
             <h3 className="text-3xl font-bold">Our Story</h3>
           </div>
           <p className="text-gray-300 leading-relaxed text-base md:text-lg">
-            Launched in <span className="text-fuchsia-400 font-semibold">2025</span>, Flytant has grown into a thriving marketplace for digital collaborations.  
+            Launched in <span className="text-fuchsia-400 font-semibold">2025</span>, InfluZone  has grown into a thriving marketplace for digital collaborations.  
             We are a passionate team of creators and marketers committed to building a{" "}
             <span className="text-fuchsia-400 font-semibold">fair and transparent</span> ecosystem.  
             With community at our core, we continuously innovate to support our users’ growth and success.

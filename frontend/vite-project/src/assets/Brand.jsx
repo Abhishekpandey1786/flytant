@@ -109,7 +109,7 @@ const Brand = () => {
           }`}
       >
         <div className="flex items-center justify-between mb-10">
-          <span className="text-2xl font-bold text-white">Flytant</span>
+          <span className="text-2xl font-bold text-white">InfluZone </span>
           <button
             className="md:hidden text-white"
             onClick={() => setSidebarOpen(false)}

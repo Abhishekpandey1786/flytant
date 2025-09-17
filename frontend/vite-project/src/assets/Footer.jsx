@@ -5,10 +5,8 @@ import { Link } from "react-router-dom";
 import {
   FaInstagram,
   FaFacebookF,
-  FaTwitter,
   FaEnvelope,
   FaYoutube,
-  FaLinkedinIn,
 } from "react-icons/fa";
 
 function Footer() {
@@ -18,15 +16,13 @@ function Footer() {
 
         {/* Logo + Tagline + Socials */}
         <div>
-          <h2 className="text-2xl font-bold text-white">Flytant</h2>
+          <h2 className="text-2xl font-bold text-white">InfluZone</h2>
           <p className="mt-2 text-sm text-gray-400">Connecting Brands & Influencers</p>
           <div className="flex space-x-4 mt-4 text-gray-400">
             <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:text-white"><FaInstagram size={20} /></a>
             <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="hover:text-white"><FaFacebookF size={20} /></a>
-            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-white"><FaTwitter size={20} /></a>
-            <a href="mailto:info@flytant.com" className="hover:text-white"><FaEnvelope size={20} /></a>
+            <a href="mailto:info@InfluZone.com" className="hover:text-white"><FaEnvelope size={20} /></a>
             <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="hover:text-white"><FaYoutube size={20} /></a>
-            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="hover:text-white"><FaLinkedinIn size={20} /></a>
           </div>
         </div>
 
@@ -67,7 +63,7 @@ function Footer() {
 
       {/* Bottom copyright */}
       <div className="text-center text-gray-500 text-xs mt-10 border-t border-gray-700 pt-4">
-        © 2025 Flytant. All rights reserved.
+        © 2025 InfluZone. All rights reserved.
       </div>
     </footer>
   );

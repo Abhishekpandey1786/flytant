@@ -7,19 +7,19 @@ const blogPosts = [
     id: 1,
     title: "The Ultimate Guide to Influencer Marketing in 2025",
     summary: "Discover the latest trends and strategies to make your campaigns a success this year...",
-    link: "/blog/guide-2025",
+    link: "/blogs",
   },
   {
     id: 2,
     title: "How to Choose the Right Influencer for Your Brand",
     summary: "Finding the perfect match can be tricky. Learn what metrics and qualities to look for...",
-    link: "/blog/choose-influencer",
+    link: "/blogs",
   },
   {
     id: 3,
     title: "From Hobby to Profession: A Creator's Journey",
-    summary: "We interview top creators on their path to becoming full-time influencers with Flytant...",
-    link: "/blog/creators-journey",
+    summary: "We interview top creators on their path to becoming full-time influencers with InfluZone...",
+    link: "/blogs",
   },
 ];
 
