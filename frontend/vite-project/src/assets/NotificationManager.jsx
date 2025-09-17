@@ -3,7 +3,7 @@ import { AuthContext } from "./AuthContext.jsx";
 import { useNotifications } from "./NotificationContext.jsx";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:5000", { transports: ["websocket"] });
+const socket = io("https://influezone.vercel.app/", { transports: ["websocket"] });
 
 export default function NotificationManager() {
   const { user } = useContext(AuthContext);
