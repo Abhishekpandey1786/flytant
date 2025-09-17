@@ -19,7 +19,7 @@ function LoginPage() {
     const loginData = { email, password };
 
     try {
-      const res = await fetch("https://influezone.vercel.app/api/auth/login", {
+      const res = await fetch("https://influezone.onrender.com/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(loginData),

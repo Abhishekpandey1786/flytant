@@ -5,10 +5,10 @@ import axios from "axios";
 import { AuthContext } from "./AuthContext.jsx";
 import { FaPaperPlane, FaArrowLeft } from "react-icons/fa";
 
-const socket = io("https://influezone.vercel.app/", { transports: ["websocket"] });
+const socket = io("https://influezone.onrender.com", { transports: ["websocket"] });
 
 const api = axios.create({
-  baseURL: "https://influezone.vercel.app/api",
+  baseURL: "https://influezone.onrender.com/api",
 });
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
