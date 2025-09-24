@@ -14,11 +14,13 @@ import {
   FaPowerOff,
   FaClipboardList,
   FaShoppingCart,
+  FaArrowRight,
 } from "react-icons/fa";
 import { AuthContext } from "./AuthContext";
 import AppliedCampaigns from "./AppliedCampaigns";
 import Campaigns from "./Campaigns";
 import UserNotifications from "./UserNotifications";
+import MyOrders from "./MyOrders";
 
 const Dashboard = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -42,7 +44,11 @@ const Dashboard = () => {
     role === "Brand"
       ? [
           { name: "Social Profile", icon: <FaUser />, key: "profile" },
-          { name: "My Campaigns", icon: <FaBullhorn />, key: "applied-campaigns" },
+          {
+            name: "My Campaigns",
+            icon: <FaBullhorn />,
+            key: "applied-campaigns",
+          },
           { name: "Subscription", icon: <FaDollarSign />, key: "subscription" },
           { name: "Logout", icon: <FaPowerOff />, key: "logout", danger: true },
         ]
@@ -61,7 +67,7 @@ const Dashboard = () => {
   const handleMenuItemClick = (key) => {
     if (key === "logout") {
       logout();
-      navigate("/",);
+      navigate("/");
       setDropdownOpen(false);
       return;
     }
@@ -70,13 +76,61 @@ const Dashboard = () => {
     setDropdownOpen(false);
     setSidebarOpen(false); // ✅ Close sidebar on mobile after selecting
   };
+  // ✅ New DashboardHome component with the welcome banner
+  const DashboardHome = () => (
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+      {/* Dynamic Welcome Banner */}
+      <div
+        className="bg-slate-800
+                  p-6 sm:p-8 md:p-10 
+                  rounded-2xl 
+                  flex flex-col lg:flex-row 
+                  items-center lg:items-start justify-between 
+                   animate-fade-in gap-6 lg:gap-0 neno-button shadow-xl border-fuchsia-800 text-white"
+      >
+        {/* Left Text */}
+        <div className="text-center lg:text-left flex-1">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-2 leading-snug">
+            Welcome back,{" "}
+            <span className="text-fuchsia-700">{user?.name || role}</span>!
+          </h1>
+          <p className="text-sm sm:text-base md:text-lg text-gray-200 max-w-2xl mx-auto lg:mx-0">
+            Your hub for all things influence. Discover new opportunities,
+            manage your collaborations, and track your success.
+          </p>
+        </div>
+        <Link
+          to={role === "Brand" ? "/create-campaign" : "/campaigns"}
+          className="shrink-0"
+        >
+          <button
+            className="px-5 sm:px-6 md:px-8 py-3 sm:py-3.5 md:py-4 
+                         bg-white text-fuchsia-800 font-bold 
+                         rounded-full text-sm sm:text-base md:text-lg 
+                         hover:bg-gray-100 
+                         transform hover:scale-105 transition-all duration-300 
+                         flex items-center space-x-2 group neno-button shadow-xl border-fuchsia-800 "
+          >
+            <span>
+              {role === "Brand"
+                ? "Launch New Campaign"
+                : "Explore Opportunities"}
+            </span>
+            <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </Link>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-slate-900 text-gray-100 font-sans">
       {/* Sidebar */}
       <aside
         className={`fixed md:static top-0 left-0 h-full md:h-auto w-64 bg-slate-800 rounded-r-2xl flex flex-col p-6 shadow-lg z-50 transform transition-transform duration-300
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+        ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
       >
         <div className="flex items-center justify-between mb-10">
           <span className="text-2xl font-bold text-white">InfluZone </span>
@@ -228,20 +282,19 @@ const Dashboard = () => {
           </div>
         </header>
         <div className="flex-1 p-6">
+          {activePage === "feed" && <DashboardHome />}
           {activePage === "feed" && <InfluencersList />}
           {activePage === "profile" && <Profile />}
           {activePage === "applied-campaigns" && <AppliedCampaigns />}
           {activePage === "Chats" && <Chats />}
           {activePage === "subscription" && <Subscription />}
           {activePage === "campaigns" && <Campaigns />}
-          {activePage === "notifications" && <UserNotifications/>}
+          {activePage === "notifications" && <UserNotifications />}
+          {activePage === "orders" && <MyOrders />}
         </div>
       </main>
     </div>
   );
 };
-
- 
-
 
 export default Dashboard;

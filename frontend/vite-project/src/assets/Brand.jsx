@@ -19,7 +19,7 @@ import {
   FaTimes,
 } from "react-icons/fa";
 import img4 from "./image/d1.png";
-import img5 from "./image/d2.png";
+import img5 from "./image/d4.png";
 import img6 from "./image/d3.png";
 import Profile from "./Profile";
 import Campaigns from "./Campaigns";

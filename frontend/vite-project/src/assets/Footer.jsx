@@ -32,8 +32,8 @@ function Footer() {
           <ul className="space-y-2 text-sm">
             <li><Link to="/campaigns" className="hover:text-white transition">Explore Campaigns</Link></li>
             <li><Link to="/create-campaign" className="hover:text-white transition">Create Campaign</Link></li>
-            <li><Link to="/pricing" className="hover:text-white transition">Pricing Plans</Link></li>
-            <li><Link to="/brands-showcase" className="hover:text-white transition">Brand Showcase</Link></li>
+            <li><Link to="/" className="hover:text-white transition">Pricing Plans</Link></li>
+            <li><Link to="/dashboard/brand" className="hover:text-white transition">Brand Showcase</Link></li>
           </ul>
         </div>
 

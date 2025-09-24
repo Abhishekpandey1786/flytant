@@ -22,7 +22,7 @@ const usersRoutes = require('./routes/users');
 const advertiserRoutes = require('./routes/advertiser');
 const appliedRoutes = require("./routes/appliedcampaigns");
 const contactRoutes = require("./routes/contact");
-
+const razorpayRoutes = require('./routes/razorpayRoutes');
 dotenv.config();
 
 // 2. Define the 'app' and 'server' objects FIRST.
@@ -63,6 +63,7 @@ app.use('/api/advertiser', advertiserRoutes); // ✅ Correctly placed AFTER `con
 app.use("/api/news", newsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use("/api/contact", contactRoutes);
+app.use('/api/razorpay', razorpayRoutes);
 
 // 6. Socket.io logic.
 const connectedUsers = new Map();

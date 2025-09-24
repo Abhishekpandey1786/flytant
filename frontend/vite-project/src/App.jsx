@@ -27,6 +27,7 @@ import TermsOfService from "./assets/TermsOfService.jsx";
 import AdminLogin from "./assets/AdminLogin.jsx";
 import AdminDashboard from "./assets/AdminDashboard.jsx";
 import UserNotifications from "./assets/UserNotifications.jsx";
+import MyOrders from "./assets/MyOrders.jsx";
 function App() {
   return (
     <BrowserRouter>
@@ -60,15 +61,9 @@ function App() {
               <Route path="/chat/:influencerId" element={<Chats />} />
               <Route path="/applied-campaigns" element={<AppliedCampaigns />} />
               <Route path="/chatslist" element={<ChatList />} />
-              <Route
-                path="/SubscriptionPlans"
-                element={<SubscriptionPlans />}
-              />
-              
-              <Route
-                path="/UserNotifications"
-                element={<UserNotifications />}
-              />
+              <Route path="/SubscriptionPlans" element={<SubscriptionPlans />}/>
+              <Route path="/UserNotifications" element={<UserNotifications />}/>
+              <Route path="/my-orders" element={<MyOrders />} />
             </Route>
           </Routes>
         </AuthProvider>
