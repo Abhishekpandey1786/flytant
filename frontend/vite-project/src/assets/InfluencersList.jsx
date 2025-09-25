@@ -17,14 +17,14 @@ const InfluencersList = () => {
   useEffect(() => {
     const fetchInfluencers = async () => {
       try {
-        const res = await fetch("https://influezone.onrender.com/api/users/influencers");
+        const res = await fetch("http://localhost:5000/api/users/influencers");
         const data = await res.json();
 
         if (res.ok) {
           const processedData = data.map((influencer) => ({
             ...influencer,
             avatar: influencer.avatar
-              ? `https://influezone.onrender.com${influencer.avatar}`
+              ? `http://localhost:5000${influencer.avatar}`
               : defaultAvatar,
             bio: influencer.bio || "No bio available.",
           }));

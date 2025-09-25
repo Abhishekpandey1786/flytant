@@ -34,7 +34,7 @@ function RazorpayCheckoutForm({ selectedPlan }) {
 
         setLoading(true);
         try {
-            const { data } = await axios.post("https://influezone.onrender.com/api/razorpay/order", {
+            const { data } = await axios.post("http://localhost:5000/api/razorpay/order", {
                 amount: selectedPlan.price,
                 currency: "INR",
                 planName: selectedPlan.name, // "Basic", "Standard", etc.
@@ -50,7 +50,7 @@ function RazorpayCheckoutForm({ selectedPlan }) {
                 order_id: data.orderId,
                 handler: async function (response) {
                     try {
-                        await axios.post("https://influezone.onrender.com/api/razorpay/verify", {
+                        await axios.post("http://localhost:5000/api/razorpay/verify", {
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_signature: response.razorpay_signature,

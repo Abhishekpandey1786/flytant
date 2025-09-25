@@ -12,7 +12,7 @@ const UserNotifications = () => {
       setLoading(true);
       const token = localStorage.getItem("adminToken");
       const res = await axios.get(
-        "https://influezone.onrender.com/api/admin/notifications",
+        "http://localhost:5000/api/admin/notifications",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -115,7 +115,7 @@ const UserNotifications = () => {
 
                   {n.image && (
                     <img
-                      src={`https://influezone.onrender.com${n.image}`}
+                      src={`http://localhost:5000${n.image}`}
                       alt="notification"
                       className="mt-3 rounded-xl w-full max-h-60 object-cover border border-gray-700 shadow"
                     />
