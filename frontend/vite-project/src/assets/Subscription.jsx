@@ -1,13 +1,5 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import p1 from "./image/p1.png";
-import p2 from "./image/p2.png";
-import p3 from "./image/p3.png";  
-import p4 from "./image/p4.png";
-import p5 from "./image/p5.png";
-import p6 from "./image/p6.png";
-import p7 from "./image/p7.png";
-import p8 from "./image/p8.png";
 
 const plans = [
   {
@@ -64,9 +56,7 @@ const plans = [
   },
 ];
 
-const influencers = [
-  p1,p2,p3,p4,p5,p6,p7,p8,
-];
+
 
 export default function Subscription() {
   return (
@@ -136,26 +126,7 @@ export default function Subscription() {
           </div>
         ))}
       </div>
-      <div className="mt-20 sm:mt-28 w-full text-center">
-        <h3 className="text-2xl sm:text-3xl font-bold mb-8 sm:mb-12 text-white drop-shadow-md">
-          100K+ Influencers already taking the advantages
-        </h3>
-        <div className="flex flex-wrap justify-center gap-4 sm:gap-8">
-          {influencers.map((src, idx) => (
-            <div
-              key={idx}
-              className="w-16 h-16 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full border-4 border-fuchsia-400 overflow-hidden shadow-lg hover:scale-110 transition transform"
-            >
-              <img
-                src={src}
-                alt={`influencer-${idx}`}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
+      
       {/* ---- Footer Q&A ---- */}
       <div className="mt-20 sm:mt-28 text-center px-4">
         <h4 className="text-xl sm:text-2xl font-semibold mb-4 text-white">

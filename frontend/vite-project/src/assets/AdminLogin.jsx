@@ -9,7 +9,7 @@ const AdminLogin = () => {
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post("http://localhost:5000/api/admin/login", { password });
+      const res = await axios.post("https://influezone.onrender.com/api/admin/login", { password });
       localStorage.setItem("adminToken", res.data.token);
       axios.defaults.headers.common["Authorization"] = `Bearer ${res.data.token}`;
       navigate("/admin/dashboard");

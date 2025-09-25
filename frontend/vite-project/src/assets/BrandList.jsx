@@ -15,11 +15,11 @@ const BrandList = () => {
   useEffect(() => {
     const fetchBrands = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/advertiser/brands");
+        const res = await axios.get("https://influezone.onrender.com/api/advertiser/brands");
         const processedData = res.data.map((brand) => ({
           ...brand,
           logo: brand.avatar
-            ? `http://localhost:5000${brand.avatar}`
+            ? `https://influezone.onrender.com/${brand.avatar}`
             : defaultLogo,
           bio: brand.bio || "No description available.",
         }));

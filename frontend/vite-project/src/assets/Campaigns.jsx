@@ -19,7 +19,7 @@ function Campaigns() {
 
   const fetchCampaigns = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/campaigns/public");
+      const res = await axios.get("https://influezone.onrender.com/api/campaigns/public");
       setCampaigns(res.data);
       setLoading(false);
     } catch (error) {
@@ -57,7 +57,7 @@ function Campaigns() {
 
     try {
       await axios.post(
-        `http://localhost:5000/api/campaigns/${campaignId}/apply`,
+        `https://influezone.onrender.com/api/campaigns/${campaignId}/apply`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -138,7 +138,7 @@ function Campaigns() {
               >
                 {campaign.imagePath && (
                   <img
-                    src={`http://localhost:5000/${campaign.imagePath}`}
+                    src={`https://influezone.onrender.com/${campaign.imagePath}`}
                     alt={campaign.name}
                     className="w-full h-40 sm:h-48 object-cover rounded-xl mb-4 neno-button shadow-xl hover:shadow-fuchsia-800/50"
                   />

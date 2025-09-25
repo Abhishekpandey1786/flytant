@@ -16,7 +16,7 @@ function AppliedCampaigns() {
         }
 
         const res = await axios.get(
-          "http://localhost:5000/api/applied/applied",
+          "https://influezone.onrender.com/api/applied/applied",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -62,7 +62,7 @@ function AppliedCampaigns() {
               >
                 {campaign.imagePath && (
                   <img
-                    src={`http://localhost:5000/${campaign.imagePath}`}
+                    src={`https://influezone.onrender.com/${campaign.imagePath}`}
                     alt={campaign.name}
                     className="w-full h-40 sm:h-48 object-cover rounded-xl mb-4"
                   />

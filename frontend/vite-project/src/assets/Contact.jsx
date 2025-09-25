@@ -23,7 +23,7 @@ const Contact = () => {
     }
 
     try {
-      const res = await axios.post("http://localhost:5000/api/contact/send", formData);
+      const res = await axios.post("https://influezone.onrender.com/api/contact/send", formData);
       if (res.data.success) {
         setSuccess("Message sent successfully!");
         setFormData({ name: "", email: "", message: "" });

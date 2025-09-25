@@ -76,7 +76,7 @@ function CreateCampaign() {
     }
 
     try {
-      await axios.post("http://localhost:5000/api/campaigns", formData, {
+      await axios.post("https://influezone.onrender.com/api/campaigns", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

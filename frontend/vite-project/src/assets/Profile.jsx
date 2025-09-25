@@ -35,7 +35,7 @@ const Profile = () => {
 
     const fetchProfile = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/users/me", {
+        const res = await fetch("https://influezone.onrender.com/api/users/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -44,7 +44,7 @@ const Profile = () => {
           const fetchedUser = {
             ...data.user,
             avatar: data.user.avatar
-              ? `http://localhost:5000${data.user.avatar}`
+              ? `https://influezone.onrender.com${data.user.avatar}`
               : defaultAvatar,
             bio: data.user.bio || "",
             description: data.user.description || "A leading brand...",
@@ -94,7 +94,7 @@ const Profile = () => {
 
     try {
       const textUpdateResponse = await fetch(
-        "http://localhost:5000/api/users/me",
+        "https://influezone.onrender.com/api/users/me",
         {
           method: "PUT",
           headers: {
@@ -117,7 +117,7 @@ const Profile = () => {
         avatarFormData.append("avatar", avatarFile);
 
         const avatarUpdateResponse = await fetch(
-          "http://localhost:5000/api/users/me/avatar",
+          "https://influezone.onrender.com/api/users/me/avatar",
           {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` },
@@ -135,7 +135,7 @@ const Profile = () => {
 
         updatedUser = {
           ...updatedUser,
-          avatar: `http://localhost:5000${avatarUpdateData.user.avatar}`,
+          avatar: `https://influezone.onrender.com${avatarUpdateData.user.avatar}`,
         };
       }
 
