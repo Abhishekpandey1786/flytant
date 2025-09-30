@@ -18,9 +18,9 @@ import {
   FaBars,
   FaTimes,
 } from "react-icons/fa";
-import img4 from "./image/d1.png";
-import img5 from "./image/d4.png";
-import img6 from "./image/d3.png";
+import img4 from "./image/d1.webp";
+import img5 from "./image/d4.webp";
+import img6 from "./image/d3.webp";
 import Profile from "./Profile";
 import Campaigns from "./Campaigns";
 import { AuthContext } from "./AuthContext";
@@ -29,14 +29,14 @@ import Subscription from "./Subscription";
 import BrandList from "./BrandList";
 import UserNotifications from "./UserNotifications";
 
-import p1 from "./image/p1.png";
-import p2 from "./image/p2.png";
-import p3 from "./image/p3.png";
-import p4 from "./image/p4.png";
-import p5 from "./image/p5.png";
-import p6 from "./image/p6.png";
-import p7 from "./image/p7.png";
-import p8 from "./image/p8.png";
+import p1 from "./image/p1.webp";
+import p2 from "./image/p2.webp";
+import p3 from "./image/p3.webp";
+import p4 from "./image/p4.webp";
+import p5 from "./image/p5.webp";
+import p6 from "./image/p6.webp";
+import p7 from "./image/p7.webp";
+import p8 from "./image/p8.webp";
 
 const Brand = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);

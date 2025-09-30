@@ -3,14 +3,14 @@ import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "./AuthContext"; // AuthContext ko import karein
 
-import p1 from "./image/p1.png";
-import p2 from "./image/p2.png";
-import p3 from "./image/p3.png";
-import p4 from "./image/p4.png";
-import p5 from "./image/p5.png";
-import p6 from "./image/p6.png";
-import p7 from "./image/p7.png";
-import p8 from "./image/p8.png";
+import p1 from "./image/p1.webp";
+import p2 from "./image/p2.webp";
+import p3 from "./image/p3.webp";
+import p4 from "./image/p4.webp";
+import p5 from "./image/p5.webp";
+import p6 from "./image/p6.webp";
+import p7 from "./image/p7.webp";
+import p8 from "./image/p8.webp";
 
 const plans = [
     { name: "Basic", title: "Billed Monthly", price: 3, oldPrice: 4, discount: "Get 20% Off" },

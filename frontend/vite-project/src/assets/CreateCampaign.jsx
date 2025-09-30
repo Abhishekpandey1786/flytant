@@ -16,15 +16,26 @@ function CreateCampaign() {
 
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [isLoading, setIsLoading] = useState(false); // ✅ नया स्टेट
   const navigate = useNavigate();
 
-  // ✅ Token check on mount
+  // Token and Role check on mount (Role check added for better security)
   useEffect(() => {
     const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user"));
+
     if (!token) {
       alert("Please log in to create a campaign.");
       navigate("/login");
+      return;
     }
+    
+    // Optional but recommended: Only advertisers should access this page
+    if (user?.userType !== "advertiser") {
+        alert("Access denied. Only advertisers can create campaigns.");
+        navigate("/dashboard"); 
+    }
+    
   }, [navigate]);
 
   // Input change
@@ -62,10 +73,15 @@ function CreateCampaign() {
       alert("Authentication failed. Please log in again.");
       return;
     }
+    
+    // Prevent multiple submissions
+    if (isLoading) return; 
+    setIsLoading(true); 
 
     const formData = new FormData();
     for (const key in campaignData) {
       if (Array.isArray(campaignData[key])) {
+        // Handle array fields (platforms, requiredNiche)
         campaignData[key].forEach((item) => formData.append(key, item));
       } else {
         formData.append(key, campaignData[key]);
@@ -81,26 +97,31 @@ function CreateCampaign() {
           Authorization: `Bearer ${token}`,
         },
       });
-      alert("Campaign created successfully!");
+      alert("Campaign created successfully! 🎉");
       navigate("/dashboard/brand");
     } catch (error) {
       console.error(
         "Error creating campaign:",
         error.response?.data || error.message
       );
-      alert("Failed to create campaign. Please try again.");
+      alert(
+        error.response?.data?.msg || "Failed to create campaign. Please try again."
+      );
+    } finally {
+        setIsLoading(false); 
     }
   };
 
   return (
     <div className="bg-slate-900 min-h-screen text-gray-100 p-8 ">
       <div className="max-w-4xl mx-auto">
-        <div className="w-full bg-slate-800 rounded-2xl shadow-xl border border-fuchsia-800 p-8 md:p-12 neno-button  hover:shadow-fuchsia-800/50">
-          <h2 className="text-3xl font-extrabold text-white text-center mb-8  ">
+        <div className="w-full bg-slate-800 rounded-2xl shadow-xl border border-fuchsia-800 p-8 md:p-12 neno-button hover:shadow-fuchsia-800/50">
+          <h2 className="text-3xl font-extrabold text-white text-center mb-8">
             Create a New Campaign
           </h2>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
+              {/* Campaign Name Input */}
               <div>
                 <label
                   htmlFor="name"
@@ -119,6 +140,7 @@ function CreateCampaign() {
                   className="w-full p-3 bg-slate-700 text-white rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-fuchsia-500 transition-all duration-200 neno-button shadow-xl hover:shadow-fuchsia-800/50"
                 />
               </div>
+              {/* Budget Input */}
               <div>
                 <label
                   htmlFor="budget"
@@ -282,14 +304,19 @@ function CreateCampaign() {
               </div>
             </div>
 
-            {/* Submit */}
+            {/* Submit Button (Disabled during loading) */}
             <div className="pt-4">
               <button
                 type="submit"
-                className="w-full py-3 text-white font-bold rounded-xl flex items-center justify-center space-x-2 neno-button shadow-xl hover:shadow-fuchsia-800/50 border-2 bg-fuchsia-800 border-fuchsia-800 transition-all duration-300"
+                disabled={isLoading} 
+                className={`w-full py-3 text-white font-bold rounded-xl flex items-center justify-center space-x-2 neno-button shadow-xl transition-all duration-300 ${
+                    isLoading 
+                    ? "bg-fuchsia-500 cursor-not-allowed" 
+                    : "bg-fuchsia-800 border-2 border-fuchsia-800 hover:shadow-fuchsia-800/50"
+                }`}
               >
-                <FaPlusCircle className="text-lg" />
-                <span>Create Campaign</span>
+                <FaPlusCircle className={`text-lg ${isLoading ? 'animate-spin' : ''}`} />
+                <span>{isLoading ? "Creating Campaign..." : "Create Campaign"}</span>
               </button>
             </div>
           </form>

@@ -1,6 +1,7 @@
+// src/components/BrandList.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaMapMarkerAlt, FaLink, FaIndustry, FaEnvelope } from "react-icons/fa";
+import {  FaLink, FaIndustry, FaEnvelope, FaInfoCircle } from "react-icons/fa"; // FaInfoCircle जोड़ा गया
 import { motion, AnimatePresence } from "framer-motion";
 
 const BrandList = () => {
@@ -16,16 +17,24 @@ const BrandList = () => {
     const fetchBrands = async () => {
       try {
         const res = await axios.get("http://localhost:5000/api/advertiser/brands");
+        
+  
         const processedData = res.data.map((brand) => ({
           ...brand,
-          logo: brand.avatar
-            ? `http://localhost:5000${brand.avatar}`
-            : defaultLogo,
+          logo: brand.avatar && brand.avatar.startsWith('http')
+            ? brand.avatar 
+            : brand.avatar
+            ? `http://localhost:5000${brand.avatar}` 
+            : defaultLogo, 
           bio: brand.bio || "No description available.",
         }));
+        
         setBrands(processedData);
+        
       } catch (err) {
-        setError("⚠️ Failed to connect to the server. Please ensure the backend is running.");
+        // Axios error handling
+        const errorMessage = err.response?.data?.msg || "⚠️ Failed to connect to the server or fetch data.";
+        setError(errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -38,6 +47,7 @@ const BrandList = () => {
     setExpanded(expanded === id ? null : id);
   };
 
+  // --- Loading and Error States ---
   if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center h-64">
@@ -56,6 +66,7 @@ const BrandList = () => {
     );
   }
 
+  // --- Main Render ---
   return (
     <div className="container mx-auto px-4 py-12 ">
       <motion.h2
@@ -63,7 +74,7 @@ const BrandList = () => {
         initial={{ y: -40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
-         Our Top Brands
+        Our Top Brands
       </motion.h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 ">
@@ -75,26 +86,25 @@ const BrandList = () => {
               animate={{ opacity: 1, y: 0 }}
               whileHover={{ scale: 1.03 }}
               transition={{ duration: 0.3 }}
-              className="relative bg-gray-900/70 backdrop-blur-xl rounded-3xl border-2 overflow-hidden group neno-button shadow-xl hover:shadow-fuchsia-800/50  border-fuchsia-800  text-white font-semibold   transition"
+              className="relative bg-gray-900/70 backdrop-blur-xl rounded-3xl border-2 overflow-hidden group neno-button shadow-xl hover:shadow-fuchsia-800/50 border-fuchsia-800 text-white font-semibold transition"
             >
               {/* Full width cover image */}
               <motion.img
-                src={brand.logo}
+                src={brand.logo} 
                 alt={brand.name}
                 className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
               />
 
               <div className="p-6">
                 {/* Brand Name */}
-                <h3 className="text-xl font-bold text-white mt-2 group-hover:text-white transition text-center">
+                <h3 className="text-xl font-bold text-white mt-2 group-hover:text-fuchsia-300 transition text-center">
                   {brand.name}
                 </h3>
-
                 {/* Location + Website */}
                 <div className="flex flex-wrap justify-center gap-3 mt-4">
                   {brand.location && (
-                    <span className="flex items-center gap-1 text-sm bg-purple-800/40 text-fuchsia-300 px-3 py-1 rounded-full">
-                      <FaMapMarkerAlt size={14} /> {brand.location}
+                    <span className="flex items-center gap-1 text-xs bg-purple-800/40 text-fuchsia-300 px-3 py-1 rounded-full">
+                      <FaMapMarkerAlt size={12} /> {brand.location}
                     </span>
                   )}
                   {brand.website && (
@@ -106,9 +116,9 @@ const BrandList = () => {
                       }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-sm bg-purple-800/40 text-fuchsia-300 px-3 py-1 rounded-full hover:bg-purple-700/50"
+                      className="flex items-center gap-1 text-xs bg-purple-800/40 text-fuchsia-300 px-3 py-1 rounded-full hover:bg-purple-700/50"
                     >
-                      <FaLink size={14} /> Visit
+                      <FaLink size={12} /> Website
                     </a>
                   )}
                 </div>
@@ -125,13 +135,12 @@ const BrandList = () => {
                     >
                       <p className="flex items-center gap-2">
                         <FaEnvelope className="text-fuchsia-400" />{" "}
-                        {brand.email || "Not provided"}
+                        {brand.email || "Email Not provided"}
                       </p>
                       <p className="flex items-center gap-2">
                         <FaIndustry className="text-fuchsia-400" />{" "}
-                        {brand.industry || "N/A"}
+                        {brand.industry || "Industry N/A"}
                       </p>
-                    
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -139,16 +148,16 @@ const BrandList = () => {
                 {/* Button */}
                 <button
                   onClick={() => toggleExpand(brand._id)}
-                  className="mt-6 w-full py-2 bg-fuchsia-800 neno-button shadow-xl hover:shadow-fuchsia-800/50  hover:bg-fuchsia-800 border-fuchsia-800  text-white font-semibold rounded-full  hover:from-fuchsia-700 transition"
+                  className="mt-6 w-full py-2 bg-fuchsia-800 neno-button shadow-xl hover:shadow-fuchsia-800/50 hover:bg-fuchsia-700 text-white font-bold rounded-full transition flex items-center justify-center space-x-2"
                 >
-                  {expanded === brand._id ? "Hide Details" : "View More"}
+                    <span>{expanded === brand._id ? "Hide Details" : "View More"}</span>
                 </button>
               </div>
             </motion.div>
           ))
         ) : (
           <p className="col-span-full text-center text-gray-400 text-lg">
-            No brands registered yet.
+            No brands registered yet. 😞
           </p>
         )}
       </div>

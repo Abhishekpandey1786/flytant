@@ -26,6 +26,17 @@ const Profile = () => {
   const defaultAvatar =
     "https://placehold.co/150x150/5B21B6/ffffff?text=User";
 
+  const resolveAvatarUrl = (avatarPath) => {
+    if (!avatarPath) return defaultAvatar;
+
+    if (avatarPath.startsWith('http') || avatarPath.startsWith('https')) {
+      return avatarPath;
+    }
+
+    return `http://localhost:5000${avatarPath}`;
+  };
+
+  
   useEffect(() => {
     if (!token) {
       setIsLoading(false);
@@ -43,12 +54,12 @@ const Profile = () => {
         if (res.ok) {
           const fetchedUser = {
             ...data.user,
-            avatar: data.user.avatar
-              ? `http://localhost:5000${data.user.avatar}`
-              : defaultAvatar,
+            // Use the helper function to set the correct avatar URL
+            avatar: resolveAvatarUrl(data.user.avatar), 
             bio: data.user.bio || "",
             description: data.user.description || "A leading brand...",
           };
+          
           setUser(fetchedUser);
           setFormData(fetchedUser);
         } else {
@@ -63,7 +74,8 @@ const Profile = () => {
     };
 
     fetchProfile();
-  }, [token, setUser, defaultAvatar]);
+  
+  }, [token, setUser]); 
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -88,11 +100,13 @@ const Profile = () => {
     }
   };
 
+  
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+     
       const textUpdateResponse = await fetch(
         "http://localhost:5000/api/users/me",
         {
@@ -101,7 +115,14 @@ const Profile = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(formData),
+         
+          body: JSON.stringify({
+            name: formData.name,
+            bio: formData.bio,
+            description: formData.description,
+           
+            ...formData, 
+          }),
         }
       );
 
@@ -111,7 +132,15 @@ const Profile = () => {
         throw new Error(textUpdateData.msg || "Failed to update text data.");
       }
 
-      let updatedUser = textUpdateData.user;
+     
+      let updatedUser = {
+        ...textUpdateData.user,
+        avatar: resolveAvatarUrl(textUpdateData.user.avatar),
+        bio: textUpdateData.user.bio || "",
+        description: textUpdateData.user.description || "A leading brand...",
+      };
+      
+      // 2. Avatar upload (if a new file was selected)
       if (avatarFile) {
         const avatarFormData = new FormData();
         avatarFormData.append("avatar", avatarFile);
@@ -135,12 +164,14 @@ const Profile = () => {
 
         updatedUser = {
           ...updatedUser,
-          avatar: `http://localhost:5000${avatarUpdateData.user.avatar}`,
+          avatar: resolveAvatarUrl(avatarUpdateData.user.avatar), // Use helper function
         };
       }
 
+     
       setUser(updatedUser);
       setFormData(updatedUser);
+      
       toast.success("Profile updated successfully! ✨");
       setIsEditing(false);
       setAvatarFile(null);
@@ -157,7 +188,7 @@ const Profile = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-black flex flex-col items-center p-4 sm:p-6 font-sans text-gray-100 neno-button  hover:shadow-fuchsia-800/50  transition">
       <Toaster position="top-center" reverseOrder={false} />
 
-      <div className="w-full max-w-4xl bg-gray-800 p-4 sm:p-8 rounded-2xl shadow-2xl  mt-6 sm:mt-10   neno-button  hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800 transition">
+      <div className="w-full max-w-4xl bg-gray-800 p-4 sm:p-8 rounded-2xl shadow-2xl  mt-6 sm:mt-10  neno-button  hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800 transition">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-center mb-6 sm:mb-8 text-white">
           User Profile
         </h1>
@@ -183,6 +214,7 @@ const Profile = () => {
                   <div className="relative flex-shrink-0">
                     <img
                       src={
+                        // Display temporary file preview OR current formData avatar
                         avatarFile
                           ? URL.createObjectURL(avatarFile)
                           : formData.avatar
@@ -227,7 +259,11 @@ const Profile = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setIsEditing(false)}
+                    onClick={() => {
+                      setIsEditing(false);
+                      setAvatarFile(null); // Clear file preview on cancel
+                      setFormData(user); // Reset formData to current user state
+                    }}
                     className="px-5 sm:px-6 py-2 bg-gray-600 text-white font-semibold rounded-full shadow-lg hover:bg-gray-700 transition flex items-center justify-center space-x-2"
                   >
                     <FaTimes />
@@ -240,7 +276,8 @@ const Profile = () => {
                 <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 pb-6 border-b border-gray-600 ">
                   <div className="relative flex-shrink-0">
                     <img
-                      src={formData.avatar || defaultAvatar}
+                      // Use formData.avatar for display (it holds the latest user state)
+                      src={formData.avatar || defaultAvatar} 
                       alt="User Avatar"
                       className="w-32 h-32 sm:w-32 sm:h-32 border-4 rounded-full  shadow-lg object-cover neno-button  hover:shadow-fuchsia-800/50 border-fuchsia-800 transition"
                     />

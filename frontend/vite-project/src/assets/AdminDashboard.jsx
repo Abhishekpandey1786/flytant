@@ -17,6 +17,18 @@ const AdminDashboard = () => {
 
   const token = localStorage.getItem("adminToken");
 
+  // ✅ NEW: Utility function to handle dynamic image URLs (Cloudinary vs Local)
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    // Check if it's already a full URL (likely Cloudinary or external)
+    if (imagePath.startsWith("http") || imagePath.startsWith("https")) {
+      return imagePath;
+    }
+    // Assume it's a local path and prefix the backend base URL
+    return `http://localhost:5000${imagePath}`;
+  };
+  // ✅ END NEW
+
   const fetchStats = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/admin/stats", {
@@ -209,7 +221,8 @@ const AdminDashboard = () => {
                     </button>
                   </div>
                   {n.image && (
-                    <img src={`http://localhost:5000${n.image}`} alt="notif" className="mt-4 rounded-xl w-full max-h-60 object-cover" />
+                    // ✅ UPDATED: Use getImageUrl function for dynamic path handling
+                    <img src={getImageUrl(n.image)} alt="notif" className="mt-4 rounded-xl w-full max-h-60 object-cover" />
                   )}
                 </div>
               ))}

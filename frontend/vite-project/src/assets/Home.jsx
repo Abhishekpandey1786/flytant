@@ -1,7 +1,7 @@
 import React from "react";
-import img1 from "./image/i1.png";
-import imgInfluencer from "./image/b1.png";
-import imgBrand from "./image/b2.png";
+import img1 from "./image/i1.webp";
+import imgInfluencer from "./image/b1.webp";
+import imgBrand from "./image/b2.webp";
 import "../index.css";
 import { Link } from "react-router-dom";
 import Footer from "./Footer.jsx";

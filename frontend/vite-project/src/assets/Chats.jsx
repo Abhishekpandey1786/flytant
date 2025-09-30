@@ -164,10 +164,9 @@ export default function Chats() {
                   : "bg-slate-800 hover:bg-slate-700"
               }`}
             >
-              <img
-                src={u.avatar || u.logo || "https://placehold.co/40"}
+              <p
                 alt={u.name}
-                className="w-10 h-10 rounded-full object-cover border border-slate-600"
+                className="w-10 h-10 rounded-full object-cover border border-fuchsia-800"
               />
               <div className="flex-1">
                 <div className="font-semibold text-white flex justify-between items-center">
@@ -201,7 +200,7 @@ export default function Chats() {
               >
                 <FaArrowLeft />
               </button>
-              <img
+              <p
                 src={
                   activeChat.avatar || activeChat.logo || "https://placehold.co/40"
                 }
@@ -280,10 +279,10 @@ function MessageBubble({ text, isMe, avatar, name, time }) {
       }`}
     >
       {!isMe && (
-        <img
+        <p
           src={avatar || "https://placehold.co/30"}
           alt=""
-          className="w-7 h-7 rounded-full border border-slate-600"
+          className="w-7 h-7 rounded-full border border-fuchsia-800"
         />
       )}
       <div

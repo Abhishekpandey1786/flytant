@@ -1,8 +1,9 @@
-// src/components/InfluencersList.jsx
+
 import React, { useState, useEffect } from "react";
 import { FaInstagram, FaYoutube, FaFacebook } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import axios from "axios"; 
 
 const InfluencersList = () => {
   const [influencers, setInfluencers] = useState([]);
@@ -12,29 +13,31 @@ const InfluencersList = () => {
   const navigate = useNavigate();
 
   const defaultAvatar =
-    "https://via.placeholder.com/150/5B21B6/FFFFFF?text=User";
+    "https://via.placeholder.com/150/5B21B6/FFFFFF?text=User"; 
 
   useEffect(() => {
     const fetchInfluencers = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/users/influencers");
-        const data = await res.json();
+      
+        const res = await axios.get("http://localhost:5000/api/users/influencers");
+        const data = res.data; 
 
-        if (res.ok) {
-          const processedData = data.map((influencer) => ({
-            ...influencer,
-            avatar: influencer.avatar
-              ? `http://localhost:5000${influencer.avatar}`
-              : defaultAvatar,
-            bio: influencer.bio || "No bio available.",
-          }));
-          setInfluencers(processedData);
-        } else {
-          setError(data.msg || "Failed to fetch influencers.");
-        }
+        const processedData = data.map((influencer) => ({
+          ...influencer,
+      
+          avatar: influencer.avatar && influencer.avatar.startsWith('http')
+            ? influencer.avatar 
+            : influencer.avatar
+            ? `http://localhost:5000${influencer.avatar}` 
+            : defaultAvatar, 
+          bio: influencer.bio || "No bio available.",
+        }));
+        setInfluencers(processedData);
+        
       } catch (err) {
-        console.error("Influencers fetch error:", err);
-        setError("Server connection failed. Please check backend.");
+        
+        console.error("Influencers fetch error:", err.response?.data || err.message);
+        setError(err.response?.data?.msg || "Server connection failed. Please check backend.");
       } finally {
         setIsLoading(false);
       }
@@ -86,6 +89,7 @@ const InfluencersList = () => {
             <motion.div
               key={influencer._id}
               whileHover={{ scale: 1.05, rotateY: 5 }}
+              
               className="relative group rounded-2xl md:rounded-3xl bg-gradient-to-br from-gray-900/80 to-gray-800/40 backdrop-blur-xl border shadow-xl md:shadow-2xl overflow-hidden transition-all duration-500 neno-button hover:shadow-fuchsia-800/50 text-white border-fuchsia-800"
             >
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-fuchsia-500 via-purple-500 to-indigo-500"></div>
@@ -100,7 +104,7 @@ const InfluencersList = () => {
                 </h3>
               </div>
 
-              {/* Socials + Button */}
+        
               <div className="absolute inset-x-0 bottom-0 translate-y-0 sm:translate-y-full sm:group-hover:translate-y-0 transition-all duration-500 bg-black/60 p-4 sm:p-6 flex flex-col items-center space-y-3 sm:space-y-4">
                 <div className="flex space-x-4 sm:space-x-5 text-white">
                   {influencer.instagram && (
