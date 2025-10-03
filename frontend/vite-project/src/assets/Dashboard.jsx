@@ -160,7 +160,6 @@ const Dashboard = () => {
               { name: "Chats", icon: "💬", key: "Chats" },
               { name: "Notifications", icon: "🔔", key: "notifications" },
               { name: "Subscription", icon: "💳", key: "subscription" },
-              { name: "More", icon: "⋯", key: "more" },
             ].map((item) => (
               <li
                 key={item.key}
