@@ -12,7 +12,7 @@ const TermsOfService = () => {
             Terms of Service
           </h2>
           <p className="mt-3 text-gray-400 text-base md:text-lg max-w-2xl mx-auto">
-            Please read these Terms carefully before using InfluZone. By
+            Please read these Terms carefully before using vistafluence.com By
             accessing or using our platform, you agree to be bound by them.
           </p>
         </header>
@@ -26,7 +26,7 @@ const TermsOfService = () => {
         {/* Sections */}
         <div className="space-y-8">
           {/* Section 1 */}
-          <section className="flex items-start bg-slate-800 p-6 rounded-2xl shadow-lg border border-fuchsia-800 hover:scale-[1.01] transition-transform">
+          <section className="flex items-start bg-slate-800 p-6 rounded-2xl shadow-lg  hover:scale-[1.01] transition-transform neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2  border-fuchsia-800">
             <div className="text-white text-3xl mr-4">
               <FaUserCheck />
             </div>
@@ -44,7 +44,7 @@ const TermsOfService = () => {
           </section>
 
           {/* Section 2 */}
-          <section className="flex items-start bg-slate-800 p-6 rounded-2xl shadow-lg border border-fuchsia-800 hover:scale-[1.01] transition-transform">
+          <section className="flex items-start bg-slate-800 p-6 rounded-2xl shadow-lg  hover:scale-[1.01] transition-transform neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2  border-fuchsia-800">
             <div className="text-white text-3xl mr-4">
               <FaUserLock />
             </div>
@@ -64,7 +64,7 @@ const TermsOfService = () => {
           </section>
 
           {/* Section 3 */}
-          <section className="flex items-start bg-slate-800 p-6 rounded-2xl shadow-lg border border-fuchsia-800 hover:scale-[1.01] transition-transform">
+          <section className="flex items-start bg-slate-800 p-6 rounded-2xl shadow-lg  hover:scale-[1.01] transition-transform neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2  border-fuchsia-800">
             <div className="text-white text-3xl mr-4">
               <FaBan />
             </div>
@@ -84,13 +84,13 @@ const TermsOfService = () => {
 
         {/* Footer Note */}
         <footer className="mt-12 text-center text-sm text-gray-500">
-          Last Updated: September 2025 <br />
+         
           For any questions regarding these Terms, contact us at{" "}
           <a
-            href="mailto:terms@flytant.com"
+            href="mailto:terms@vistafluence.com"
             className="text-fuchsia-400 hover:underline"
           >
-            terms@InfluZone.com
+            terms@vistafluence.com
           </a>
         </footer>
       </div>

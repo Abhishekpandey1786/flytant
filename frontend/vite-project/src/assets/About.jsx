@@ -8,12 +8,12 @@ const About = () => {
       <PageHeader />
       <div className="max-w-7xl mx-auto p-4 md:p-8 lg:p-12">
 
-        <header className="text-center my-12 md:my-16">
+        <header className="text-center my-12 md:my-16 ">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 text-white  drop-shadow-lg">
             Our Story, Our Mission
           </h2>
           <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-            InfluZone  is where <span className="text-fuchsia-400">creativity meets opportunity</span>.  
+            vistafluence.com  is where <span className="text-fuchsia-400">creativity meets opportunity</span>.  
             We empower meaningful connections between brands and influencers, building bridges that matter.
           </p>
         </header>
@@ -21,13 +21,13 @@ const About = () => {
         {/* Grid Sections */}
         <div className="grid md:grid-cols-2 gap-10 md:gap-16">
           {/* Mission Section */}
-          <section className="bg-slate-800/80 backdrop-blur-sm p-6 md:p-10 rounded-2xl shadow-2xl border border-fuchsia-700 hover:shadow-fuchsia-500/30 hover:scale-[1.03] transition-transform duration-300 group">
+          <section className="bg-slate-800/80 backdrop-blur-sm p-6 md:p-10 rounded-2xl shadow-2xl hover:scale-[1.03] transition-transform duration-300 group neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2  border-fuchsia-800">
             <div className="flex items-center gap-3 mb-4">
               <FaBullseye className="text-white text-3xl group-hover:rotate-12 transition-transform" />
               <h3 className="text-3xl font-bold">Our Mission</h3>
             </div>
             <p className="text-gray-300 leading-relaxed text-base md:text-lg">
-              InfluZone  was founded with a simple mission: to{" "}
+              vistafluence.com  was founded with a simple mission: to{" "}
               <span className="text-fuchsia-400 font-semibold">empower creators and brands</span>{" "}
               by providing a seamless platform to connect, collaborate, and grow.  
               We believe in the power of authentic partnerships that drive{" "}
@@ -36,7 +36,7 @@ const About = () => {
           </section>
 
           {/* What We Do Section */}
-          <section className="bg-slate-800/80 backdrop-blur-sm p-6 md:p-10 rounded-2xl shadow-2xl border border-fuchsia-700 hover:shadow-fuchsia-500/30 hover:scale-[1.03] transition-transform duration-300 group">
+          <section className="bg-slate-800/80 backdrop-blur-sm p-6 md:p-10 rounded-2xl shadow-2xl hover:scale-[1.03] transition-transform duration-300 group neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2  border-fuchsia-800">
             <div className="flex items-center gap-3 mb-4">
               <FaHandsHelping className="text-white text-3xl group-hover:scale-110 transition-transform" />
               <h3 className="text-3xl font-bold">What We Do</h3>
@@ -52,7 +52,7 @@ const About = () => {
         </div>
 
         {/* Story Section */}
-        <section className="mt-12 md:mt-16 bg-slate-800/80 backdrop-blur-sm p-6 md:p-10 rounded-2xl shadow-2xl border border-fuchsia-700 hover:shadow-fuchsia-500/30 hover:scale-[1.02] transition-transform duration-300 group">
+        <section className="mt-12 md:mt-16 bg-slate-800/80 backdrop-blur-sm p-6 md:p-10 rounded-2xl shadow-2x1 hover:scale-[1.02] transition-transform duration-300 group neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2  border-fuchsia-800">
           <div className="flex items-center gap-3 mb-4">
             <FaRocket className="text-white text-3xl group-hover:-translate-y-1 transition-transform" />
             <h3 className="text-3xl font-bold">Our Story</h3>

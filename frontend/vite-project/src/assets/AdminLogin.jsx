@@ -20,19 +20,19 @@ const AdminLogin = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900">
-      <div className="p-8 bg-slate-800 rounded-xl w-80 text-center">
+      <div className="p-8 bg-slate-800 rounded-xl w-80 text-center neno-button shadow-xl hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800">
         <h2 className="text-white text-2xl mb-6">Admin Login</h2>
         <input
           type="password"
           placeholder="Enter Admin Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 mb-3 rounded bg-slate-700 text-white"
+          className="w-full p-2 mb-3 rounded bg-slate-700 text-white neno-button shadow-xl hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800"
         />
         {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
         <button
           onClick={handleLogin}
-          className="w-full py-2 bg-fuchsia-700 hover:bg-fuchsia-800 rounded text-white"
+          className="w-full py-2 bg-fuchsia-800 rounded text-white hover:active:scale-85 transition duration-300 neno-button shadow-xs hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800"
         >
           Login
         </button>

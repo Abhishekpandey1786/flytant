@@ -40,7 +40,7 @@ function App() {
             <Route path="/signup" element={<Login />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            
             <Route path="/contact" element={<Contact />} />
               <Route path="/about" element={<About />} />
               <Route path="/blogs" element={<Blog />} />
@@ -53,6 +53,7 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/campaigns" element={<Campaigns />} />
               <Route path="/create-campaign" element={<CreateCampaign />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route
                 path="/chats/campaign/:campaignId/user/:userId"
                 element={<Chats />}
@@ -64,6 +65,7 @@ function App() {
               <Route path="/SubscriptionPlans" element={<SubscriptionPlans />}/>
               <Route path="/UserNotifications" element={<UserNotifications />}/>
               <Route path="/my-orders" element={<MyOrders />} />
+              <Route path="/chats" element={<Chats />} />
             </Route>
           </Routes>
         </AuthProvider>

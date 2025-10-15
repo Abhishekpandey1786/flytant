@@ -6,7 +6,7 @@ const PageHeader = () => {
     <div className="flex justify-between items-center px-6 py-4 bg-slate-900 border-b border-fuchsia-800 sticky top-0 z-10">
       <nav className="flex justify-between items-center px-4 md:px-12 py-4 fixed top-0 left-0 right-0 z-50 bg-slate-800">
               <h1 className="text-2xl md:text-3xl font-extrabold tracking-wide">
-                Flytant
+                <Link to="/">vistafluence.com</Link>
               </h1>
               <div className="space-x-2 md:space-x-4">
                 <Link to="/login">

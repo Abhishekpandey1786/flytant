@@ -18,7 +18,7 @@ const blogPosts = [
   {
     id: 3,
     title: "From Hobby to Profession: A Creator's Journey",
-    summary: "We interview top creators on their path to becoming full-time influencers with InfluZone...",
+    summary: "We interview top creators on their path to becoming full-time influencers with vistafluence.com...",
     link: "/blogs",
   },
 ];
@@ -28,10 +28,10 @@ const Blog = () => {
     <div className="min-h-screen bg-slate-900 text-white">
       <PageHeader />
       <div className="max-w-4xl mx-auto p-15">
-        <h2 className="text-4xl font-bold mb-6 text-center text-fuchsia-400">Our Blog</h2>
+        <h2 className="text-4xl font-bold mb-6 text-center text-white">Our Blog</h2>
         <div className="grid md:grid-cols-2 gap-8">
           {blogPosts.map((post) => (
-            <div key={post.id} className="bg-slate-800 p-6 rounded-xl shadow-lg border-2 border-fuchsia-800 transition hover:scale-105">
+            <div key={post.id} className="bg-slate-800 p-6 rounded-xl shadow-lg  transition hover:scale-102 neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2  border-fuchsia-800">
               <h3 className="text-2xl font-semibold mb-2">{post.title}</h3>
               <p className="text-gray-400 mb-4">{post.summary}</p>
               <Link to={post.link} className="text-fuchsia-400 hover:underline">

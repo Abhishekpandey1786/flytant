@@ -1,4 +1,3 @@
-// src/components/Chats.jsx
 import React, { useEffect, useRef, useState, useContext } from "react";
 import { io } from "socket.io-client";
 import axios from "axios";
@@ -139,7 +138,7 @@ export default function Chats() {
   };
 
   return (
-    <div className="flex h-screen  md:h-[85vh] rounded-2xl bg-slate-900 overflow-hidden neno-button shadow-xl hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800 transition">
+    <div className="flex h-135 md:h-[85vh] rounded-2xl bg-slate-900 overflow-hidden neno-button shadow-xl hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800 transition">
       <div
         className={`flex flex-col border-r border-slate-800 w-full md:w-1/3 ${
           activeChat ? "hidden md:flex" : "flex"
@@ -164,7 +163,8 @@ export default function Chats() {
                   : "bg-slate-800 hover:bg-slate-700"
               }`}
             >
-              <p
+              <img
+                src={u.avatar || u.logo || "https://placehold.co/40"}
                 alt={u.name}
                 className="w-10 h-10 rounded-full object-cover border border-fuchsia-800"
               />
@@ -200,9 +200,11 @@ export default function Chats() {
               >
                 <FaArrowLeft />
               </button>
-              <p
+              <img
                 src={
-                  activeChat.avatar || activeChat.logo || "https://placehold.co/40"
+                  activeChat.avatar ||
+                  activeChat.logo ||
+                  "https://placehold.co/40"
                 }
                 alt={activeChat.name}
                 className="w-9 h-9 rounded-full border border-fuchsia-500"
@@ -228,18 +230,22 @@ export default function Chats() {
                   const senderId =
                     typeof m.sender === "object" ? m.sender._id : m.sender;
                   const isMe = senderId === user._id;
+                  let messageAvatar = m.senderAvatar;
+                  if (!isMe && !messageAvatar) {
+                    messageAvatar = activeChat.avatar || activeChat.logo;
+                  }
                   return (
-                    <MessageBubble
-                      key={m._id || m.createdAt}
-                      text={m.text}
-                      isMe={isMe}
-                      avatar={m.senderAvatar}
-                      name={m.senderName}
-                      time={new Date(m.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    />
+                     <MessageBubble
+                      key={m._id || m.createdAt}
+                      text={m.text}
+                      isMe={isMe}
+                      avatar={messageAvatar} // Use the resolved avatar
+                      name={m.senderName}
+                      time={new Date(m.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    />
                   );
                 })
               )}
@@ -279,11 +285,12 @@ function MessageBubble({ text, isMe, avatar, name, time }) {
       }`}
     >
       {!isMe && (
-        <p
-          src={avatar || "https://placehold.co/30"}
-          alt=""
-          className="w-7 h-7 rounded-full border border-fuchsia-800"
-        />
+        <img
+          // The || fallback is correct and should work for null, undefined, or ""
+          src={avatar || "https://placehold.co/30"}
+          alt=""
+          className="w-7 h-7 rounded-full border border-fuchsia-800"
+        />
       )}
       <div
         className={`max-w-[80%] sm:max-w-[70%] p-3 rounded-2xl shadow-md break-words ${

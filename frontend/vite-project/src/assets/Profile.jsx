@@ -296,7 +296,7 @@ const Profile = () => {
                   <div className="flex justify-center md:justify-end w-full md:w-auto">
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="px-5 sm:px-6 py-2 bg-fuchsia-600 text-white font-semibold rounded-full shadow-lg  transition flex items-center space-x-2 neno-button  hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800 "
+                      className="px-5 sm:px-6 py-2 bg-fuchsia-800 text-white font-semibold rounded-full shadow-lg  transition flex items-center space-x-2 neno-button  hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800 "
                     >
                       <FaEdit />
                       <span>Edit</span>

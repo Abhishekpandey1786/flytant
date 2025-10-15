@@ -27,7 +27,7 @@ const PrivacyPolicy = () => {
         {/* Sections */}
         <div className="space-y-8">
           {/* Section 1 */}
-          <section className="flex items-start bg-slate-800 p-6 rounded-2xl shadow-lg border border-fuchsia-800 hover:scale-[1.01] transition-transform">
+          <section className="flex items-start bg-slate-800 p-6 rounded-2xl shadow-lg  hover:scale-[1.01] transition-transform neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2  border-fuchsia-800">
             <div className="text-white text-3xl mr-4">
               <FaUserShield />
             </div>
@@ -47,7 +47,7 @@ const PrivacyPolicy = () => {
           </section>
 
           {/* Section 2 */}
-          <section className="flex items-start bg-slate-800 p-6 rounded-2xl shadow-lg border border-fuchsia-800 hover:scale-[1.01] transition-transform">
+          <section className="flex items-start bg-slate-800 p-6 rounded-2xl shadow-lg border-fuchsia-800 hover:scale-[1.01] transition-transform neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2  ">
             <div className="text-white text-3xl mr-4">
               <FaLock />
             </div>
@@ -68,7 +68,7 @@ const PrivacyPolicy = () => {
           </section>
 
           {/* Section 3 */}
-          <section className="flex items-start bg-slate-800 p-6 rounded-2xl shadow-lg border border-fuchsia-800 hover:scale-[1.01] transition-transform">
+          <section className="flex items-start bg-slate-800 p-6 rounded-2xl shadow-lg  border-fuchsia-800 hover:scale-[1.01] transition-transform neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2">
             <div className="text-white text-3xl mr-4">
               <FaShareAlt />
             </div>
@@ -89,13 +89,12 @@ const PrivacyPolicy = () => {
 
         {/* Footer Note */}
         <footer className="mt-12 text-center text-sm text-gray-500">
-          Last Updated: September 2025 <br />
           For any privacy concerns, contact us at{" "}
           <a
-            href="mailto:privacy@flytant.com"
+            href="mailto:vistafluence@gmail.com"
             className="text-fuchsia-400 hover:underline"
           >
-            privacy@InfluZone.com
+            privacy@vistafluence.com
           </a>
         </footer>
       </div>

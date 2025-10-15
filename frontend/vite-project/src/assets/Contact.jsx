@@ -45,7 +45,7 @@ const Contact = () => {
       <div className="relative max-w-6xl mx-auto p-6 md:p-12 z-10">
         {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-fuchsia-400 to-pink-500 bg-clip-text text-transparent drop-shadow-lg">
+          <h2 className="text-4xl md:text-5xl font-extrabold bg-white bg-clip-text text-transparent drop-shadow-lg">
             Get in Touch
           </h2>
           <p className="text-gray-300 mt-4 max-w-2xl mx-auto">
@@ -58,42 +58,42 @@ const Contact = () => {
         <div className="grid md:grid-cols-2 gap-10">
           {/* Contact Info */}
           <div className="space-y-6">
-            <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-fuchsia-500/40 hover:scale-[1.02] transition duration-300">
+            <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl shadow-lg  hover:scale-[1.02] transition duration-300 neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2  border-fuchsia-800">
               <div className="flex items-center gap-3 mb-2">
                 <FaEnvelope className="text-fuchsia-400 text-2xl" />
                 <h4 className="text-xl font-semibold">General Inquiries</h4>
               </div>
               <p className="text-gray-300">
                 Email us at{" "}
-                <a href="mailto:info@flytant.com" className="text-fuchsia-400 hover:underline">
-                  info@InfluZone.com
+                <a href="mailto:vistafluence@gmail.com" className="text-fuchsia-400 hover:underline">
+                  vistafluence@gmail.com
                 </a>
               </p>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-fuchsia-500/40 hover:scale-[1.02] transition duration-300">
+            <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl shadow-lg  hover:scale-[1.02] transition duration-300 neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2  border-fuchsia-800">
               <div className="flex items-center gap-3 mb-2">
                 <FaHeadset className="text-fuchsia-400 text-2xl" />
                 <h4 className="text-xl font-semibold">Support</h4>
               </div>
               <p className="text-gray-300">
                 For technical issues:{" "}
-                <a href="mailto:support@flytant.com" className="text-fuchsia-400 hover:underline">
-                  support@InfluZone.com
+                <a href="mailto:vistafluence@gmail.com" className="text-fuchsia-400 hover:underline">
+                  vistafluence@gmail.com
                 </a>
               </p>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl shadow-lg border border-fuchsia-500/40 hover:scale-[1.02] transition duration-300">
+            <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl shadow-lg  hover:scale-[1.02] transition duration-300 neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2  border-fuchsia-800">
               <div className="flex items-center gap-3 mb-2">
                 <FaPhoneAlt className="text-fuchsia-400 text-2xl" />
                 <h4 className="text-xl font-semibold">Phone</h4>
               </div>
-              <p className="text-gray-300">+91 98765 43210</p>
+              <p className="text-gray-300">+91 ------------</p>
             </div>
 
             {/* Social Icons */}
-            <div className="flex gap-6 mt-6">
+            {/* <div className="flex gap-6 mt-6">
               <a href="#" className="text-gray-400 hover:text-fuchsia-400 text-2xl transition">
                 <FaFacebook />
               </a>
@@ -103,15 +103,15 @@ const Contact = () => {
               <a href="#" className="text-gray-400 hover:text-fuchsia-400 text-2xl transition">
                 <FaLinkedin />
               </a>
-            </div>
+            </div> */}
           </div>
 
           {/* Contact Form */}
           <form
             onSubmit={handleSubmit}
-            className="bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-xl border border-fuchsia-500/40 space-y-6"
+            className="bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-xl  space-y-6 neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2  border-fuchsia-800"
           >
-            <h3 className="text-2xl font-bold mb-4 text-fuchsia-400">Send Us a Message</h3>
+            <h3 className="text-2xl font-bold mb-4 text-white">Get in touch with ush</h3>
 
             {success && <p className="text-green-400 font-medium">{success}</p>}
             {error && <p className="text-red-400 font-medium">{error}</p>}
@@ -151,7 +151,7 @@ const Contact = () => {
             </div>
             <button
               type="submit"
-              className="w-full py-3 rounded-lg bg-gradient-to-r from-fuchsia-500 to-pink-500 hover:opacity-90 transition text-white font-semibold shadow-lg"
+              className="w-full py-3 rounded-lg bg-fuchsia-800  hover:opacity-90 transition  font-semibold shadow-lg neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2 border-fuchsia-800"
             >
               Send Message
             </button>
