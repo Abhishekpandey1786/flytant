@@ -139,8 +139,7 @@ function CreateCampaign() {
                   required
                   className="w-full p-3 bg-slate-700 text-white rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-fuchsia-500 transition-all duration-200 neno-button shadow-xl hover:shadow-fuchsia-800/50"
                 />
-              </div>
-              {/* Budget Input */}
+              </div> 
               <div>
                 <label
                   htmlFor="budget"
