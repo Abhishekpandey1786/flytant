@@ -32,7 +32,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "https://vistafluence.vercel.app/",
+    origin: "https://vistafluence.netlify.app/",
     methods: ["GET", "POST"]
   }
 });
