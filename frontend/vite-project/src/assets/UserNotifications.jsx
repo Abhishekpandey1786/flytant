@@ -11,7 +11,7 @@ const UserNotifications = () => {
 
   // ✅ 1. 'token' वेरिएबल को हटा दिया गया है
   // ⚠️ सुनिश्चित करें कि आपके बैकएंड में यह रूट पब्लिक हो
-  const API_URL = "http://localhost:5000/api/notifications";
+  const API_URL = "https://vistafluence.onrender.com/api/notifications";
 
 
   const getImageUrl = (imagePath) => {
@@ -21,7 +21,7 @@ const UserNotifications = () => {
       return imagePath;
     }
   
-    return `http://localhost:5000${imagePath}`;
+    return `https://vistafluence.onrender.com${imagePath}`;
   };
 
   // isRead स्टेटस अब केवल क्लाइंट-साइड (Browser Session) के लिए होगा,

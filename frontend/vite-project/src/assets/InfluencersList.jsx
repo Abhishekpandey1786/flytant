@@ -19,7 +19,7 @@ const InfluencersList = () => {
     const fetchInfluencers = async () => {
       try {
       
-        const res = await axios.get("http://localhost:5000/api/users/influencers");
+        const res = await axios.get("https://vistafluence.onrender.com/api/users/influencers");
         const data = res.data; 
 
         const processedData = data.map((influencer) => ({
@@ -28,7 +28,7 @@ const InfluencersList = () => {
           avatar: influencer.avatar && influencer.avatar.startsWith('http')
             ? influencer.avatar 
             : influencer.avatar
-            ? `http://localhost:5000${influencer.avatar}` 
+            ? `https://vistafluence.onrender.com${influencer.avatar}` 
             : defaultAvatar, 
           bio: influencer.bio || "No bio available.",
         }));

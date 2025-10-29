@@ -33,7 +33,7 @@ const Profile = () => {
       return avatarPath;
     }
 
-    return `http://localhost:5000${avatarPath}`;
+    return `https://vistafluence.onrender.com${avatarPath}`;
   };
 
   
@@ -46,7 +46,7 @@ const Profile = () => {
 
     const fetchProfile = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/users/me", {
+        const res = await fetch("https://vistafluence.onrender.com/api/users/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -108,7 +108,7 @@ const Profile = () => {
     try {
      
       const textUpdateResponse = await fetch(
-        "http://localhost:5000/api/users/me",
+        "https://vistafluence.onrender.com/api/users/me",
         {
           method: "PUT",
           headers: {
@@ -146,7 +146,7 @@ const Profile = () => {
         avatarFormData.append("avatar", avatarFile);
 
         const avatarUpdateResponse = await fetch(
-          "http://localhost:5000/api/users/me/avatar",
+          "https://vistafluence.onrender.com/api/users/me/avatar",
           {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` },

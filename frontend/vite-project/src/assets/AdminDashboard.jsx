@@ -25,13 +25,13 @@ const AdminDashboard = () => {
       return imagePath;
     }
     // Assume it's a local path and prefix the backend base URL
-    return `http://localhost:5000${imagePath}`;
+    return `https://vistafluence.onrender.com${imagePath}`;
   };
   // END Utility
 
   const fetchStats = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/admin/stats", {
+      const res = await axios.get("https://vistafluence.onrender.com/api/admin/stats", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setStats({
@@ -47,7 +47,7 @@ const AdminDashboard = () => {
 
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/admin/notifications", {
+      const res = await axios.get("https://vistafluence.onrender.com/api/admin/notifications", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications(res.data);
@@ -66,7 +66,7 @@ const AdminDashboard = () => {
     if (newNotification.imageFile) formData.append("image", newNotification.imageFile);
 
     try {
-      await axios.post("http://localhost:5000/api/admin/notifications", formData, {
+      await axios.post("https://vistafluence.onrender.com/api/admin/notifications", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
@@ -83,7 +83,7 @@ const AdminDashboard = () => {
   const deleteNotification = async (id) => {
     if (!window.confirm("Are you sure to delete this notification?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/admin/notifications/${id}`, {
+      await axios.delete(`https://vistafluence.onrender.com/api/admin/notifications/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchNotifications(); // Notification delete होने के बाद तुरंत डेटा फेच करें
@@ -95,7 +95,7 @@ const AdminDashboard = () => {
 
   const fetchMessages = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/contact/all", {
+      const res = await axios.get("https://vistafluence.onrender.com/api/contact/all", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessages(res.data);

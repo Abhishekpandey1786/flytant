@@ -17,7 +17,7 @@ const resolveAssetUrl = (assetPath) => {
     }
 
     // Otherwise, assume it's a relative path from the local server
-    return `http://localhost:5000/${assetPath}`;
+    return `https://vistafluence.onrender.com/${assetPath}`;
 };
 
 
@@ -33,7 +33,7 @@ function Campaigns() {
   const fetchCampaigns = async () => {
     try {
       // 1. Fetch campaigns
-      const res = await axios.get("http://localhost:5000/api/campaigns/public");
+      const res = await axios.get("https://vistafluence.onrender.com/api/campaigns/public");
       
       // 2. Resolve URLs for display 
       const updatedCampaigns = res.data.map(campaign => ({
@@ -87,7 +87,7 @@ function Campaigns() {
 
     try {
       await axios.post(
-        `http://localhost:5000/api/campaigns/${campaignId}/apply`,
+        `https://vistafluence.onrender.com/api/campaigns/${campaignId}/apply`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

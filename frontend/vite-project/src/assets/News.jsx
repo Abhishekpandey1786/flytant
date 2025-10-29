@@ -5,7 +5,7 @@ function News() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/news/top-headlines")
+    fetch("https://vistafluence.onrender.com/api/news/top-headlines")
       .then((res) => res.json())
       .then((data) => {
         if (data.articles) {

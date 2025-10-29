@@ -16,7 +16,7 @@ const BrandList = () => {
   useEffect(() => {
     const fetchBrands = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/advertiser/brands");
+        const res = await axios.get("https://vistafluence.onrender.com/api/advertiser/brands");
         
   
         const processedData = res.data.map((brand) => ({
@@ -24,7 +24,7 @@ const BrandList = () => {
           logo: brand.avatar && brand.avatar.startsWith('http')
             ? brand.avatar 
             : brand.avatar
-            ? `http://localhost:5000${brand.avatar}` 
+            ? `https://vistafluence.onrender.com${brand.avatar}` 
             : defaultLogo, 
           bio: brand.bio || "No description available.",
         }));
