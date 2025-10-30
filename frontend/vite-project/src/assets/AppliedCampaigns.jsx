@@ -62,7 +62,7 @@ function AppliedCampaigns() {
               >
                 {campaign.imagePath && (
                   <img
-                    src={`https://vistafluence.onrender.com${campaign.imagePath}`}
+                    src={`${campaign.imagePath}`}
                     alt={campaign.name}
                     className="w-full h-40 sm:h-48 object-cover rounded-xl mb-4"
                   />
