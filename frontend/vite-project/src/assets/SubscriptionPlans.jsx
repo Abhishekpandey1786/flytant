@@ -1,36 +1,50 @@
 import React, { useState, useContext } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { AuthContext } from "./AuthContext";
+import { AuthContext } from "./AuthContext"; 
 
-// --- CASHFREE INTEGRATION KE LIYE BADLAV YAHAN HAIN ---
+import p1 from "./image/p1.webp";
+// ... (rest of the image imports)
+import p8 from "./image/p8.webp";
+
+const plans = [
+    { name: "Basic", title: "Billed Monthly", price: 3, oldPrice: 4, discount: "Get 20% Off" },
+    // ... (rest of the plans)
+    { name: "Premium", title: "Billed Monthly", price: 19, oldPrice: 39, discount: "Get 50% Off" },
+];
+
+const influencers = [p1, p2, p3, p4, p5, p6, p7, p8];
+
+// --- CASHFREE CHECKOUT COMPONENT ---
 function CashfreeCheckoutForm({ selectedPlan }) {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
+    
+    // Base URL ko environment variable se len ya use karein
+    const API_BASE_URL = "https://vistafluence.onrender.com/api/payments"; 
 
     const handleCashfreePayment = async () => {
-        // 1. Login check
+        // 1. Login check and Null Safety
         if (!user || !user._id) {
             alert("Please log in to make a payment.");
             return;
         }
 
-        // Cashfree mein amount 'rupees' mein bheja jata hai, server side par /100 kiya jayega.
-        // Customer Details required hain. Assuming user object mein data hai.
+        // Customer Details required for Cashfree
         const customerDetails = {
-            customer_id: user._id,
-            customer_phone: user.phone || '9999999999', // Phone number required
-            customer_email: user.email || 'customer@example.com', // Email required
-            customer_name: user.name || 'Customer'
+            customer_id: user?._id, 
+            customer_phone: user?.phone || '9999999999', // Phone required
+            customer_email: user?.email || 'customer@example.com', // Email required
+            customer_name: user?.name || 'Customer'
         };
 
         setLoading(true);
         try {
             // 2. Server se Cashfree Order aur Session ID create karna
-            const { data } = await axios.post("https://vistafluence.onrender.com/api/payments/order", {
-                // Server ko amount paise/rupees mein bhej rahe hain, server use /100 karega
-                amount: selectedPlan.price * 100, // Assuming price is in Rupees, sending in Paise to server
+            const { data } = await axios.post(`${API_BASE_URL}/order`, {
+                // Cashfree API ko amount rupees mein chahiye, lekin hum client se paise mein bhej rahe hain
+                amount: selectedPlan.price * 100, 
                 currency: "INR",
                 planName: selectedPlan.name,
                 userId: user._id,
@@ -46,46 +60,31 @@ function CashfreeCheckoutForm({ selectedPlan }) {
             }
 
             // 3. Cashfree Handler initialize karna
-            // Ensure window.CashFree is available (script tag added in index.html)
+            if (!window.CashFree) {
+                throw new Error("Cashfree SDK not loaded. Check script tag in index.html.");
+            }
+            
             const cashfree = new window.CashFree(paymentSessionId);
 
-            // 4. Payment Gateway Open karna
-            // Cashfree Pop-up mode ke liye
             cashfree.ready(() => {
                 cashfree.checkout({
                     orderToken: paymentSessionId,
-                    // Checkout ka pop-up mode. Aap 'redirect' bhi use kar sakte hain
                     mode: 'popup', 
-                    // onOpen: () => { console.log("Cashfree Modal Opened"); },
-                    // onIntegrate: () => { console.log("Integration done"); },
                     onClose: () => {
-                        console.log("Cashfree Modal Closed");
+                        console.log("Cashfree Modal Closed. Checking order status...");
                         
-                        // Payment fail hone par ya user close karne par,
-                        // order status verify karne ke liye aap yahan server call kar sakte hain.
-                        // Lekin Webhook zyada reliable hai.
-
-                        // Example: Server side verification call (optional, webhook is better)
-                        // axios.get(`https://vistafluence.onrender.com/api/payments/order-status/${orderId}`)
-                        //   .then(res => {
-                        //       if (res.data.status === 'succeeded') {
-                        //           alert('Payment successful!');
-                        //           navigate('/my-orders');
-                        //       } else if (res.data.status === 'failed') {
-                        //           alert('Payment failed.');
-                        //       }
-                        //   });
-
-                        setLoading(false);
+                        // Payment fail ya close hone par, order status fetch karein
+                        // Kyunki Webhook asynchronous hota hai, yahan user ko update dena better hai
+                        navigate(`/payment/status?order_id=${orderId}`);
                     },
                 });
             });
 
         } catch (error) {
             console.error("Cashfree Payment Error:", error);
-            alert("Payment initialization failed: " + (error.response?.data?.message || error.message));
+            alert("Payment failed: " + (error.response?.data?.message || error.message));
         }
-        setLoading(false); // Ye line agar cashfree.ready() fail ho jaye to zaroori hai
+        setLoading(false); 
     };
 
     return (
@@ -100,17 +99,24 @@ function CashfreeCheckoutForm({ selectedPlan }) {
         </div>
     );
 }
-// ----------------------------------------------------------------------------------
 
-// --- SubscriptionPlans Component (jahan CashfreeCheckoutForm ka upyog ho raha hai) ---
+// --- MAIN SUBSCRIPTION PLANS COMPONENT ---
 export default function SubscriptionPlans() {
     const [selectedPlan, setSelectedPlan] = useState(plans[0]);
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 px-4 sm:px-6 py-10">
             <div className="max-w-6xl mx-auto">
-                {/* ... other code (headings, influencers) ... */}
-                
+                {/* ... Headings and Influencer section ... */}
+                <div className="items-center mb-10">
+                     <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-4 text-center drop-shadow-lg">
+                        Subscription Plans
+                    </h2>
+                     <p className="text-gray-400 mb-8 sm:mb-12 md:mb-16 text-center max-w-2xl mx-auto px-2">
+                        Choose the plan that best fits your needs and unlock new opportunities
+                        for sponsorships & collaborations 🚀
+                    </p>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {plans.map((plan) => (
                         <div
@@ -131,7 +137,6 @@ export default function SubscriptionPlans() {
                                     className="w-4 h-4 accent-fuchsia-600"
                                 />
                             </div>
-                            {/* ... price display ... */}
                             <div className="mt-4 flex items-baseline">
                                 <span className="text-2xl sm:text-3xl font-bold text-white">
                                     ₹{plan.price}
@@ -145,14 +150,12 @@ export default function SubscriptionPlans() {
                             {plan.discount && (
                                 <p className="mt-2 text-sm font-medium text-white">{plan.discount}</p>
                             )}
-                            {/* Component Name Change */}
                             {selectedPlan.name === plan.name && (
                                 <CashfreeCheckoutForm selectedPlan={selectedPlan} />
                             )}
                         </div>
                     ))}
                 </div>
-                {/* ... other code (influencers list) ... */}
                 <div className="mt-20 sm:mt-28 w-full text-center">
                     <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-8 sm:mb-12 text-white drop-shadow-lg">
                         100K+ Influencers already taking the advantages
