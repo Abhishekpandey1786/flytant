@@ -1,118 +1,108 @@
 import React, { useState, useContext } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { AuthContext } from "./AuthContext"; 
+import { AuthContext } from "./AuthContext"; // AuthContext ko import karein
 
 import p1 from "./image/p1.webp";
-// ... (rest of the image imports)
+import p2 from "./image/p2.webp";
+import p3 from "./image/p3.webp";
+import p4 from "./image/p4.webp";
+import p5 from "./image/p5.webp";
+import p6 from "./image/p6.webp";
+import p7 from "./image/p7.webp";
 import p8 from "./image/p8.webp";
 
 const plans = [
     { name: "Basic", title: "Billed Monthly", price: 3, oldPrice: 4, discount: "Get 20% Off" },
-    // ... (rest of the plans)
+    { name: "Standard", title: "Billed Monthly", price: 5, oldPrice: 7, discount: "Get 30% Off" },
+    { name: "Advance", title: "Billed Monthly", price: 9, oldPrice: 18, discount: "Get 40% Off" },
     { name: "Premium", title: "Billed Monthly", price: 19, oldPrice: 39, discount: "Get 50% Off" },
 ];
 
 const influencers = [p1, p2, p3, p4, p5, p6, p7, p8];
 
-// --- CASHFREE CHECKOUT COMPONENT ---
-function CashfreeCheckoutForm({ selectedPlan }) {
+function RazorpayCheckoutForm({ selectedPlan }) {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
-    
-    // Base URL ko environment variable se len ya use karein
-    const API_BASE_URL = "https://vistafluence.onrender.com/api/payments"; 
 
-    const handleCashfreePayment = async () => {
-        // 1. Login check and Null Safety
+    const handlePayment = async () => {
         if (!user || !user._id) {
             alert("Please log in to make a payment.");
             return;
         }
 
-        // Customer Details required for Cashfree
-        const customerDetails = {
-            customer_id: user?._id, 
-            customer_phone: user?.phone || '9999999999', // Phone required
-            customer_email: user?.email || 'customer@example.com', // Email required
-            customer_name: user?.name || 'Customer'
-        };
-
         setLoading(true);
         try {
-            // 2. Server se Cashfree Order aur Session ID create karna
-            const { data } = await axios.post(`${API_BASE_URL}/order`, {
-                // Cashfree API ko amount rupees mein chahiye, lekin hum client se paise mein bhej rahe hain
-                amount: selectedPlan.price * 100, 
+            const { data } = await axios.post("https://vistafluence.onrender.com/api/razorpay/order", {
+                amount: selectedPlan.price,
                 currency: "INR",
-                planName: selectedPlan.name,
-                userId: user._id,
-                customerDetails: customerDetails,
+                planName: selectedPlan.name, // "Basic", "Standard", etc.
+                userId: user._id, // Real user ID
             });
 
-            const { paymentSessionId, orderId } = data;
+            const options = {
+                key: "YOUR_RAZORPAY_KEY_ID", // Yahan apni live key daalein
+                amount: data.amount,
+                currency: data.currency,
+                name: "Your Company Name",
+                description: selectedPlan.title,
+                order_id: data.orderId,
+                handler: async function (response) {
+                    try {
+                        await axios.post("https://vistafluence.onrender.com/api/razorpay/verify", {
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_signature: response.razorpay_signature,
+                        });
+                        alert(`✅ Payment successful!`);
+                        navigate('/my-orders');
+                    } catch (error) {
+                        alert("Payment verification failed: " + error.message);
+                    }
+                },
+                prefill: {
+                    name: user.name || "Customer",
+                    email: user.email || "customer@example.com",
+                },
+                theme: { color: "#a21caf" },
+            };
 
-            if (!paymentSessionId) {
-                alert("Error creating payment session. Please try again.");
-                setLoading(false);
-                return;
-            }
-
-            // 3. Cashfree Handler initialize karna
-            if (!window.CashFree) {
-                throw new Error("Cashfree SDK not loaded. Check script tag in index.html.");
-            }
-            
-            const cashfree = new window.CashFree(paymentSessionId);
-
-            cashfree.ready(() => {
-                cashfree.checkout({
-                    orderToken: paymentSessionId,
-                    mode: 'popup', 
-                    onClose: () => {
-                        console.log("Cashfree Modal Closed. Checking order status...");
-                        
-                        // Payment fail ya close hone par, order status fetch karein
-                        // Kyunki Webhook asynchronous hota hai, yahan user ko update dena better hai
-                        navigate(`/payment/status?order_id=${orderId}`);
-                    },
-                });
+            const rzp1 = new window.Razorpay(options);
+            rzp1.on("payment.failed", function (response) {
+                alert(response.error.description);
             });
-
+            rzp1.open();
         } catch (error) {
-            console.error("Cashfree Payment Error:", error);
-            alert("Payment failed: " + (error.response?.data?.message || error.message));
+            alert("Payment failed: " + error.message);
         }
-        setLoading(false); 
+        setLoading(false);
     };
 
     return (
         <div className="mt-6 space-y-4">
             <button
-                onClick={handleCashfreePayment}
+                onClick={handlePayment}
                 disabled={loading}
                 className="relative w-full mt-4 py-3 rounded-xl font-semibold bg-fuchsia-700 text-white shadow-lg hover:shadow-fuchsia-800/50"
             >
-                {loading ? "Redirecting to Cashfree..." : `Buy Now - ₹${selectedPlan.price}`}
+                {loading ? "Processing..." : `Buy Now - ₹${selectedPlan.price}`}
             </button>
         </div>
     );
 }
 
-// --- MAIN SUBSCRIPTION PLANS COMPONENT ---
 export default function SubscriptionPlans() {
     const [selectedPlan, setSelectedPlan] = useState(plans[0]);
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 px-4 sm:px-6 py-10">
             <div className="max-w-6xl mx-auto">
-                {/* ... Headings and Influencer section ... */}
                 <div className="items-center mb-10">
-                     <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-4 text-center drop-shadow-lg">
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-4 text-center drop-shadow-lg">
                         Subscription Plans
                     </h2>
-                     <p className="text-gray-400 mb-8 sm:mb-12 md:mb-16 text-center max-w-2xl mx-auto px-2">
+                    <p className="text-gray-400 mb-8 sm:mb-12 md:mb-16 text-center max-w-2xl mx-auto px-2">
                         Choose the plan that best fits your needs and unlock new opportunities
                         for sponsorships & collaborations 🚀
                     </p>
@@ -151,7 +141,7 @@ export default function SubscriptionPlans() {
                                 <p className="mt-2 text-sm font-medium text-white">{plan.discount}</p>
                             )}
                             {selectedPlan.name === plan.name && (
-                                <CashfreeCheckoutForm selectedPlan={selectedPlan} />
+                                <RazorpayCheckoutForm selectedPlan={selectedPlan} />
                             )}
                         </div>
                     ))}
