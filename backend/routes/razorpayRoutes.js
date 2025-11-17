@@ -6,8 +6,8 @@ const Order = require('../models/Order'); // Order model import karein
 
 // Razorpay Instance
 const razorpayInstance = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
+  key_id: process.env.CASHFREE_CLIENT_ID,
+  key_secret: process.env.CASHFREE_CLIENT_SECRET,
 });
 
 // Endpoint 1: Order create karne ke liye
