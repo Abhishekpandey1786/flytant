@@ -1,83 +1,151 @@
 const express = require('express');
 const router = express.Router();
-const Razorpay = require('razorpay');
+const axios = require('axios');
 const crypto = require('crypto');
-const Order = require('../models/Order'); // Order model import karein
+const Order = require('../models/Order'); // Aapka Order model
 
-// Razorpay Instance
-const razorpayInstance = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+// --- Cashfree Production Configuration (Environment Variables se) ---
+// Production API Base URL: Cashfree Production ke liye 'https://api.cashfree.com/pg/orders' use karein.
+// Development/Staging ke liye: 'https://sandbox.cashfree.com/pg/orders' use karein.
+const CASHFREE_API_BASE_URL = process.env.CASHFREE_API_BASE_URL || 'https://api.cashfree.com/pg/orders'; 
+const CASHFREE_CLIENT_ID = process.env.CASHFREE_CLIENT_ID;
+const CASHFREE_CLIENT_SECRET = process.env.CASHFREE_CLIENT_SECRET;
+const CASHFREE_WEBHOOK_SECRET = process.env.CASHFREE_WEBHOOK_SECRET; 
+// ------------------------------------------------------------------------
 
-// Endpoint 1: Order create karne ke liye
+// Cashfree API Headers
+const cashfreeHeaders = {
+    'Content-Type': 'application/json',
+    'x-client-id': CASHFREE_CLIENT_ID,
+    'x-client-secret': CASHFREE_CLIENT_SECRET,
+    'x-api-version': '2022-01-01', // Recommended API version
+};
+
+// Middleware: Webhook Signature Verification ke liye raw body parse karna zaroori hai
+router.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+}));
+
+// --- 1. Endpoint: Order Create karne ke liye ---
 router.post('/order', async (req, res) => {
-  try {
-    const { amount, currency, planName, userId } = req.body;
+    try {
+        const { amount, currency, planName, userId, customerDetails } = req.body;
+        
+        // Validation: Required fields check karein
+        if (!amount || !currency || !userId || !customerDetails || !customerDetails.customer_phone || !customerDetails.customer_email) {
+            return res.status(400).json({ message: "Missing required fields for Cashfree order." });
+        }
 
-    const options = {
-      amount: amount, // Amount in paise
-      currency: currency,
-      receipt: 'receipt_order_' + Date.now(),
-    };
+        // Order ID generate karein
+        const orderId = 'order_' + Date.now() + '_' + userId;
+        
+        // Inhe aapko apne Production URLs se badalna hoga
+        const returnUrl = 'https://YOUR-PRODUCTION-FRONTEND.com/payment/success'; 
+        const notifyUrl = 'https://YOUR-PRODUCTION-BACKEND.com/api/payments/webhook'; 
 
-    const razorpayOrder = await razorpayInstance.orders.create(options);
+        const orderPayload = {
+            order_id: orderId,
+            // Cashfree 'rupees' mein amount leta hai
+            order_amount: (amount / 100).toFixed(2), 
+            order_currency: currency,
+            customer_details: customerDetails,
+            order_meta: {
+                return_url: returnUrl + '?order_id={order_id}&status={order_status}',
+                notify_url: notifyUrl, 
+            },
+        };
 
-    // Database mein ek naya order record banayein (pending status ke saath)
-    const newOrder = new Order({
-        userId,
-        planName,
-        amount,
-        orderId: razorpayOrder.id,
-        status: 'pending',
-    });
-    await newOrder.save();
+        const response = await axios.post(
+            CASHFREE_API_BASE_URL,
+            orderPayload,
+            { headers: cashfreeHeaders }
+        );
 
-    res.status(200).json({
-      orderId: razorpayOrder.id,
-      amount: razorpayOrder.amount,
-      currency: razorpayOrder.currency,
-    });
-  } catch (error) {
-    console.error("Error creating Razorpay order:", error);
-    res.status(500).send("Error creating order: " + error.message);
-  }
+        const cashfreeOrder = response.data;
+
+        // Database mein pending order record banayein
+        const newOrder = new Order({
+            userId,
+            planName,
+            amount,
+            orderId: cashfreeOrder.order_id,
+            status: 'pending',
+            paymentSessionId: cashfreeOrder.payment_session_id, 
+        });
+        await newOrder.save();
+
+        res.status(200).json({
+            orderId: cashfreeOrder.order_id,
+            paymentSessionId: cashfreeOrder.payment_session_id, 
+        });
+    } catch (error) {
+        console.error("Error creating Cashfree production order:", error.response ? error.response.data : error.message);
+        res.status(500).send("Error creating order: " + (error.response ? error.response.data.message : error.message));
+    }
 });
 
-// Endpoint 2: Payment signature verify karne ke liye
-router.post('/verify', async (req, res) => {
-  const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
-  
-  const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
-  hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
-  const generatedSignature = hmac.digest('hex');
+// --- 2. Endpoint: Cashfree Webhook Verification (Production Ready) ---
+router.post('/webhook', async (req, res) => {
+    try {
+        const signature = req.headers['x-cf-signature'];
+        const rawBody = req.rawBody.toString(); 
 
-  if (generatedSignature === razorpay_signature) {
-    try {
-      // Database mein order ko 'succeeded' mark karein aur paymentId add karein
-      await Order.findOneAndUpdate(
-        { orderId: razorpay_order_id },
-        { status: 'succeeded', paymentId: razorpay_payment_id },
-        { new: true }
-      );
-      res.status(200).json({ message: "Payment verified successfully" });
+        if (!signature || !rawBody) {
+            return res.status(400).send("Missing signature or body");
+        }
+
+        // Webhook signature verify karein
+        const generatedSignature = crypto.createHmac('sha256', CASHFREE_WEBHOOK_SECRET)
+            .update(rawBody)
+            .digest('base64');
+
+        if (generatedSignature !== signature) {
+            console.error("Webhook: Invalid signature received for order:", req.body.data.order.order_id);
+            // Unauthorized access block karein
+            return res.status(401).send("Invalid signature"); 
+        }
+
+        const data = req.body.data;
+        const eventType = req.body.event_type;
+        const orderStatus = data.order.order_status;
+        const orderId = data.order.order_id;
+        const paymentId = data.payment ? data.payment.cf_payment_id : null;
+
+        // Order events ko process karein
+        if (eventType === 'ORDER_EVENTS') {
+            let updateStatus;
+            
+            if (orderStatus === 'PAID') {
+                updateStatus = 'succeeded';
+            } else if (orderStatus === 'FAILED' || orderStatus === 'USER_DROPPED') {
+                updateStatus = 'failed';
+            } else if (orderStatus === 'ACTIVE') {
+                // Subscription payment ke liye, jise aap "pending" ya "active" hi rakh sakte hain
+                updateStatus = 'active'; 
+            } else {
+                return res.status(200).send("Status not processed");
+            }
+
+            // Database update
+            await Order.findOneAndUpdate(
+                { orderId: orderId, status: 'pending' }, // Status 'pending' hona zaroori hai
+                { status: updateStatus, paymentId: paymentId },
+                { new: true }
+            );
+        }
+
+        // Cashfree ko 200 OK response dena zaroori hai
+        res.status(200).send("Webhook acknowledged"); 
     } catch (dbError) {
-      console.error("Database update error:", dbError);
-      res.status(500).json({ message: "Database update failed" });
+        console.error("Database update error in webhook:", dbError);
+        // Agar database update fail ho, tab bhi Cashfree ko 200 OK bhej den
+        res.status(200).send("Error processing webhook but acknowledged");
     }
-  } else {
-    // Agar signature match nahi hota, to order ko 'failed' mark karein
-    try {
-      await Order.findOneAndUpdate(
-        { orderId: razorpay_order_id },
-        { status: 'failed' }
-      );
-      res.status(400).json({ message: "Invalid signature, verification failed" });
-    } catch (dbError) {
-      res.status(500).json({ message: "Database update failed" });
-    }
-  }
 });
+
+// --- 3. Endpoint: User ke orders fetch karne ke liye ---
 router.get('/orders/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
