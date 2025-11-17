@@ -42,10 +42,10 @@ function RazorpayCheckoutForm({ selectedPlan }) {
             });
 
             const options = {
-                key: "1127795c8d6740fcb41ecc874455977211", // Yahan apni live key daalein
+                key: "YOUR_RAZORPAY_KEY_ID", // Yahan apni live key daalein
                 amount: data.amount,
                 currency: data.currency,
-                name: "vistaFluence",
+                name: "Your Company Name",
                 description: selectedPlan.title,
                 order_id: data.orderId,
                 handler: async function (response) {
