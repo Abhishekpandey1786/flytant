@@ -1,5 +1,3 @@
-// PaymentSuccess.jsx
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -7,7 +5,6 @@ export default function PaymentSuccess() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // 2 sec wait (optional UI feel)
         setTimeout(() => {
             navigate("/my-orders");
         }, 1500);
