@@ -49,7 +49,7 @@ router.post("/create-order", async (req, res) => {
     };
 
     const response = await axios.post(
-      `${BASE_URL}/orders`,
+      `${BASE_URL}/my-orders`,
       payload,
       {
         headers: {
