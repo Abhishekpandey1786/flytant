@@ -22,7 +22,7 @@ const usersRoutes = require('./routes/users');
 const advertiserRoutes = require('./routes/advertiser');
 const appliedRoutes = require("./routes/appliedcampaigns");
 const contactRoutes = require("./routes/contact");
-const cashfreeRoutes = require('./routes/razorpayRoutes');
+const razorpayRoutes = require('./routes/razorpayRoutes');
 const publicRoutes = require('./routes/notifications');
 dotenv.config();
 
@@ -59,7 +59,7 @@ app.use("/api/news", newsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use("/api", publicRoutes);
 app.use("/api/contact", contactRoutes);
-app.use('/api/cashfree', cashfreeRoutes);
+app.use('/api/razorpay', razorpayRoutes);
 
 // 6. Socket.io logic.
 const connectedUsers = new Map();

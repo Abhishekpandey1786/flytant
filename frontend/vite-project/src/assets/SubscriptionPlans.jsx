@@ -1,9 +1,8 @@
 import React, { useState, useContext } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { AuthContext } from "./AuthContext";
+import { AuthContext } from "./AuthContext"; // AuthContext ko import karein
 
-// Image imports (ये वैसे ही रहेंगे)
 import p1 from "./image/p1.webp";
 import p2 from "./image/p2.webp";
 import p3 from "./image/p3.webp";
@@ -22,14 +21,12 @@ const plans = [
 
 const influencers = [p1, p2, p3, p4, p5, p6, p7, p8];
 
-// RazorpayCheckoutForm को CashfreeCheckoutForm में बदला गया
-function CashfreeCheckoutForm({ selectedPlan }) {
+function RazorpayCheckoutForm({ selectedPlan }) {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
 
-    // Cashfree Checkout को हैंडल करने का फंक्शन
-    const handleCashfreePayment = async () => {
+    const handlePayment = async () => {
         if (!user || !user._id) {
             alert("Please log in to make a payment.");
             return;
@@ -37,69 +34,55 @@ function CashfreeCheckoutForm({ selectedPlan }) {
 
         setLoading(true);
         try {
-            // 1. Backend से Order ID और Payment Session ID (PSI) प्राप्त करें
-            // Cashfree के लिए आपको orderId और payment_session_id की आवश्यकता होगी।
-            const { data } = await axios.post("https://vistafluence.onrender.com/api/cashfree/create-order", {
+            const { data } = await axios.post("https://vistafluence.onrender.com/api/razorpay/order", {
                 amount: selectedPlan.price,
                 currency: "INR",
-                planName: selectedPlan.name,
-                userId: user._id,
-                // Cashfree को ग्राहक की जानकारी भी चाहिए
-                customerName: user.name || "Customer",
-                customerEmail: user.email || "customer@example.com",
-                customerPhone: user.phone || "9999999999", // एक वैध फोन नंबर आवश्यक है
+                planName: selectedPlan.name, // "Basic", "Standard", etc.
+                userId: user._id, // Real user ID
             });
 
-            const { payment_session_id, order_id } = data;
-
-            if (!payment_session_id) {
-                throw new Error("Failed to get Payment Session ID from backend.");
-            }
-
-            // 2. Cashfree SDK का उपयोग करके Checkout शुरू करें
-            const cashfree = window.Cashfree;
-
-            const checkoutOptions = {
-                paymentSessionId: payment_session_id,
-                returnUrl: `${window.location.origin}/payment-success?order_id={order_id}`, // Success URL. Cashfree इसे order_id से बदल देगा।
+            const options = {
+                key: "YOUR_RAZORPAY_KEY_ID", // Yahan apni live key daalein
+                amount: data.amount,
+                currency: data.currency,
+                name: "Your Company Name",
+                description: selectedPlan.title,
+                order_id: data.orderId,
+                handler: async function (response) {
+                    try {
+                        await axios.post("https://vistafluence.onrender.com/api/razorpay/verify", {
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_signature: response.razorpay_signature,
+                        });
+                        alert(`✅ Payment successful!`);
+                        navigate('/my-orders');
+                    } catch (error) {
+                        alert("Payment verification failed: " + error.message);
+                    }
+                },
+                prefill: {
+                    name: user.name || "Customer",
+                    email: user.email || "customer@example.com",
+                },
+                theme: { color: "#a21caf" },
             };
 
-            // Cashfree 'embed' या 'redirect' मोड में पेमेंट शुरू करता है
-            cashfree.checkout(
-                checkoutOptions
-            ).then(function(result) {
-                if (result.error) {
-                    // पेमेंट शुरू करने में कोई SDK त्रुटि
-                    alert("Payment initiation error: " + result.error.message);
-                    setLoading(false);
-                }
-                if (result.redirect) {
-                    // पेमेंट गेटवे पर रीडायरेक्ट हो रहा है
-                }
+            const rzp1 = new window.Razorpay(options);
+            rzp1.on("payment.failed", function (response) {
+                alert(response.error.description);
             });
-
-
-            // NOTE: Payment status verification अब आपके backend के Webhook endpoint पर होगा
-            // और सफल होने पर यूजर को '/my-orders' पर रीडायरेक्ट करने का काम भी Webhook के बाद
-            // client-side navigate() की बजाय Cashfree के `returnUrl` से होना चाहिए।
-            // यहाँ हम सादगी के लिए पुरानी विधि का उपयोग कर रहे हैं।
-
-
+            rzp1.open();
         } catch (error) {
-            // ऑर्डर क्रिएशन या SDK लोडिंग में विफलता
-            console.error("Cashfree Payment failed:", error);
-            alert("Payment failed: " + (error.response?.data?.message || error.message));
+            alert("Payment failed: " + error.message);
         }
-        // Cashfree SDK खुद ही आगे का प्रोसेस हैंडल करता है, इसलिए loading state को
-        // पेमेंट सक्सेस/फेल्योर के बाद ही FALSE करना सही है, लेकिन यहाँ यह Checkout शुरू होने के बाद ही
-        // FALSE कर दिया जाता है ताकि यूजर इंटरैक्ट कर सके।
         setLoading(false);
     };
 
     return (
         <div className="mt-6 space-y-4">
             <button
-                onClick={handleCashfreePayment} // फंक्शन का नाम बदला गया
+                onClick={handlePayment}
                 disabled={loading}
                 className="relative w-full mt-4 py-3 rounded-xl font-semibold bg-fuchsia-700 text-white shadow-lg hover:shadow-fuchsia-800/50"
             >
@@ -158,8 +141,7 @@ export default function SubscriptionPlans() {
                                 <p className="mt-2 text-sm font-medium text-white">{plan.discount}</p>
                             )}
                             {selectedPlan.name === plan.name && (
-                                // यहाँ CashfreeCheckoutForm का उपयोग किया गया है
-                                <CashfreeCheckoutForm selectedPlan={selectedPlan} />
+                                <RazorpayCheckoutForm selectedPlan={selectedPlan} />
                             )}
                         </div>
                     ))}
@@ -183,6 +165,3 @@ export default function SubscriptionPlans() {
         </div>
     );
 }
-
-// यह महत्वपूर्ण है: RazorpayCheckoutForm की जगह CashfreeCheckoutForm को export किया गया है
-// आप चाहें तो इसका नाम बदलकर SubscriptionPlans.jsx कर सकते हैं

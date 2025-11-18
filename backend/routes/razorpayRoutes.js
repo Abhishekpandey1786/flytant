@@ -1,142 +1,83 @@
 const express = require('express');
 const router = express.Router();
-const axios = require('axios');
+const Razorpay = require('razorpay');
 const crypto = require('crypto');
-const Order = require('../models/Order');
+const Order = require('../models/Order'); // Order model import karein
 
-// Cashfree Configuration ⚙️
-const CF_API_ENDPOINT = process.env.CF_MODE === 'PROD' 
-    ? "https://api.cashfree.com/pg/orders" 
-    : "https://sandbox.cashfree.com/pg/orders";
-
-const CF_CLIENT_ID = process.env.CF_CLIENT_ID; 
-const CF_CLIENT_SECRET = process.env.CF_CLIENT_SECRET; 
-
-// Cashfree API के लिए Headers तैयार करें
-const getCashfreeHeaders = () => ({
-    'Content-Type': 'application/json',
-    'x-client-id': CF_CLIENT_ID,
-    'x-client-secret': CF_CLIENT_SECRET,
-    'x-api-version': '2022-09-01',
+// Razorpay Instance
+const razorpayInstance = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// Endpoint 1: Cashfree Order और Payment Session ID (PSI) बनाने के लिए
-router.post('/create-order', async (req, res) => {
-    try {
-        const { amount, planName, userId, customerName, customerEmail, customerPhone } = req.body;
+// Endpoint 1: Order create karne ke liye
+router.post('/order', async (req, res) => {
+  try {
+    const { amount, currency, planName, userId } = req.body;
 
-        const orderId = `ORDER_${userId}_${Date.now()}`;
-        const cfAmount = amount; 
+    const options = {
+      amount: amount, // Amount in paise
+      currency: currency,
+      receipt: 'receipt_order_' + Date.now(),
+    };
 
-        // Webhook URL को डायनामिक रूप से निर्धारित करें
-        const dynamicNotifyUrl = `${req.protocol}://${req.get('host')}/api/cashfree/webhook`;
-        
-        // 1. Cashfree API को Order बनाने के लिए कॉल करें
-        const cfOrderPayload = {
-            order_id: orderId,
-            order_amount: cfAmount,
-            order_currency: "INR",
-            customer_details: {
-                customer_id: userId,
-                customer_name: customerName,
-                customer_email: customerEmail,
-                customer_phone: customerPhone,
-            },
-            order_meta: {
-                return_url: `${req.protocol}://${req.get('host')}/payment-success?order_id={order_id}&order_token={order_token}`,
-                // 🛠️ सुधार: Webhook URL को Hardcode से डायनामिक में बदला गया
-                notify_url: dynamicNotifyUrl, 
-            },
-            order_note: `Subscription for ${planName}`,
-        };
+    const razorpayOrder = await razorpayInstance.orders.create(options);
 
-        const response = await axios.post(CF_API_ENDPOINT, cfOrderPayload, {
-            headers: getCashfreeHeaders(),
-        });
-        
-        const cfData = response.data; 
+    // Database mein ek naya order record banayein (pending status ke saath)
+    const newOrder = new Order({
+        userId,
+        planName,
+        amount,
+        orderId: razorpayOrder.id,
+        status: 'pending',
+    });
+    await newOrder.save();
 
-        if (cfData.order_status !== 'ACTIVE') {
-            throw new Error(`Cashfree Order failed with status: ${cfData.order_status}`);
-        }
-
-        // 2. Database में एक नया order record बनाएं (pending status के साथ)
-        const newOrder = new Order({
-            userId,
-            planName,
-            amount: cfAmount, 
-            orderId: cfData.order_id,
-            cfOrderId: cfData.cf_order_id, 
-            status: 'pending',
-        });
-        await newOrder.save();
-
-        // 3. Client को Payment Session ID वापस भेजें
-        res.status(200).json({
-            order_id: cfData.order_id,
-            payment_session_id: cfData.payment_session_id,
-        });
-
-    } catch (error) {
-        console.error("Error creating Cashfree order:", error.response?.data || error.message);
-        res.status(500).send("Error creating order: " + (error.response?.data?.message || error.message));
-    }
+    res.status(200).json({
+      orderId: razorpayOrder.id,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
+    });
+  } catch (error) {
+    console.error("Error creating Razorpay order:", error);
+    res.status(500).send("Error creating order: " + error.message);
+  }
 });
 
-// ------------------------------------------------------------------
-// Endpoint 2: Cashfree Webhook (Payment Status Verification के लिए) 🛡️
-router.post('/webhook', async (req, res) => {
-    // 1. Webhook Signature Verify करें (यह सुनिश्चित करता है कि यह कॉल Cashfree से ही आ रही है)
-    const signature = req.headers['x-webhook-signature'];
-    const timeStamp = req.headers['x-webhook-timestamp'];
-    const webhookSecret = process.env.CF_WEBHOOK_SECRET; 
+// Endpoint 2: Payment signature verify karne ke liye
+router.post('/verify', async (req, res) => {
+  const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+  
+  const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
+  hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
+  const generatedSignature = hmac.digest('hex');
 
-    // 💡 ध्यान दें: Express.json() Middleware से Webhook body ठीक से parse होनी चाहिए
-    // अगर Webhook काम नहीं करता है, तो आपको Webhook लॉजिक से पहले raw body middleware डालना पड़ सकता है
-    
-    const body = JSON.stringify(req.body); 
-    
-    const data = timeStamp + body;
-    const generatedSignature = crypto.createHmac('sha256', webhookSecret)
-        .update(data)
-        .digest('base64');
-
-    if (generatedSignature !== signature) {
-        console.error("Cashfree Webhook: Invalid Signature");
-        return res.status(401).json({ message: "Invalid Signature" });
-    }
-
-    // 2. Signature Verify होने के बाद, Payment Status चेक करें
-    const event = req.body;
-    const orderDetails = event.data.order;
-    const paymentStatus = orderDetails.order_status; 
-    const orderId = orderDetails.order_id;
-    const cfPaymentId = event.data.payment.cf_payment_id;
-
-    let newStatus = 'failed';
-    if (paymentStatus === 'PAID') {
-        newStatus = 'succeeded';
-    } else if (paymentStatus === 'ACTIVE') {
-        newStatus = 'pending'; 
-    }
-    
-    // 3. Database में Order Status अपडेट करें
+  if (generatedSignature === razorpay_signature) {
     try {
-        await Order.findOneAndUpdate(
-            { orderId: orderId },
-            { status: newStatus, paymentId: cfPaymentId },
-            { new: true }
-        );
-        res.status(200).send("Webhook received and processed"); 
+      // Database mein order ko 'succeeded' mark karein aur paymentId add karein
+      await Order.findOneAndUpdate(
+        { orderId: razorpay_order_id },
+        { status: 'succeeded', paymentId: razorpay_payment_id },
+        { new: true }
+      );
+      res.status(200).json({ message: "Payment verified successfully" });
     } catch (dbError) {
-        console.error("Database update error on webhook:", dbError);
-        res.status(500).send("Database update failed");
+      console.error("Database update error:", dbError);
+      res.status(500).json({ message: "Database update failed" });
     }
+  } else {
+    // Agar signature match nahi hota, to order ko 'failed' mark karein
+    try {
+      await Order.findOneAndUpdate(
+        { orderId: razorpay_order_id },
+        { status: 'failed' }
+      );
+      res.status(400).json({ message: "Invalid signature, verification failed" });
+    } catch (dbError) {
+      res.status(500).json({ message: "Database update failed" });
+    }
+  }
 });
-// ------------------------------------------------------------------
-
-
-// Endpoint 3: Existing order fetching 
 router.get('/orders/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
