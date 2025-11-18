@@ -47,6 +47,7 @@ function App() {
               <Route path="/blogs" element={<Blog />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route element={<PrivateRoutes />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/dashboard/brand" element={<Brand />} />
@@ -66,7 +67,7 @@ function App() {
               <Route path="/SubscriptionPlans" element={<SubscriptionPlans />}/>
               <Route path="/UserNotifications" element={<UserNotifications />}/>
               <Route path="/my-orders" element={<MyOrders />} />
-              <Route path="/payment-success" element={<PaymentSuccess />} />
+              
               <Route path="/chats" element={<Chats />} />
             </Route>
           </Routes>
