@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "./AuthContext";
 
+// इमेज इम्पोर्ट
 import p1 from "./image/p1.webp";
 import p2 from "./image/p2.webp";
 import p3 from "./image/p3.webp";
@@ -12,6 +13,7 @@ import p6 from "./image/p6.webp";
 import p7 from "./image/p7.webp";
 import p8 from "./image/p8.webp";
 
+// प्लान डेटा
 const plans = [
     { name: "Basic", title: "Billed Monthly", price: 3, oldPrice: 4, discount: "Get 20% Off" },
     { name: "Standard", title: "Billed Monthly", price: 5, oldPrice: 7, discount: "Get 30% Off" },
@@ -21,39 +23,87 @@ const plans = [
 
 const influencers = [p1, p2, p3, p4, p5, p6, p7, p8];
 
+// CSS Spinner Component (सिर्फ UI के लिए)
+const Spinner = () => (
+    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+);
+
+// ------------------------------------------------------------------
+// 💳 Cashfree Checkout Component
+// ------------------------------------------------------------------
 function CashfreeCheckoutForm({ selectedPlan }) {
     const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
-    const { user } = useContext(AuthContext);
+    const { user } = useContext(AuthContext); // useNavigate अब आवश्यक नहीं है क्योंकि Cashfree रीडायरेक्ट संभालता है
 
     const handlePayment = async () => {
+        // 1. उपयोगकर्ता की जाँच
         if (!user || !user._id) {
-            alert("Please log in to make a payment.");
+            alert("🔒 कृपया भुगतान करने के लिए लॉग इन करें।");
             return;
         }
 
         setLoading(true);
 
+        // 2. ग्राहक विवरण (Customer Details) को सुनिश्चित करें
+        // Production में, सुनिश्चित करें कि user ऑब्जेक्ट में ये फ़ील्ड्स मौजूद हैं
+        const customerDetails = {
+            customerName: user.name || "Test Customer",
+            customerEmail: user.email || "test@example.com",
+            customerPhone: user.phone || "9999999999", // 10-अंक का वैध नंबर चाहिए!
+        };
+
         try {
+            // 3. बैकएंड से Payment Session ID (PSI) प्राप्त करें
             const { data } = await axios.post(
                 "https://vistafluence.onrender.com/api/cashfree/create-order",
                 {
                     amount: selectedPlan.price,
                     userId: user._id,
                     planName: selectedPlan.name,
+                    ...customerDetails // customer details को payload में जोड़ें
                 }
             );
 
-            if (data && data.payment_link) {
-                window.location.href = data.payment_link; // redirect to Cashfree Hosted Checkout
-            } else {
-                alert("Something went wrong!");
-            }
-        } catch (error) {
-            alert("Payment failed: " + error.message);
-        }
+            const { payment_session_id } = data;
 
-        setLoading(false);
+            if (!payment_session_id) {
+                alert("Payment setup failed. Missing session ID from server.");
+                setLoading(false);
+                return;
+            }
+            
+            // 4. Cashfree SDK का उपयोग करके Checkout शुरू करें
+            const cashfree = window.Cashfree;
+
+            if (!cashfree) {
+                throw new Error("Cashfree SDK not loaded. Please check index.html."); 
+            }
+
+            const checkoutOptions = {
+                paymentSessionId: payment_session_id, // <--- Key Fix: PSI का उपयोग करें
+            };
+
+            // Cashfree Checkout शुरू
+            cashfree.checkout(checkoutOptions)
+                .catch(sdkError => {
+                    // SDK-संबंधित त्रुटियों को यहाँ संभालें
+                    console.error("Cashfree SDK Checkout Error:", sdkError);
+                    alert("Payment failed during checkout setup.");
+                    setLoading(false);
+                });
+
+            // नोट: लोडिंग को यहां FALSE न करें। यह तभी बंद होगा जब Cashfree का रीडायरेक्ट हो जाएगा।
+
+        } catch (error) {
+            // 5. API कॉल त्रुटियाँ
+            const errorMessage = error.response?.data?.message || error.message;
+            console.error("API Error:", error.response?.data || error);
+            alert(`⚠️ Payment Failed: ${errorMessage}`);
+            setLoading(false);
+        }
     };
 
     return (
@@ -61,14 +111,18 @@ function CashfreeCheckoutForm({ selectedPlan }) {
             <button
                 onClick={handlePayment}
                 disabled={loading}
-                className="relative w-full mt-4 py-3 rounded-xl font-semibold bg-fuchsia-700 text-white shadow-lg hover:shadow-fuchsia-800/50"
+                className="relative w-full mt-4 py-3 rounded-xl font-semibold bg-fuchsia-700 text-white shadow-lg hover:shadow-fuchsia-800/50 flex items-center justify-center transition-opacity disabled:opacity-75"
             >
+                {loading && <Spinner />}
                 {loading ? "Processing..." : `Buy Now - ₹${selectedPlan.price}`}
             </button>
         </div>
     );
 }
 
+// ------------------------------------------------------------------
+// 📊 Subscription Plans Main Component
+// ------------------------------------------------------------------
 export default function SubscriptionPlans() {
     const [selectedPlan, setSelectedPlan] = useState(plans[0]);
 
@@ -121,6 +175,7 @@ export default function SubscriptionPlans() {
                                 <p className="mt-2 text-sm font-medium text-white">{plan.discount}</p>
                             )}
 
+                            {/* Buy Button Component */}
                             {selectedPlan.name === plan.name && (
                                 <CashfreeCheckoutForm selectedPlan={selectedPlan} />
                             )}
