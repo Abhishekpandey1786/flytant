@@ -83,45 +83,41 @@ router.post("/create-order", async (req, res) => {
 });
 
 
-router.post("/webhook", express.json({ type: "application/json" }), async (req, res) => {
+router.post("/webhook", express.json({ type: 'application/json' }), async (req, res) => {
+
+    if (!WEBHOOK_SECRET) {
+        console.warn("WEBHOOK_SECRET is missing. Skipping verification.");
+        
+    }
+
     const event = req.body;
+    const orderId = event.data.order.order_id;
+    const orderStatus = event.data.order.order_status;
 
     try {
-        const orderId = event.data.order.order_id;
-        const orderStatus = event.data.order.order_status;
+        if (orderStatus === "PAID") {
+    
+            await Order.findOneAndUpdate(
+                { orderId: orderId },
+                { status: "succeeded", paymentId: event.data.order.order_id },
+                { new: true }
+            );
+            console.log(`Order ${orderId} successfully paid and updated.`);
+        } else if (orderStatus === "FAILED" || orderStatus === "USER_DROPPED") {
+            // ❌ Payment Failed:
+            await Order.findOneAndUpdate(
+                { orderId: orderId },
+                { status: "failed" }
+            );
+             console.log(`Order ${orderId} failed.`);
+        }
+        res.status(200).send("Webhook received successfully.");
 
-        // Payment Details
-        const payment = event.data.payment || {};
-
-        const updateData = {
-            status:
-                orderStatus === "PAID"
-                    ? "succeeded"
-                    : orderStatus === "FAILED" || orderStatus === "USER_DROPPED"
-                    ? "failed"
-                    : "pending",
-
-            // Save full payment details
-            paymentId: payment.payment_id || null,
-            paymentMethod: payment.payment_method || null,
-            bankReference: payment.bank_reference || null,
-            paymentTime: payment.payment_time || null,
-            paymentAmount: payment.payment_amount || null,
-            paymentCurrency: payment.payment_currency || null,
-        };
-
-        // Update order in DB
-        await Order.findOneAndUpdate({ orderId }, updateData, { new: true });
-
-        console.log("Webhook updated: ", updateData);
-
-        res.status(200).send("OK");
     } catch (error) {
-        console.error("Webhook error: ", error);
-        res.status(200).send("Webhook ACK but failed");
+        console.error("Webhook Processing Error:", error);
+        res.status(200).send("Error processing webhook but acknowledged.");
     }
 });
-
 
 router.get('/orders/:userId', async (req, res) => {
   try {
