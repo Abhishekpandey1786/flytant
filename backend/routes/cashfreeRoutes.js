@@ -148,11 +148,10 @@ router.get('/orders/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const orders = await Order.find({ 
-    userId, 
-    status: "succeeded" 
-}).sort({ createdAt: -1 });
+    const orders = await Order.find({ userId })
+      .sort({ createdAt: -1 });
 
+    return res.status(200).json(orders);
 
   } catch (error) {
     return res.status(500).send("Error fetching orders: " + error.message);
