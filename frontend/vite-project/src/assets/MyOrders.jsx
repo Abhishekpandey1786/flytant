@@ -17,7 +17,7 @@ export default function MyOrders() {
 
         const fetchOrders = async () => {
             try {
-                const response = await axios.get(`https://vistafluence.onrender.com/api/razorpay/orders/${user._id}`);
+                const response = await axios.get(`https://vistafluence.onrender.com/api/cashfree/orders/${user._id}`);
                 setOrders(response.data);
             } catch (err) {
                 setError("Failed to fetch orders. Please try again later.");
