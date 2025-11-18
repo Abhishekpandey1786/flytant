@@ -1,7 +1,7 @@
 import React, { useState, useContext } from "react";
 import axios from "axios";
-import { useNavigate, Link } from "react-router-dom";
-import { AuthContext } from "./AuthContext"; // AuthContext ko import karein
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "./AuthContext";
 
 import p1 from "./image/p1.webp";
 import p2 from "./image/p2.webp";
@@ -21,7 +21,7 @@ const plans = [
 
 const influencers = [p1, p2, p3, p4, p5, p6, p7, p8];
 
-function RazorpayCheckoutForm({ selectedPlan }) {
+function CashfreeCheckoutForm({ selectedPlan }) {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
@@ -33,49 +33,26 @@ function RazorpayCheckoutForm({ selectedPlan }) {
         }
 
         setLoading(true);
+
         try {
-            const { data } = await axios.post("https://vistafluence.onrender.com/api/razorpay/order", {
-                amount: selectedPlan.price,
-                currency: "INR",
-                planName: selectedPlan.name, // "Basic", "Standard", etc.
-                userId: user._id, // Real user ID
-            });
+            const { data } = await axios.post(
+                "https://vistafluence.onrender.com/api/cashfree/create-order",
+                {
+                    amount: selectedPlan.price,
+                    userId: user._id,
+                    planName: selectedPlan.name,
+                }
+            );
 
-            const options = {
-                key: "YOUR_RAZORPAY_KEY_ID", // Yahan apni live key daalein
-                amount: data.amount,
-                currency: data.currency,
-                name: "Your Company Name",
-                description: selectedPlan.title,
-                order_id: data.orderId,
-                handler: async function (response) {
-                    try {
-                        await axios.post("https://vistafluence.onrender.com/api/razorpay/verify", {
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_signature: response.razorpay_signature,
-                        });
-                        alert(`✅ Payment successful!`);
-                        navigate('/my-orders');
-                    } catch (error) {
-                        alert("Payment verification failed: " + error.message);
-                    }
-                },
-                prefill: {
-                    name: user.name || "Customer",
-                    email: user.email || "customer@example.com",
-                },
-                theme: { color: "#a21caf" },
-            };
-
-            const rzp1 = new window.Razorpay(options);
-            rzp1.on("payment.failed", function (response) {
-                alert(response.error.description);
-            });
-            rzp1.open();
+            if (data && data.payment_link) {
+                window.location.href = data.payment_link; // redirect to Cashfree Hosted Checkout
+            } else {
+                alert("Something went wrong!");
+            }
         } catch (error) {
             alert("Payment failed: " + error.message);
         }
+
         setLoading(false);
     };
 
@@ -107,6 +84,7 @@ export default function SubscriptionPlans() {
                         for sponsorships & collaborations 🚀
                     </p>
                 </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {plans.map((plan) => (
                         <div
@@ -127,6 +105,7 @@ export default function SubscriptionPlans() {
                                     className="w-4 h-4 accent-fuchsia-600"
                                 />
                             </div>
+
                             <div className="mt-4 flex items-baseline">
                                 <span className="text-2xl sm:text-3xl font-bold text-white">
                                     ₹{plan.price}
@@ -137,15 +116,18 @@ export default function SubscriptionPlans() {
                                     </span>
                                 )}
                             </div>
+
                             {plan.discount && (
                                 <p className="mt-2 text-sm font-medium text-white">{plan.discount}</p>
                             )}
+
                             {selectedPlan.name === plan.name && (
-                                <RazorpayCheckoutForm selectedPlan={selectedPlan} />
+                                <CashfreeCheckoutForm selectedPlan={selectedPlan} />
                             )}
                         </div>
                     ))}
                 </div>
+
                 <div className="mt-20 sm:mt-28 w-full text-center">
                     <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-8 sm:mb-12 text-white drop-shadow-lg">
                         100K+ Influencers already taking the advantages
