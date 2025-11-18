@@ -1,9 +1,8 @@
 import React, { useState, useContext } from "react";
 import axios from "axios";
-import { load } from "@cashfreepayments/cashfree-js"; // ✅ NEW CASHFREE V3 SDK
+import { load } from "@cashfreepayments/cashfree-js";
 import { AuthContext } from "./AuthContext";
 
-// Images
 import p1 from "./image/p1.webp";
 import p2 from "./image/p2.webp";
 import p3 from "./image/p3.webp";
@@ -13,7 +12,6 @@ import p6 from "./image/p6.webp";
 import p7 from "./image/p7.webp";
 import p8 from "./image/p8.webp";
 
-// Plans
 const plans = [
     { name: "Basic", title: "Billed Monthly", price: 3, oldPrice: 4, discount: "Get 20% Off" },
     { name: "Standard", title: "Billed Monthly", price: 5, oldPrice: 7, discount: "Get 30% Off" },
@@ -23,7 +21,6 @@ const plans = [
 
 const influencers = [p1, p2, p3, p4, p5, p6, p7, p8];
 
-// Spinner animation
 const Spinner = () => (
     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -31,63 +28,53 @@ const Spinner = () => (
     </svg>
 );
 
-// ---------------------------------------------------------------------------------------------
-// 💳 FINAL WORKING CASHFREE V3 CHECKOUT COMPONENT
-// ---------------------------------------------------------------------------------------------
+// CASHFREE CHECKOUT
 function CashfreeCheckoutForm({ selectedPlan }) {
     const [loading, setLoading] = useState(false);
     const { user } = useContext(AuthContext);
 
     const handlePayment = async () => {
         if (!user || !user._id) {
-            alert("Please login to continue payment.");
+            alert("Please login first");
             return;
         }
 
         setLoading(true);
 
-        const customerDetails = {
-            customerName: user.name || "User",
-            customerEmail: user.email || "test@gmail.com",
-            customerPhone: user.phone || "9999999999",
-        };
-
         try {
-            // STEP 1 → Get Payment Session from backend
+            // 1️⃣ Create session from backend
             const { data } = await axios.post(
                 "https://vistafluence.onrender.com/api/cashfree/create-order",
                 {
                     amount: selectedPlan.price,
                     userId: user._id,
                     planName: selectedPlan.name,
-                    ...customerDetails,
+                    customerName: user.name,
+                    customerEmail: user.email,
+                    customerPhone: user.phone,
                 }
             );
 
-            const sessionId = data.payment_session_id;
-
-            if (!sessionId) {
-                alert("Payment session ID missing!");
+            if (!data.payment_session_id) {
+                alert("Payment session missing!");
                 setLoading(false);
                 return;
             }
 
-            console.log("SESSION:", sessionId);
+            console.log("SESSION ID:", data.payment_session_id);
 
-            // STEP 2 → Load Cashfree V3 SDK
-            const cashfree = await load({
-                mode: "production", // sandbox/testing → "sandbox"
-            });
+            // 2️⃣ Load SDK
+            const cashfree = await load({ mode: "production" });
 
-            // STEP 3 → Start Checkout
+            // 3️⃣ Start payment
             await cashfree.checkout({
-                paymentSessionId: sessionId,
+                paymentSessionId: data.payment_session_id,
                 redirectTarget: "_self",
             });
 
-        } catch (error) {
-            console.error("API ERROR:", error);
-            alert("Payment failed! Check console.");
+        } catch (err) {
+            console.log("PAYMENT ERROR:", err);
+            alert("Payment failed!");
             setLoading(false);
         }
     };
@@ -96,7 +83,7 @@ function CashfreeCheckoutForm({ selectedPlan }) {
         <button
             onClick={handlePayment}
             disabled={loading}
-            className="w-full mt-4 py-3 rounded-xl font-semibold bg-fuchsia-700 text-white shadow-lg flex items-center justify-center disabled:opacity-75"
+            className="w-full mt-4 py-3 rounded-xl font-semibold bg-fuchsia-700 text-white shadow-lg flex items-center justify-center disabled:opacity-50"
         >
             {loading && <Spinner />}
             {loading ? "Processing..." : `Buy Now - ₹${selectedPlan.price}`}
@@ -104,9 +91,6 @@ function CashfreeCheckoutForm({ selectedPlan }) {
     );
 }
 
-// ---------------------------------------------------------------------------------------------
-// 🌟 MAIN PLANS PAGE
-// ---------------------------------------------------------------------------------------------
 export default function SubscriptionPlans() {
     const [selectedPlan, setSelectedPlan] = useState(plans[0]);
 
@@ -159,11 +143,7 @@ export default function SubscriptionPlans() {
 
                     <div className="flex flex-wrap justify-center gap-6">
                         {influencers.map((src, idx) => (
-                            <img
-                                key={idx}
-                                src={src}
-                                className="w-20 h-20 rounded-full border-4 border-orange-400 shadow-lg object-cover"
-                            />
+                            <img key={idx} src={src} className="w-20 h-20 rounded-full border-4 border-orange-400 shadow-lg object-cover" />
                         ))}
                     </div>
                 </div>
