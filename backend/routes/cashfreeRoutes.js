@@ -43,13 +43,14 @@ router.post("/create-order", async (req, res) => {
       },
       order_meta: {
 
-        return_url: "https://vistafluence.com/login"
+        return_url: `https://vistafluence.com/payment-status?order_id=${orderId}`
+
 
       }
     };
 
     const response = await axios.post(
-      `${BASE_URL}/my-orders`,
+      `${BASE_URL}/orders`,
       payload,
       {
         headers: {
