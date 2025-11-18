@@ -4,22 +4,17 @@ const axios = require('axios');
 const Order = require('../models/Order');
 require('dotenv').config();
 
-// 1. Environment Variables Setup
 const APP_ID = process.env.CASHFREE_APP_ID;
 const SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
-const WEBHOOK_SECRET = process.env.CASHFREE_WEBHOOK_SECRET; // Webhook के लिए आवश्यक
+const WEBHOOK_SECRET = process.env.CASHFREE_WEBHOOK_SECRET; 
 
 const BASE_URL =
   process.env.CASHFREE_ENV === "PROD"
     ? "https://api.cashfree.com/pg" // Production API
     : "https://sandbox.cashfree.com/pg"; // Sandbox API
 
-
-// --- CREATE ORDER ENDPOINT ---
-// यह एंडपॉइंट Payment Session ID (PSI) जेनरेट करता है जिसे फ्रंटएंड Cashfree SDK को पास करता है।
 router.post("/create-order", async (req, res) => {
   try {
-    // सुनिश्चित करें कि आपका फ्रंटएंड ये विवरण भेजता है:
     const { 
         amount, 
         userId, 
@@ -38,16 +33,16 @@ router.post("/create-order", async (req, res) => {
 
     const payload = {
       order_id: orderId,
-      order_amount: amount, // ध्यान दें: यह Cashfree API के संस्करण पर निर्भर करता है कि यह Rupee या Paise में राशि चाहता है।
+      order_amount: amount, 
       order_currency: "INR",
       customer_details: {
         customer_id: userId,
-        // ⚠️ Production में डिफ़ॉल्ट मानों का उपयोग न करें
+    
         customer_email: customerEmail || "default@example.com", 
-        customer_phone: customerPhone || "9999999999", // 10-digit number is required
+        customer_phone: customerPhone || "9999999999", 
       },
       order_meta: {
-        // यह return_url Cashfree द्वारा order_id के साथ रिप्लेस किया जाएगा
+
         return_url: "https://vistafluence.netlify.app/payment-success?order_id={order_id}"
       }
     };
@@ -87,20 +82,12 @@ router.post("/create-order", async (req, res) => {
   }
 });
 
-// --- CASHFREE WEBHOOK ENDPOINT (सुरक्षित और अनुशंसित तरीका) ---
-// यह एंडपॉइंट Cashfree से सर्वर-टू-सर्वर कॉल प्राप्त करता है।
+
 router.post("/webhook", express.json({ type: 'application/json' }), async (req, res) => {
-    // ⚠️ सुरक्षा: Webhook Signature Verification लागू करें
-    
-    // Webhook Secret Verification (Cashfree Docs से आवश्यक)
-    // यहाँ Cashfree की लाइब्रेरी (जैसे cashfree-pg-node-sdk) का उपयोग करके
-    // `x-webhook-signature` हेडर को सत्यापित किया जाना चाहिए।
-    // यहाँ एक सरलीकृत लॉजिक है, लेकिन **Production** में, आपको Crypto मॉड्यूल का उपयोग करके
-    // या SDK का उपयोग करके HMAC सत्यापन लागू करना चाहिए।
 
     if (!WEBHOOK_SECRET) {
         console.warn("WEBHOOK_SECRET is missing. Skipping verification.");
-        // Production में, आपको यहाँ 500 भेजना चाहिए
+        
     }
 
     const event = req.body;
@@ -109,7 +96,7 @@ router.post("/webhook", express.json({ type: 'application/json' }), async (req, 
 
     try {
         if (orderStatus === "PAID") {
-            // ✅ Payment Successful: यूजर को सदस्यता प्रदान करें
+    
             await Order.findOneAndUpdate(
                 { orderId: orderId },
                 { status: "succeeded", paymentId: event.data.order.order_id },
@@ -124,19 +111,14 @@ router.post("/webhook", express.json({ type: 'application/json' }), async (req, 
             );
              console.log(`Order ${orderId} failed.`);
         }
-
-        // Cashfree को स्वीकार करने के लिए 200 OK प्रतिक्रिया दें
         res.status(200).send("Webhook received successfully.");
 
     } catch (error) {
         console.error("Webhook Processing Error:", error);
-        // यदि डेटाबेस अपडेट विफल हो जाता है, तब भी Cashfree को 200 भेजें ताकि वह री-ट्रिगर न करे
         res.status(200).send("Error processing webhook but acknowledged.");
     }
 });
 
-
-// --- GET ORDERS ENDPOINT (जैसा था, ठीक है) ---
 router.get('/orders/:userId', async (req, res) => {
   try {
       const { userId } = req.params;
@@ -146,8 +128,5 @@ router.get('/orders/:userId', async (req, res) => {
       res.status(500).send("Error fetching orders: " + error.message);
   }
 });
-
-// ⚠️ हटा दिया गया: क्लाइंट-साइड सत्यापन असुरक्षित है और Webhook द्वारा प्रतिस्थापित किया गया है।
-// router.post("/verify", ... ) 
 
 module.exports = router;
