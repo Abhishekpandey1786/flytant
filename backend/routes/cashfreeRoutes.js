@@ -1,27 +1,23 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const Order = require('../models/Order'); // Order Model
+const Order = require('../models/Order');
 require('dotenv').config();
 
 const APP_ID = process.env.CASHFREE_APP_ID;
 const SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
 
-// BASE URL ENVIRONMENT KE HISAB SE
 const BASE_URL =
   process.env.CASHFREE_ENV === "PROD"
     ? "https://api.cashfree.com/pg"
     : "https://sandbox.cashfree.com/pg";
 
 
-// ----------------------------
-// 1. Create Order (Hosted Checkout Link)
-// ----------------------------
+// CREATE ORDER
 router.post("/create-order", async (req, res) => {
   try {
     const { amount, userId, planName } = req.body;
 
-    // Order ID (unique)
     const orderId = "ORDER_" + Date.now();
 
     const payload = {
@@ -38,7 +34,6 @@ router.post("/create-order", async (req, res) => {
       }
     };
 
-    // API Request to Cashfree
     const response = await axios.post(
       `${BASE_URL}/orders`,
       payload,
@@ -46,15 +41,14 @@ router.post("/create-order", async (req, res) => {
         headers: {
           "x-client-id": APP_ID,
           "x-client-secret": SECRET_KEY,
+          "x-api-version": "2023-08-01",
           "Content-Type": "application/json"
         }
       }
     );
 
-    // Hosted Checkout Payment Link
     const paymentLink = response.data.payment_link;
 
-    // SAVE to Database
     await Order.create({
       userId,
       planName,
@@ -66,16 +60,13 @@ router.post("/create-order", async (req, res) => {
     res.status(200).json({ payment_link: paymentLink });
 
   } catch (error) {
-    console.log(error.response?.data || error);
+    console.log("Cashfree Error:", error.response?.data || error);
     res.status(500).json({ message: "Order creation failed" });
   }
 });
 
 
-
-// ----------------------------
-// 2. Payment Verification (Webhook Recommended)
-// ----------------------------
+// VERIFY PAYMENT
 router.post("/verify", async (req, res) => {
   try {
     const { orderId } = req.body;
@@ -85,7 +76,8 @@ router.post("/verify", async (req, res) => {
       {
         headers: {
           "x-client-id": APP_ID,
-          "x-client-secret": SECRET_KEY
+          "x-client-secret": SECRET_KEY,
+          "x-api-version": "2023-08-01"
         }
       }
     );
@@ -108,16 +100,13 @@ router.post("/verify", async (req, res) => {
     res.status(400).json({ message: "Payment Failed" });
 
   } catch (error) {
-    console.log(error.response?.data || error);
+    console.log("Verify Error:", error.response?.data || error);
     res.status(500).json({ message: "Verification failed" });
   }
 });
 
 
-
-// ----------------------------
-// 3. Get Orders (User Dashboard)
-// ----------------------------
+// GET ORDERS
 router.get('/orders/:userId', async (req, res) => {
   try {
       const { userId } = req.params;
@@ -127,6 +116,5 @@ router.get('/orders/:userId', async (req, res) => {
       res.status(500).send("Error fetching orders: " + error.message);
   }
 });
-
 
 module.exports = router;
