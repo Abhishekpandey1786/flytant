@@ -1,39 +1,18 @@
-// models/Order.js
-
-const mongoose = require('mongoose');
-
 const OrderSchema = new mongoose.Schema({
-    userId: {
-        type: String,
-        required: true
-    },
-    planName: {
-        type: String,
-        required: true
-    },
-    amount: {
-        type: Number,
-        required: true
-    },
-    orderId: {
-        type: String,
-        required: true,
-        unique: true
-    },
-    paymentId: {
-        type: String,
-        unique: true,
-        sparse: true
-    }, // Razorpay ka payment ID
-    status: {
-        type: String,
-        enum: ['pending', 'succeeded', 'failed'],
-        default: 'pending'
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-});
+    userId: String,
+    planName: String,
+    amount: Number,
+    orderId: String,
+    cfOrderId: String,
 
-module.exports = mongoose.model('Order', OrderSchema);
+    status: { type: String, default: "pending" },
+
+    // Payment details
+    paymentId: String,
+    paymentMethod: String,
+    paymentAmount: Number,
+    paymentCurrency: String,
+    paymentTime: String,
+    bankReference: String,
+
+}, { timestamps: true });
