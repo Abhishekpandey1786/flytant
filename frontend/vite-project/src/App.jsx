@@ -28,6 +28,7 @@ import AdminLogin from "./assets/AdminLogin.jsx";
 import AdminDashboard from "./assets/AdminDashboard.jsx";
 import UserNotifications from "./assets/UserNotifications.jsx";
 import MyOrders from "./assets/MyOrders.jsx";
+import PaymentSuccess from "./assets/PaymentSuccess.jsx";
 function App() {
   return (
     <BrowserRouter>
@@ -65,6 +66,7 @@ function App() {
               <Route path="/SubscriptionPlans" element={<SubscriptionPlans />}/>
               <Route path="/UserNotifications" element={<UserNotifications />}/>
               <Route path="/my-orders" element={<MyOrders />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/chats" element={<Chats />} />
             </Route>
           </Routes>
