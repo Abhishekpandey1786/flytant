@@ -1,9 +1,9 @@
 import React, { useState, useContext } from "react";
 import axios from "axios";
-// useNavigate is no longer needed since Cashfree handles redirection
+import { load } from "@cashfreepayments/cashfree-js"; // ✅ NEW CASHFREE V3 SDK
 import { AuthContext } from "./AuthContext";
 
-// इमेज इम्पोर्ट
+// Images
 import p1 from "./image/p1.webp";
 import p2 from "./image/p2.webp";
 import p3 from "./image/p3.webp";
@@ -13,7 +13,7 @@ import p6 from "./image/p6.webp";
 import p7 from "./image/p7.webp";
 import p8 from "./image/p8.webp";
 
-// प्लान डेटा
+// Plans
 const plans = [
     { name: "Basic", title: "Billed Monthly", price: 3, oldPrice: 4, discount: "Get 20% Off" },
     { name: "Standard", title: "Billed Monthly", price: 5, oldPrice: 7, discount: "Get 30% Off" },
@@ -23,7 +23,7 @@ const plans = [
 
 const influencers = [p1, p2, p3, p4, p5, p6, p7, p8];
 
-// CSS Spinner Component (सिर्फ UI के लिए)
+// Spinner animation
 const Spinner = () => (
     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -31,142 +31,107 @@ const Spinner = () => (
     </svg>
 );
 
-// ------------------------------------------------------------------
-// 💳 Cashfree Checkout Component
-// ------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
+// 💳 FINAL WORKING CASHFREE V3 CHECKOUT COMPONENT
+// ---------------------------------------------------------------------------------------------
 function CashfreeCheckoutForm({ selectedPlan }) {
     const [loading, setLoading] = useState(false);
     const { user } = useContext(AuthContext);
 
     const handlePayment = async () => {
-        // 1. उपयोगकर्ता की जाँच
         if (!user || !user._id) {
-            alert("🔒 कृपया भुगतान करने के लिए लॉग इन करें।");
+            alert("Please login to continue payment.");
             return;
         }
 
         setLoading(true);
 
-        // 2. ग्राहक विवरण (Customer Details) को सुनिश्चित करें
-        // सुनिश्चित करें कि आप 'user' ऑब्जेक्ट में वास्तविक डेटा डाल रहे हैं।
         const customerDetails = {
-            customerName: user.name || "Test Customer",
-            customerEmail: user.email || "test@example.com", // production में वास्तविक ईमेल आवश्यक है
-            customerPhone: user.phone || "9999999999", // production में 10-अंक का वैध नंबर आवश्यक है
+            customerName: user.name || "User",
+            customerEmail: user.email || "test@gmail.com",
+            customerPhone: user.phone || "9999999999",
         };
-        
-        // 💡 DEBBUGING LOG: API को भेजा जा रहा डेटा
-        console.log("🚀 Attempting to create order with details:", {
-            amount: selectedPlan.price,
-            userId: user._id,
-            planName: selectedPlan.name,
-            ...customerDetails
-        });
 
         try {
-            // 3. बैकएंड से Payment Session ID (PSI) प्राप्त करें
+            // STEP 1 → Get Payment Session from backend
             const { data } = await axios.post(
                 "https://vistafluence.onrender.com/api/cashfree/create-order",
                 {
                     amount: selectedPlan.price,
                     userId: user._id,
                     planName: selectedPlan.name,
-                    ...customerDetails
+                    ...customerDetails,
                 }
             );
 
-            const { payment_session_id } = data;
+            const sessionId = data.payment_session_id;
 
-            if (!payment_session_id) {
-                // 💡 DEBBUGING LOG: यदि बैकएंड ने PSI नहीं भेजा
-                console.error("❌ API Success, but payment_session_id is missing.", data);
-                alert("Payment setup failed. Missing session ID from server.");
+            if (!sessionId) {
+                alert("Payment session ID missing!");
                 setLoading(false);
                 return;
             }
-            
-            // 💡 DEBBUGING LOG: PSI प्राप्त हुआ
-            console.log("✅ Payment Session ID received:", payment_session_id);
 
-            // 4. Cashfree SDK का उपयोग करके Checkout शुरू करें
-            const cashfree = window.Cashfree;
+            console.log("SESSION:", sessionId);
 
-            if (!cashfree) {
-                // यह तभी होगा जब index.html में स्क्रिप्ट लोड नहीं हुई हो।
-                throw new Error("Cashfree SDK not loaded. Please check index.html."); 
-            }
+            // STEP 2 → Load Cashfree V3 SDK
+            const cashfree = await load({
+                mode: "production", // sandbox/testing → "sandbox"
+            });
 
-            const checkoutOptions = {
-                paymentSessionId: payment_session_id,
-            };
-
-            // Cashfree Checkout शुरू
-            cashfree.checkout(checkoutOptions)
-                .catch(sdkError => {
-                    // 💡 DEBBUGING LOG: SDK विफल हुआ
-                    console.error("❌ Cashfree SDK Checkout Error:", sdkError);
-                    alert("Payment failed during checkout setup.");
-                    setLoading(false);
-                });
-
-            // नोट: लोडिंग को यहां FALSE न करें। यह तभी बंद होगा जब Cashfree का रीडायरेक्ट हो जाएगा।
+            // STEP 3 → Start Checkout
+            await cashfree.checkout({
+                paymentSessionId: sessionId,
+                redirectTarget: "_self",
+            });
 
         } catch (error) {
-            // 5. API कॉल त्रुटियाँ
-            const errorMessage = error.response?.data?.message || error.message;
-            // 💡 DEBBUGING LOG: API कॉल विफल हुई
-            console.error("❌ API Call Failed:", error.response?.data || error);
-            alert(`⚠️ Payment Failed: ${errorMessage}`);
+            console.error("API ERROR:", error);
+            alert("Payment failed! Check console.");
             setLoading(false);
         }
     };
 
     return (
-        <div className="mt-6 space-y-4">
-            <button
-                onClick={handlePayment}
-                disabled={loading}
-                className="relative w-full mt-4 py-3 rounded-xl font-semibold bg-fuchsia-700 text-white shadow-lg hover:shadow-fuchsia-800/50 flex items-center justify-center transition-opacity disabled:opacity-75"
-            >
-                {loading && <Spinner />}
-                {loading ? "Processing..." : `Buy Now - ₹${selectedPlan.price}`}
-            </button>
-        </div>
+        <button
+            onClick={handlePayment}
+            disabled={loading}
+            className="w-full mt-4 py-3 rounded-xl font-semibold bg-fuchsia-700 text-white shadow-lg flex items-center justify-center disabled:opacity-75"
+        >
+            {loading && <Spinner />}
+            {loading ? "Processing..." : `Buy Now - ₹${selectedPlan.price}`}
+        </button>
     );
 }
 
-// ------------------------------------------------------------------
-// 📊 Subscription Plans Main Component
-// ------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------
+// 🌟 MAIN PLANS PAGE
+// ---------------------------------------------------------------------------------------------
 export default function SubscriptionPlans() {
     const [selectedPlan, setSelectedPlan] = useState(plans[0]);
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 px-4 sm:px-6 py-10">
             <div className="max-w-6xl mx-auto">
-                <div className="items-center mb-10">
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-4 text-center drop-shadow-lg">
-                        Subscription Plans
-                    </h2>
-                    <p className="text-gray-400 mb-8 sm:mb-12 md:mb-16 text-center max-w-2xl mx-auto px-2">
-                        Choose the plan that best fits your needs and unlock new opportunities
-                        for sponsorships & collaborations 🚀
-                    </p>
-                </div>
+
+                <h2 className="text-3xl font-extrabold text-white text-center mb-6">
+                    Subscription Plans
+                </h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {plans.map((plan) => (
                         <div
                             key={plan.name}
                             onClick={() => setSelectedPlan(plan)}
-                            className={`relative rounded-2xl p-6 cursor-pointer border transition transform hover:-translate-y-1 ${
-                                selectedPlan.name === plan.name
-                                    ? "bg-slate-900 text-white shadow-xl border-2 border-fuchsia-800"
-                                    : "bg-slate-900 text-white shadow-lg border border-gray-700"
-                            }`}
+                            className={`relative rounded-2xl p-6 cursor-pointer transition border
+                                ${
+                                    selectedPlan.name === plan.name
+                                        ? "bg-slate-900 text-white border-fuchsia-700 border-2 shadow-xl"
+                                        : "bg-slate-900 text-white border-gray-700 shadow-lg"
+                                }`}
                         >
-                            <div className="flex justify-between items-center">
-                                <h3 className="font-medium text-base sm:text-lg">{plan.name}</h3>
+                            <div className="flex justify-between">
+                                <h3 className="font-medium text-lg">{plan.name}</h3>
                                 <input
                                     type="radio"
                                     checked={selectedPlan.name === plan.name}
@@ -176,21 +141,12 @@ export default function SubscriptionPlans() {
                             </div>
 
                             <div className="mt-4 flex items-baseline">
-                                <span className="text-2xl sm:text-3xl font-bold text-white">
-                                    ₹{plan.price}
-                                </span>
-                                {plan.oldPrice && (
-                                    <span className="line-through ml-3 text-gray-500 text-sm sm:text-base">
-                                        ₹{plan.oldPrice}
-                                    </span>
-                                )}
+                                <span className="text-3xl font-bold">₹{plan.price}</span>
+                                <span className="line-through ml-3 text-gray-500">₹{plan.oldPrice}</span>
                             </div>
 
-                            {plan.discount && (
-                                <p className="mt-2 text-sm font-medium text-white">{plan.discount}</p>
-                            )}
+                            <p className="mt-2 text-sm text-fuchsia-300">{plan.discount}</p>
 
-                            {/* Buy Button Component */}
                             {selectedPlan.name === plan.name && (
                                 <CashfreeCheckoutForm selectedPlan={selectedPlan} />
                             )}
@@ -198,21 +154,20 @@ export default function SubscriptionPlans() {
                     ))}
                 </div>
 
-                <div className="mt-20 sm:mt-28 w-full text-center">
-                    <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-8 sm:mb-12 text-white drop-shadow-lg">
-                        100K+ Influencers already taking the advantages
-                    </h3>
-                    <div className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-10">
+                <div className="mt-16 text-center">
+                    <h3 className="text-3xl font-bold mb-8 text-white">100K+ Influencers Already Taking The Benefits</h3>
+
+                    <div className="flex flex-wrap justify-center gap-6">
                         {influencers.map((src, idx) => (
-                            <div
+                            <img
                                 key={idx}
-                                className="w-16 h-16 sm:w-20 sm:h-20 md:w-28 md:h-28 rounded-full border-4 border-orange-400 overflow-hidden shadow-lg hover:scale-110 transition transform"
-                            >
-                                <img src={src} alt={`influencer-${idx}`} className="w-full h-full object-cover" />
-                            </div>
+                                src={src}
+                                className="w-20 h-20 rounded-full border-4 border-orange-400 shadow-lg object-cover"
+                            />
                         ))}
                     </div>
                 </div>
+
             </div>
         </div>
     );
