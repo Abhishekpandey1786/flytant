@@ -20,13 +20,11 @@ const OrderSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-
-    // ❗️ FIX: paymentId should NOT be unique (webhook retry may cause duplicate)
     paymentId: {
         type: String,
-        default: null
-    },
-
+        unique: true,
+        sparse: true
+    }, // Razorpay ka payment ID
     status: {
         type: String,
         enum: ['pending', 'succeeded', 'failed'],
