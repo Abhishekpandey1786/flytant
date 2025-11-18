@@ -1,6 +1,6 @@
 import React, { useState, useContext } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+// useNavigate is no longer needed since Cashfree handles redirection
 import { AuthContext } from "./AuthContext";
 
 // इमेज इम्पोर्ट
@@ -36,7 +36,7 @@ const Spinner = () => (
 // ------------------------------------------------------------------
 function CashfreeCheckoutForm({ selectedPlan }) {
     const [loading, setLoading] = useState(false);
-    const { user } = useContext(AuthContext); // useNavigate अब आवश्यक नहीं है क्योंकि Cashfree रीडायरेक्ट संभालता है
+    const { user } = useContext(AuthContext);
 
     const handlePayment = async () => {
         // 1. उपयोगकर्ता की जाँच
@@ -48,12 +48,20 @@ function CashfreeCheckoutForm({ selectedPlan }) {
         setLoading(true);
 
         // 2. ग्राहक विवरण (Customer Details) को सुनिश्चित करें
-        // Production में, सुनिश्चित करें कि user ऑब्जेक्ट में ये फ़ील्ड्स मौजूद हैं
+        // सुनिश्चित करें कि आप 'user' ऑब्जेक्ट में वास्तविक डेटा डाल रहे हैं।
         const customerDetails = {
             customerName: user.name || "Test Customer",
-            customerEmail: user.email || "test@example.com",
-            customerPhone: user.phone || "9999999999", // 10-अंक का वैध नंबर चाहिए!
+            customerEmail: user.email || "test@example.com", // production में वास्तविक ईमेल आवश्यक है
+            customerPhone: user.phone || "9999999999", // production में 10-अंक का वैध नंबर आवश्यक है
         };
+        
+        // 💡 DEBBUGING LOG: API को भेजा जा रहा डेटा
+        console.log("🚀 Attempting to create order with details:", {
+            amount: selectedPlan.price,
+            userId: user._id,
+            planName: selectedPlan.name,
+            ...customerDetails
+        });
 
         try {
             // 3. बैकएंड से Payment Session ID (PSI) प्राप्त करें
@@ -63,34 +71,40 @@ function CashfreeCheckoutForm({ selectedPlan }) {
                     amount: selectedPlan.price,
                     userId: user._id,
                     planName: selectedPlan.name,
-                    ...customerDetails // customer details को payload में जोड़ें
+                    ...customerDetails
                 }
             );
 
             const { payment_session_id } = data;
 
             if (!payment_session_id) {
+                // 💡 DEBBUGING LOG: यदि बैकएंड ने PSI नहीं भेजा
+                console.error("❌ API Success, but payment_session_id is missing.", data);
                 alert("Payment setup failed. Missing session ID from server.");
                 setLoading(false);
                 return;
             }
             
+            // 💡 DEBBUGING LOG: PSI प्राप्त हुआ
+            console.log("✅ Payment Session ID received:", payment_session_id);
+
             // 4. Cashfree SDK का उपयोग करके Checkout शुरू करें
             const cashfree = window.Cashfree;
 
             if (!cashfree) {
+                // यह तभी होगा जब index.html में स्क्रिप्ट लोड नहीं हुई हो।
                 throw new Error("Cashfree SDK not loaded. Please check index.html."); 
             }
 
             const checkoutOptions = {
-                paymentSessionId: payment_session_id, // <--- Key Fix: PSI का उपयोग करें
+                paymentSessionId: payment_session_id,
             };
 
             // Cashfree Checkout शुरू
             cashfree.checkout(checkoutOptions)
                 .catch(sdkError => {
-                    // SDK-संबंधित त्रुटियों को यहाँ संभालें
-                    console.error("Cashfree SDK Checkout Error:", sdkError);
+                    // 💡 DEBBUGING LOG: SDK विफल हुआ
+                    console.error("❌ Cashfree SDK Checkout Error:", sdkError);
                     alert("Payment failed during checkout setup.");
                     setLoading(false);
                 });
@@ -100,7 +114,8 @@ function CashfreeCheckoutForm({ selectedPlan }) {
         } catch (error) {
             // 5. API कॉल त्रुटियाँ
             const errorMessage = error.response?.data?.message || error.message;
-            console.error("API Error:", error.response?.data || error);
+            // 💡 DEBBUGING LOG: API कॉल विफल हुई
+            console.error("❌ API Call Failed:", error.response?.data || error);
             alert(`⚠️ Payment Failed: ${errorMessage}`);
             setLoading(false);
         }
