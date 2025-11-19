@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const Campaign = require('../models/Campaign');
+const User = require('../models/User');
 const auth = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
 const { Readable } = require('stream');
@@ -29,6 +30,7 @@ const uploadToCloudinary = (buffer, folder = 'campaign_images') => {
         else reject(error);
       }
     );
+
     const readable = new Readable();
     readable._read = () => {};
     readable.push(buffer);
@@ -37,7 +39,9 @@ const uploadToCloudinary = (buffer, folder = 'campaign_images') => {
   });
 };
 
-// Create campaign
+/* ============================================================
+   CREATE CAMPAIGN (Advertiser Only)
+============================================================ */
 router.post('/', auth, roleMiddleware("advertiser"), upload.single('image'), async (req, res) => {
   try {
     const { name, description, budget, platforms, requiredNiche, cta, endDate } = req.body;
@@ -62,13 +66,16 @@ router.post('/', auth, roleMiddleware("advertiser"), upload.single('image'), asy
 
     const campaign = await newCampaign.save();
     res.status(201).json(campaign);
+
   } catch (error) {
     console.error("Error creating campaign:", error.message);
     res.status(500).send('Server Error');
   }
 });
 
-// Get all public campaigns
+/* ============================================================
+   GET ALL PUBLIC CAMPAIGNS
+============================================================ */
 router.get('/public', async (req, res) => {
   try {
     const campaigns = await Campaign.find()
@@ -77,26 +84,47 @@ router.get('/public', async (req, res) => {
       .sort({ createdAt: -1 });
 
     res.json(campaigns);
+
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
   }
 });
 
-// Apply to a campaign
+/* ============================================================
+   APPLY TO A CAMPAIGN (Influencers)
+   — WITH SUBSCRIPTION LIMIT CHECK
+============================================================ */
 router.post('/:campaignId/apply', auth, async (req, res) => {
   try {
-    const campaign = await Campaign.findById(req.params.campaignId);
+    // 1️⃣ User Fetch
+    const user = await User.findById(req.user.id);
 
-    if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
-
-    if (campaign.applicants.some(applicant => applicant.user.toString() === req.user.id)) {
-      return res.status(400).json({ msg: 'You have already applied for this campaign' });
+    // 2️⃣ Subscription Limit Check
+    if (user.subscription.usedApplications >= user.subscription.maxApplications) {
+      return res.status(400).json({
+        msg: `❌ Aapka monthly limit khatam ho chuka hai. Allowed: ${user.subscription.maxApplications}`
+      });
     }
 
+    // 3️⃣ Campaign fetch
+    const campaign = await Campaign.findById(req.params.campaignId);
+    if (!campaign) return res.status(404).json({ msg: 'Campaign not found' });
+
+    // 4️⃣ Already applied check
+    if (campaign.applicants.some(a => a.user.toString() === req.user.id)) {
+      return res.status(400).json({ msg: 'You already applied for this campaign' });
+    }
+
+    // 5️⃣ Add applicant
     campaign.applicants.unshift({ user: req.user.id });
     await campaign.save();
 
+    // 6️⃣ Increase Used Applications Count
+    user.subscription.usedApplications += 1;
+    await user.save();
+
+    // 7️⃣ Return updated campaign
     const updatedCampaign = await Campaign.findById(req.params.campaignId)
       .populate('createdBy', 'name email')
       .populate('applicants.user', 'name email');
