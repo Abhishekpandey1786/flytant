@@ -19,18 +19,7 @@ const BASE_URL =
 // ======================
 router.post("/create-order", async (req, res) => {
   try {
-    const { 
-      amount, 
-      userId, 
-      planName, 
-      customerName, 
-      customerEmail, 
-      customerPhone 
-    } = req.body;
-
-    if (!APP_ID || !SECRET_KEY) {
-      return res.status(500).json({ message: "Cashfree keys not configured." });
-    }
+    const { amount, userId, planName, customerName, customerEmail, customerPhone } = req.body;
 
     if (!amount || !userId || !planName) {
       return res.status(400).json({ message: "Required fields missing." });
@@ -65,13 +54,14 @@ router.post("/create-order", async (req, res) => {
       }
     );
 
-    // Save order as pending
+    // SAVE ORDER
     await Order.create({
       userId,
       planName,
       amount,
       orderId,
-      cfOrderId: response.data.cf_order_id,
+      cfOrderId: orderId,       // Cashfree returns same order_id
+      payment_session_id: response.data.payment_session_id,
       status: "pending"
     });
 
@@ -90,55 +80,54 @@ router.post("/create-order", async (req, res) => {
 });
 
 
+
+
 // ======================
-// WEBHOOK HANDLER
+// RECEIVE WEBHOOK
 // ======================
-router.post("/webhook", express.json({ type: 'application/json' }), async (req, res) => {
+router.post("/webhook", express.json(), async (req, res) => {
 
   const event = req.body;
 
-  // Cashfree Order Details
+  console.log("🔥 WEBHOOK RECEIVED: ", JSON.stringify(event, null, 2));
+
   const orderId = event.data?.order?.order_id;
-  const orderStatus = event.data?.order?.order_status;
+  let orderStatus = event.data?.order?.order_status;
   const paymentId = event.data?.payment?.payment_id;
 
   if (!orderId) {
-    console.log("Invalid webhook: missing orderId");
-    return res.status(200).send("Webhook received");
+    console.log("⚠ Missing order_id in webhook");
+    return res.status(200).send("OK");
   }
+
+  // NORMALIZE STATUS
+  if (orderStatus === "PAID" || orderStatus === "SUCCESS" || orderStatus === "PAYMENT_SUCCESS")
+    orderStatus = "succeeded";
+
+  if (orderStatus === "FAILED" || orderStatus === "USER_DROPPED")
+    orderStatus = "failed";
 
   try {
-    if (orderStatus === "PAID") {
+    await Order.findOneAndUpdate(
+      { orderId },
+      {
+        status: orderStatus,
+        paymentId: paymentId || null
+      },
+      { new: true }
+    );
 
-      await Order.findOneAndUpdate(
-        { orderId },
-        {
-          status: "succeeded",
-          paymentId: paymentId
-        },
-        { new: true }
-      );
+    console.log(`✅ Updated Order: ${orderId} → ${orderStatus}`);
 
-      console.log(`✅ PAYMENT SUCCESS: Order ${orderId} updated.`);
-    } 
-    
-    else if (orderStatus === "FAILED" || orderStatus === "USER_DROPPED") {
-
-      await Order.findOneAndUpdate(
-        { orderId },
-        { status: "failed" }
-      );
-
-      console.log(`❌ PAYMENT FAILED: Order ${orderId}`);
-    }
-
-    return res.status(200).send("Webhook received successfully.");
+    return res.status(200).send("Webhook received");
 
   } catch (error) {
-    console.error("Webhook Processing Error:", error);
-    return res.status(200).send("Error processing webhook but acknowledged.");
+    console.error("❌ Webhook DB Update Failed:", error);
+    return res.status(200).send("Webhook error, acknowledged");
   }
 });
+
+
 
 
 // ======================
