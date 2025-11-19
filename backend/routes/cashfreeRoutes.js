@@ -23,39 +23,29 @@ router.post("/create-order", async (req, res) => {
       amount, 
       userId, 
       planName, 
-      customerName,       // 👈 यूजर का नाम 
-      customerEmail,      // 👈 यूजर की ईमेल
-      customerPhone       // 👈 यूजर का फ़ोन
+      customerName, 
+      customerEmail, 
+      customerPhone 
     } = req.body;
 
     if (!APP_ID || !SECRET_KEY) {
       return res.status(500).json({ message: "Cashfree keys not configured." });
     }
 
-    if (!amount || !userId || !planName || !customerEmail || !customerPhone) {
-      // 💡 ईमेल/फ़ोन को आवश्यक फ़ील्ड माना गया है
-      return res.status(400).json({ message: "Required fields missing: amount, userId, planName, customerEmail, or customerPhone." });
-    }
-    
-    // 1. राशि को फ्लोटिंग पॉइंट नंबर में बदलना (Amount Fix)
-    const orderAmount = parseFloat(amount); 
-
-    if (isNaN(orderAmount) || orderAmount <= 0) {
-        console.error("❌ Invalid order amount received:", amount);
-        return res.status(400).json({ message: "Invalid order amount provided." });
+    if (!amount || !userId || !planName) {
+      return res.status(400).json({ message: "Required fields missing." });
     }
 
     const orderId = "ORDER_" + Date.now();
 
     const payload = {
       order_id: orderId,
-      order_amount: orderAmount, // ✅ Correct Float Amount
+      order_amount: amount,
       order_currency: "INR",
       customer_details: {
         customer_id: userId,
-        customer_name: customerName || "Guest User", // 👈 नाम का उपयोग 
-        customer_email: customerEmail,               // 👈 ईमेल का उपयोग 
-        customer_phone: customerPhone                // 👈 फ़ोन का उपयोग 
+        customer_email: customerEmail || "default@example.com",
+        customer_phone: customerPhone || "9999999999"
       },
       order_meta: {
         return_url: `https://vistafluence.com/payment-status?order_id=${orderId}`
@@ -75,18 +65,14 @@ router.post("/create-order", async (req, res) => {
       }
     );
 
-    // Save order as pending in your database
+    // Save order as pending
     await Order.create({
       userId,
       planName,
-      amount: orderAmount, // ✅ Correct Float Amount
+      amount,
       orderId,
       cfOrderId: response.data.cf_order_id,
-      status: "pending",
-      // 👈 यूजर की सारी इन्फॉर्मेशन डेटाबेस में सेव करें
-      customerName, 
-      customerEmail, 
-      customerPhone
+      status: "pending"
     });
 
     return res.status(200).json({
@@ -103,21 +89,18 @@ router.post("/create-order", async (req, res) => {
   }
 });
 
-// ---
 
 // ======================
-// WEBHOOK HANDLER (No major changes, ensures correct update)
+// WEBHOOK HANDLER
 // ======================
 router.post("/webhook", express.json({ type: 'application/json' }), async (req, res) => {
-  // **Highly Recommended:** Implement HMAC SHA-256 verification using WEBHOOK_SECRET here.
-  
+
   const event = req.body;
 
   // Cashfree Order Details
   const orderId = event.data?.order?.order_id;
   const orderStatus = event.data?.order?.order_status;
   const paymentId = event.data?.payment?.payment_id;
-  const paymentTime = event.data?.payment?.payment_time; // 👈 पेमेंट टाइम कैप्चर किया जा सकता है
 
   if (!orderId) {
     console.log("Invalid webhook: missing orderId");
@@ -125,16 +108,13 @@ router.post("/webhook", express.json({ type: 'application/json' }), async (req, 
   }
 
   try {
-    console.log(`Webhook Received for Order ${orderId}. Status: ${orderStatus}`);
-    
     if (orderStatus === "PAID") {
 
       await Order.findOneAndUpdate(
         { orderId },
         {
           status: "succeeded",
-          paymentId: paymentId,
-          paymentTime: paymentTime // 👈 DB में अपडेट
+          paymentId: paymentId
         },
         { new: true }
       );
@@ -156,14 +136,13 @@ router.post("/webhook", express.json({ type: 'application/json' }), async (req, 
 
   } catch (error) {
     console.error("Webhook Processing Error:", error);
-    return res.status(200).send("Error processing webhook but acknowledged."); 
+    return res.status(200).send("Error processing webhook but acknowledged.");
   }
 });
 
-// ---
 
 // ======================
-// GET USER ORDERS (No changes needed)
+// GET USER ORDERS
 // ======================
 router.get('/orders/:userId', async (req, res) => {
   try {
