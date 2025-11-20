@@ -8,15 +8,15 @@ export default function MyOrders() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Format the date cleanly
+    // Function to format the date
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
-        return new Date(dateString).toLocaleDateString("en-IN", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
+        return new Date(dateString).toLocaleDateString('en-IN', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
         });
     };
 
@@ -30,6 +30,7 @@ export default function MyOrders() {
         const fetchOrders = async () => {
             try {
                 const response = await axios.get(
+                    // NOTE: Backend must implement Authorization check here
                     `https://vistafluence.onrender.com/api/cashfree/orders/${user._id}`
                 );
                 setOrders(response.data);
@@ -81,7 +82,6 @@ export default function MyOrders() {
                                         {order.planName} Plan
                                     </h3>
 
-                                    {/* Status Badge */}
                                     <span
                                         className={`px-3 py-1 rounded-full text-sm font-medium uppercase tracking-wider
                                             ${
@@ -98,18 +98,17 @@ export default function MyOrders() {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-gray-400">
-
+                                    
                                     {/* Financial Details */}
                                     <p>
                                         <span className="font-semibold text-white">Amount:</span>{" "}
                                         ₹{order.amount}
                                     </p>
-
                                     <p>
                                         <span className="font-semibold text-white">Order ID:</span>{" "}
                                         {order.orderId}
                                     </p>
-
+                                    
                                     {/* Customer Details */}
                                     {order.customerName && (
                                         <p>
@@ -117,14 +116,12 @@ export default function MyOrders() {
                                             {order.customerName}
                                         </p>
                                     )}
-
                                     {order.customerEmail && (
                                         <p>
                                             <span className="font-semibold text-white">Email:</span>{" "}
                                             {order.customerEmail}
                                         </p>
                                     )}
-
                                     {order.customerPhone && (
                                         <p>
                                             <span className="font-semibold text-white">Phone:</span>{" "}
@@ -132,39 +129,24 @@ export default function MyOrders() {
                                         </p>
                                     )}
 
-                                    {/* Cashfree Order ID */}
+                                    {/* Payment IDs and Dates */}
                                     {order.cfOrderId && (
                                         <p className="col-span-1 md:col-span-2">
                                             <span className="font-semibold text-white">Cashfree ID:</span>{" "}
                                             {order.cfOrderId}
                                         </p>
                                     )}
-
-                                    {/* Create & Paid Dates */}
                                     <p>
                                         <span className="font-semibold text-white">Order Created:</span>{" "}
                                         {formatDate(order.createdAt)}
                                     </p>
-
-                                    {order.paidAt && order.status === "succeeded" && (
+                                    {order.paidAt && order.status === 'succeeded' && (
                                         <p>
                                             <span className="font-semibold text-white">Paid On:</span>{" "}
                                             {formatDate(order.paidAt)}
                                         </p>
                                     )}
                                 </div>
-
-                                {/* ⭐ Invoice Download Button */}
-                                {order.status === "succeeded" && (
-                                    <a
-                                        href={`https://vistafluence.onrender.com/pdfs/${order.orderId}.pdf`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="mt-5 inline-block bg-fuchsia-600 hover:bg-fuchsia-700 text-white px-4 py-2 rounded-lg transition"
-                                    >
-                                        Download Invoice
-                                    </a>
-                                )}
                             </div>
                         ))}
                     </div>
