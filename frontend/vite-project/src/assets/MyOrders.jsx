@@ -8,6 +8,18 @@ export default function MyOrders() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Function to format the date
+    const formatDate = (dateString) => {
+        if (!dateString) return "N/A";
+        return new Date(dateString).toLocaleDateString('en-IN', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
     useEffect(() => {
         if (!user || !user._id) {
             setLoading(false);
@@ -18,6 +30,7 @@ export default function MyOrders() {
         const fetchOrders = async () => {
             try {
                 const response = await axios.get(
+                    // NOTE: Backend must implement Authorization check here
                     `https://vistafluence.onrender.com/api/cashfree/orders/${user._id}`
                 );
                 setOrders(response.data);
@@ -62,21 +75,21 @@ export default function MyOrders() {
                         {orders.map((order) => (
                             <div
                                 key={order._id}
-                                className="bg-slate-800 rounded-lg p-6 shadow-lg border border-gray-700"
+                                className="bg-slate-800 rounded-lg p-6 shadow-lg border border-gray-700 hover:border-fuchsia-700 transition duration-300"
                             >
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-xl font-semibold text-white">
-                                        {order.planName}
+                                <div className="flex justify-between items-start mb-4">
+                                    <h3 className="text-2xl font-bold text-fuchsia-400">
+                                        {order.planName} Plan
                                     </h3>
 
                                     <span
-                                        className={`px-3 py-1 rounded-full text-sm font-medium
+                                        className={`px-3 py-1 rounded-full text-sm font-medium uppercase tracking-wider
                                             ${
                                                 order.status === "succeeded"
                                                     ? "bg-green-500 text-white"
                                                     : order.status === "failed"
                                                     ? "bg-red-500 text-white"
-                                                    : "bg-yellow-500 text-white"
+                                                    : "bg-yellow-500 text-slate-900"
                                             }
                                         `}
                                     >
@@ -84,19 +97,55 @@ export default function MyOrders() {
                                     </span>
                                 </div>
 
-                                <div className="text-gray-400 space-y-2">
-                                    <p>
-                                        <span className="font-semibold text-white">Order ID:</span>{" "}
-                                        {order.orderId}
-                                    </p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-gray-400">
+                                    
+                                    {/* Financial Details */}
                                     <p>
                                         <span className="font-semibold text-white">Amount:</span>{" "}
                                         ₹{order.amount}
                                     </p>
                                     <p>
-                                        <span className="font-semibold text-white">Date:</span>{" "}
-                                        {new Date(order.createdAt).toLocaleDateString()}
+                                        <span className="font-semibold text-white">Order ID:</span>{" "}
+                                        {order.orderId}
                                     </p>
+                                    
+                                    {/* Customer Details */}
+                                    {order.customerName && (
+                                        <p>
+                                            <span className="font-semibold text-white">Name:</span>{" "}
+                                            {order.customerName}
+                                        </p>
+                                    )}
+                                    {order.customerEmail && (
+                                        <p>
+                                            <span className="font-semibold text-white">Email:</span>{" "}
+                                            {order.customerEmail}
+                                        </p>
+                                    )}
+                                    {order.customerPhone && (
+                                        <p>
+                                            <span className="font-semibold text-white">Phone:</span>{" "}
+                                            {order.customerPhone}
+                                        </p>
+                                    )}
+
+                                    {/* Payment IDs and Dates */}
+                                    {order.cfOrderId && (
+                                        <p className="col-span-1 md:col-span-2">
+                                            <span className="font-semibold text-white">Cashfree ID:</span>{" "}
+                                            {order.cfOrderId}
+                                        </p>
+                                    )}
+                                    <p>
+                                        <span className="font-semibold text-white">Order Created:</span>{" "}
+                                        {formatDate(order.createdAt)}
+                                    </p>
+                                    {order.paidAt && order.status === 'succeeded' && (
+                                        <p>
+                                            <span className="font-semibold text-white">Paid On:</span>{" "}
+                                            {formatDate(order.paidAt)}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         ))}
