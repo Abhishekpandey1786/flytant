@@ -1,47 +1,18 @@
 const mongoose = require('mongoose');
 
 const OrderSchema = new mongoose.Schema({
-    userId: {
-        type: String,
-        required: true
-    },
+    userId: { type: String, required: true },
+    planName: { type: String, required: true },
+    amount: { type: Number, required: true },
 
-    customerName: {
-        type: String
-    },
+    orderId: { type: String, required: true, unique: true },
+    cfOrderId: { type: String },
 
-    customerEmail: {
-        type: String
-    },
+    paymentId: { type: String, unique: true, sparse: true },
 
-    customerPhone: {
-        type: String
-    },
-
-    planName: {
-        type: String,
-        required: true
-    },
-
-    amount: {
-        type: Number,
-        required: true
-    },
-
-    orderId: {
-        type: String,
-        required: true,
-        unique: true
-    },
-
-    cfOrderId: {
-        type: String
-    },
-
-    paymentId: {
-        type: String,
-        sparse: true
-    },
+    customerName: { type: String },
+    customerEmail: { type: String },
+    customerPhone: { type: String },
 
     status: {
         type: String,
@@ -49,18 +20,11 @@ const OrderSchema = new mongoose.Schema({
         default: 'pending'
     },
 
-    invoiceUrl: {
-        type: String // /pdfs/orderid.pdf
-    },
+    paidAt: { type: Date },
 
-    paidAt: {
-        type: Date // payment hone ki exact date/time
-    },
+    invoiceUrl: { type: String },
 
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
+    createdAt: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model('Order', OrderSchema);
