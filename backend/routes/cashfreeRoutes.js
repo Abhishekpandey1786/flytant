@@ -13,82 +13,84 @@ const BASE_URL =
     ? "https://api.cashfree.com/pg"
     : "https://sandbox.cashfree.com/pg";
 
-
-// ======================
-// CREATE ORDER
-// ======================
 router.post("/create-order", async (req, res) => {
-  try {
-    const { 
-      amount, 
-      userId, 
-      planName, 
-      customerName, 
-      customerEmail, 
-      customerPhone 
-    } = req.body;
+  try {
+    const { 
+      amount, 
+      userId, 
+      planName, 
+      customerName, 
+      customerEmail, 
+      customerPhone 
+    } = req.body;
 
-    if (!APP_ID || !SECRET_KEY) {
-      return res.status(500).json({ message: "Cashfree keys not configured." });
-    }
+    if (!APP_ID || !SECRET_KEY) {
+      return res.status(500).json({ message: "Cashfree keys not configured." });
+  	}
 
-    if (!amount || !userId || !planName) {
-      return res.status(400).json({ message: "Required fields missing." });
-    }
+    // customerEmail is required in your updated Schema
+    if (!amount || !userId || !planName || !customerEmail) { 
+      return res.status(400).json({ message: "Required fields missing." });
+    }
 
-    const orderId = "ORDER_" + Date.now();
+    const orderId = "ORDER_" + Date.now();
 
-    const payload = {
-      order_id: orderId,
-      order_amount: amount,
-      order_currency: "INR",
-      customer_details: {
-        customer_id: userId,
-        customer_email: customerEmail || "default@example.com",
-        customer_phone: customerPhone || "9999999999"
-      },
-      order_meta: {
-        return_url: `https://vistafluence.com/payment-status?order_id=${orderId}`
-      }
-    };
+    // 1. Payload for Cashfree (Correctly uses all customer details)
+    const payload = {
+      order_id: orderId,
+      order_amount: amount,
+      order_currency: "INR",
+      customer_details: {
+        customer_id: userId,
+        // Note: Since customerEmail is required in schema now, we can remove || 'default@...' fallback here
+        customer_email: customerEmail, 
+        customer_phone: customerPhone || "9999999999"
+      },
+      order_meta: {
+        return_url: `https://vistafluence.com/payment-status?order_id=${orderId}`
+      }
+    };
 
-    const response = await axios.post(
-      `${BASE_URL}/orders`,
-      payload,
-      {
-        headers: {
-          "x-client-id": APP_ID,
-          "x-client-secret": SECRET_KEY,
-          "x-api-version": "2023-08-01",
-          "Content-Type": "application/json"
-        }
-      }
-    );
+    const response = await axios.post(
+      `${BASE_URL}/orders`,
+      payload,
+      {
+        headers: {
+          "x-client-id": APP_ID,
+          "x-client-secret": SECRET_KEY,
+          "x-api-version": "2023-08-01",
+          "Content-Type": "application/json"
+        }
+      }
+    );
 
-    // Save order as pending
-    await Order.create({
-      userId,
-      planName,
-      amount,
-      orderId,
-      cfOrderId: response.data.cf_order_id,
-      status: "pending"
-    });
+    // 2. Database Save (UPDATED to include customer details)
+    await Order.create({
+      userId,
+      planName,
+      amount,
+      orderId,
+      cfOrderId: response.data.cf_order_id,
+      status: "pending",
+        // Naye fields jod diye gaye hain
+      customerName,
+      customerEmail,
+      customerPhone
+    });
 
-    return res.status(200).json({
-      order_id: orderId,
-      payment_session_id: response.data.payment_session_id
-    });
+    return res.status(200).json({
+      order_id: orderId,
+      payment_session_id: response.data.payment_session_id
+    });
 
-  } catch (error) {
-    console.error("❌ Cashfree Order Creation Failed:", error.response?.data || error.message);
-    return res.status(500).json({
-      message: "Order creation failed",
-      details: error.response?.data || error.message
-    });
-  }
+  } catch (error) {
+    console.error("❌ Cashfree Order Creation Failed:", error.response?.data || error.message);
+    return res.status(500).json({
+      message: "Order creation failed",
+      details: error.response?.data || error.message
+    });
+  }
 });
-
 
 // ======================
 // WEBHOOK HANDLER
