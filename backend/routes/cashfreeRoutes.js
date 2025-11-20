@@ -93,53 +93,64 @@ router.post("/create-order", async (req, res) => {
 // ======================
 // WEBHOOK HANDLER
 // ======================
-router.post("/webhook", express.json({ type: 'application/json' }), async (req, res) => {
-
-  const event = req.body;
-
-  // Cashfree Order Details
-  const orderId = event.data?.order?.order_id;
-  const orderStatus = event.data?.order?.order_status;
-  const paymentId = event.data?.payment?.payment_id;
-
-  if (!orderId) {
-    console.log("Invalid webhook: missing orderId");
-    return res.status(200).send("Webhook received");
-  }
-
+router.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
   try {
-    if (orderStatus === "PAID") {
+    const signature = req.headers["x-webhook-signature"];
 
+    if (!signature) {
+      console.log("❌ Missing signature");
+      return res.status(400).send("Missing signature");
+    }
+
+    // Convert raw buffer to string
+    const payload = req.body.toString("utf8");
+
+    // Calculate signature
+    const expectedSignature = crypto
+      .createHmac("sha256", WEBHOOK_SECRET)
+      .update(payload)
+      .digest("hex");
+
+    if (signature !== expectedSignature) {
+      console.log("❌ Invalid signature, webhook rejected");
+      return res.status(400).send("Invalid signature");
+    }
+
+    // Parse JSON manually (because express.raw is used)
+    const event = JSON.parse(payload);
+
+    const orderId = event.data?.order?.order_id;
+    const orderStatus = event.data?.order?.order_status;
+    const paymentId = event.data?.payment?.payment_id;
+
+    if (!orderId) {
+      console.log("❌ Invalid webhook: missing orderId");
+      return res.status(200).send("Webhook received");
+    }
+
+    if (orderStatus === "PAID") {
       await Order.findOneAndUpdate(
         { orderId },
-        {
-          status: "succeeded",
-          paymentId: paymentId
-        },
+        { status: "succeeded", paymentId },
         { new: true }
       );
-
-      console.log(`✅ PAYMENT SUCCESS: Order ${orderId} updated.`);
+      console.log(`✅ PAYMENT SUCCESS: Order ${orderId}`);
     } 
-    
     else if (orderStatus === "FAILED" || orderStatus === "USER_DROPPED") {
-
       await Order.findOneAndUpdate(
         { orderId },
         { status: "failed" }
       );
-
       console.log(`❌ PAYMENT FAILED: Order ${orderId}`);
     }
 
-    return res.status(200).send("Webhook received successfully.");
+    return res.status(200).send("Webhook processed");
 
   } catch (error) {
-    console.error("Webhook Processing Error:", error);
-    return res.status(200).send("Error processing webhook but acknowledged.");
+    console.error("Webhook error:", error);
+    return res.status(500).send("Webhook error");
   }
 });
-
 
 // ======================
 // GET USER ORDERS
