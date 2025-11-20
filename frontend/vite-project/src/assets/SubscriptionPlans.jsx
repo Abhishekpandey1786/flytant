@@ -2,7 +2,10 @@ import React, { useState, useContext } from "react";
 import axios from "axios";
 import { load } from "@cashfreepayments/cashfree-js";
 import { AuthContext } from "./AuthContext";
+// NOTE: Use useNavigate for better UX (Make sure react-router-dom is installed)
+// import { useNavigate } from "react-router-dom"; 
 
+// --- Image Imports (Keep existing) ---
 import p1 from "./image/p1.webp";
 import p2 from "./image/p2.webp";
 import p3 from "./image/p3.webp";
@@ -32,12 +35,18 @@ const Spinner = () => (
 function CashfreeCheckoutForm({ selectedPlan }) {
     const [loading, setLoading] = useState(false);
     const { user } = useContext(AuthContext);
+    // const navigate = useNavigate(); // Uncomment if using React Router
 
     const handlePayment = async () => {
+        // 1. Login Check (Better UX implementation)
         if (!user || !user._id) {
-            alert("Please login first");
+            alert("Please login first"); // Replace with navigate('/login') for production
+            // navigate('/login');
             return;
         }
+
+        // 2. Duplicate Click Prevention
+        if (loading) return; 
 
         setLoading(true);
 
@@ -67,15 +76,23 @@ function CashfreeCheckoutForm({ selectedPlan }) {
             const cashfree = await load({ mode: "production" });
 
             // 3️⃣ Start payment
+            // NOTE: This call will typically cause a page redirect or a popup.
+            // If the transaction is completed, the user will be redirected to the return_url.
             await cashfree.checkout({
                 paymentSessionId: data.payment_session_id,
-                redirectTarget: "_self",
+                redirectTarget: "_self", 
             });
+
+            // If the checkout method successfully launched the payment window/redirected,
+            // we don't reset loading here because the page state is about to change.
+            // If the payment flow is aborted/dropped by the user without redirecting, 
+            // the 'catch' block should handle resetting 'loading'.
 
         } catch (err) {
             console.log("PAYMENT ERROR:", err);
-            alert("Payment failed!");
-            setLoading(false);
+            // Cashfree errors often come here if the SDK launch fails
+            alert("Payment failed! Please try again.");
+            setLoading(false); // Reset loading state on failure
         }
     };
 
