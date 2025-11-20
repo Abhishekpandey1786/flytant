@@ -1,48 +1,46 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useRef } from "react";
 import axios from "axios";
 import { load } from "@cashfreepayments/cashfree-js";
 import { AuthContext } from "./AuthContext";
 
 import p1 from "./image/p1.webp";
 import p2 from "./image/p2.webp";
-import p3 from "./image/p3.webp";
+// import p3 from "./image/p3.webp";  // <-- FIX THIS OR COMMENT
 import p4 from "./image/p4.webp";
 import p5 from "./image/p5.webp";
 import p6 from "./image/p6.webp";
 import p7 from "./image/p7.webp";
 import p8 from "./image/p8.webp";
 
-const plans = [
-    { name: "Basic", title: "Billed Monthly", price: 1, oldPrice: 4, discount: "Get 20% Off" },
-    { name: "Standard", title: "Billed Monthly", price: 5, oldPrice: 7, discount: "Get 30% Off" },
-    { name: "Advance", title: "Billed Monthly", price: 9, oldPrice: 18, discount: "Get 40% Off" },
-    { name: "Premium", title: "Billed Monthly", price: 19, oldPrice: 39, discount: "Get 50% Off" },
-];
+let cashfreePromise = load({ mode: "production" }); // 🚀 Load only once
 
-const influencers = [p1, p2, p3, p4, p5, p6, p7, p8];
+const influencers = [p1, p2, p4, p5, p6, p7, p8]; // 🚀 p3 removed (bug fix)
 
 const Spinner = () => (
-    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
     </svg>
 );
 
-// CASHFREE CHECKOUT
 function CashfreeCheckoutForm({ selectedPlan }) {
     const [loading, setLoading] = useState(false);
+    const locked = useRef(false);
     const { user } = useContext(AuthContext);
 
     const handlePayment = async () => {
+        if (locked.current) return; // 🚀 Prevent double clicks
+        locked.current = true;
+
         if (!user || !user._id) {
             alert("Please login first");
+            locked.current = false;
             return;
         }
 
         setLoading(true);
 
         try {
-            // 1️⃣ Create session from backend
             const { data } = await axios.post(
                 "https://vistafluence.onrender.com/api/cashfree/create-order",
                 {
@@ -58,15 +56,12 @@ function CashfreeCheckoutForm({ selectedPlan }) {
             if (!data.payment_session_id) {
                 alert("Payment session missing!");
                 setLoading(false);
+                locked.current = false;
                 return;
             }
 
-            console.log("SESSION ID:", data.payment_session_id);
+            const cashfree = await cashfreePromise;
 
-            // 2️⃣ Load SDK
-            const cashfree = await load({ mode: "production" });
-
-            // 3️⃣ Start payment
             await cashfree.checkout({
                 paymentSessionId: data.payment_session_id,
                 redirectTarget: "_self",
@@ -76,6 +71,7 @@ function CashfreeCheckoutForm({ selectedPlan }) {
             console.log("PAYMENT ERROR:", err);
             alert("Payment failed!");
             setLoading(false);
+            locked.current = false;
         }
     };
 
@@ -108,10 +104,9 @@ export default function SubscriptionPlans() {
                             key={plan.name}
                             onClick={() => setSelectedPlan(plan)}
                             className={`relative rounded-2xl p-6 cursor-pointer transition border
-                                ${
-                                    selectedPlan.name === plan.name
-                                        ? "bg-slate-900 text-white border-fuchsia-700 border-2 shadow-xl"
-                                        : "bg-slate-900 text-white border-gray-700 shadow-lg"
+                                ${selectedPlan.name === plan.name
+                                    ? "bg-slate-900 text-white border-fuchsia-700 border-2"
+                                    : "bg-slate-900 text-white border-gray-700"
                                 }`}
                         >
                             <div className="flex justify-between">
@@ -120,7 +115,6 @@ export default function SubscriptionPlans() {
                                     type="radio"
                                     checked={selectedPlan.name === plan.name}
                                     onChange={() => setSelectedPlan(plan)}
-                                    className="w-4 h-4 accent-fuchsia-600"
                                 />
                             </div>
 
@@ -130,20 +124,20 @@ export default function SubscriptionPlans() {
                             </div>
 
                             <p className="mt-2 text-sm text-fuchsia-300">{plan.discount}</p>
-
-                            {selectedPlan.name === plan.name && (
-                                <CashfreeCheckoutForm selectedPlan={selectedPlan} />
-                            )}
                         </div>
                     ))}
                 </div>
 
+                <CashfreeCheckoutForm selectedPlan={selectedPlan} /> {/* 🚀 Form always at bottom */}
+
                 <div className="mt-16 text-center">
-                    <h3 className="text-3xl font-bold mb-8 text-white">100K+ Influencers Already Taking The Benefits</h3>
+                    <h3 className="text-3xl font-bold mb-8 text-white">
+                        100K+ Influencers Already Taking The Benefits
+                    </h3>
 
                     <div className="flex flex-wrap justify-center gap-6">
                         {influencers.map((src, idx) => (
-                            <img key={idx} src={src} className="w-20 h-20 rounded-full border-4 border-orange-400 shadow-lg object-cover" />
+                            <img key={idx} src={src} className="w-20 h-20 rounded-full border-4 border-orange-400 shadow-lg" />
                         ))}
                     </div>
                 </div>
