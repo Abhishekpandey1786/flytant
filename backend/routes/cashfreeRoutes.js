@@ -111,46 +111,50 @@ router.post(
 
       const event = JSON.parse(payload);
       const orderId = event.data.order.order_id;
-      const orderStatus = event.data.order.order_status;
       const paymentId = event.data.payment?.payment_id;
+      const orderStatus = event.data.order.order_status;
 
       let updatedOrder = await Order.findOne({ orderId });
+      if (!updatedOrder) return res.status(404).send("Order not found");
 
-      if (!updatedOrder) return res.status(200).send("Order not found");
-
+      // ================
+      // Payment Success
+      // ================
       if (orderStatus === "PAID") {
+
         updatedOrder.status = "succeeded";
         updatedOrder.paymentId = paymentId;
         updatedOrder.paidAt = new Date();
         await updatedOrder.save();
 
-        // ----------------------------
-        // 1️⃣ GENERATE PDF INVOICE
-        // ----------------------------
+        // -----------------------
+        // Generate PDF
+        // -----------------------
+        const PDFDocument = require("pdfkit");
+        const fs = require("fs");
+        const path = require("path");
+
         const pdfPath = path.join(__dirname, `../pdfs/${orderId}.pdf`);
         const doc = new PDFDocument();
         doc.pipe(fs.createWriteStream(pdfPath));
 
         doc.fontSize(22).text("Payment Invoice", { align: "center" });
         doc.moveDown();
-
         doc.fontSize(14).text(`Order ID: ${orderId}`);
         doc.text(`Payment ID: ${paymentId}`);
-        doc.text(`Amount: ₹${updatedOrder.amount}`);
+        doc.text(`Amount: ₹${event.data.order.order_amount}`);
         doc.text(`Plan: ${updatedOrder.planName}`);
-        doc.text(`Customer: ${updatedOrder.customerName}`);
-        doc.text(`Email: ${updatedOrder.customerEmail}`);
-        doc.text(`Phone: ${updatedOrder.customerPhone}`);
         doc.text(`Status: SUCCESS`);
-        doc.text(`Date: ${updatedOrder.paidAt.toLocaleString()}`);
-
+        doc.text(`Date: ${new Date().toLocaleString()}`);
         doc.end();
 
         updatedOrder.invoiceUrl = `/pdfs/${orderId}.pdf`;
         await updatedOrder.save();
 
-        // ----------------------------
-        // 2️⃣ SEND EMAIL WITH INVO
+        // -----------------------
+        // Email Invoice
+        // -----------------------
+        const nodemailer = require("nodemailer");
         const transporter = nodemailer.createTransport({
           service: "gmail",
           auth: {
@@ -162,39 +166,28 @@ router.post(
         await transporter.sendMail({
           from: process.env.MAIL_ID,
           to: updatedOrder.customerEmail,
-          subject: "Payment Successful - Receipt",
+          subject: "Payment Successful - Invoice",
           html: `
             <h2>Payment Successful</h2>
-            <p>Thank you, ${updatedOrder.customerName}!</p>
             <p><b>Order ID:</b> ${orderId}</p>
             <p><b>Plan:</b> ${updatedOrder.planName}</p>
             <p><b>Amount:</b> ₹${updatedOrder.amount}</p>
-            <p><b>Date:</b> ${updatedOrder.paidAt.toLocaleString()}</p>
             <p>Your invoice is attached.</p>
           `,
-          attachments: [
-            {
-              filename: `${orderId}.pdf`,
-              path: pdfPath
-            }
-          ]
+          attachments: [{ filename: `${orderId}.pdf`, path: pdfPath }]
         });
 
-        console.log("📤 Invoice Email Sent!");
-
-      } else {
-        updatedOrder.status = "failed";
-        await updatedOrder.save();
+        console.log("📄 Invoice generated & mailed");
       }
 
       return res.status(200).send("Webhook Processed");
-
     } catch (error) {
       console.error("Webhook Error:", error);
       return res.status(500).send("Webhook error");
     }
   }
 );
+
 
 
 // ======================
