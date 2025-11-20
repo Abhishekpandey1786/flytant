@@ -270,5 +270,35 @@ router.get('/orders/:userId',  async (req, res) => {
     return res.status(500).send("Error fetching orders: " + error.message);
   }
 });
+// ======================================
+// NEW ROUTE: DOWNLOAD INVOICE PDF
+// ======================================
+router.get('/download-invoice/:orderId', async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const pdfDir = path.join(__dirname, `../pdfs`);
+        const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
+
+        
+        if (!fs.existsSync(pdfPath)) {
+           
+            return res.status(404).json({ message: "Invoice not found. File may not exist on server or was deleted." });
+        }
+        
+        res.download(pdfPath, `${orderId}_invoice.pdf`, (err) => {
+            if (err) {
+                console.error("Error sending PDF:", err);
+                if (!res.headersSent) {
+                    return res.status(500).send("Error downloading file.");
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error("Error in download-invoice route:", error);
+        return res.status(500).send("Server error during file download.");
+    }
+});
+
 
 module.exports = router;
