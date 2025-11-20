@@ -1,4 +1,4 @@
-import React, { useState, useContext, useRef } from "react";
+import React, { useState, useContext } from "react";
 import axios from "axios";
 import { load } from "@cashfreepayments/cashfree-js";
 import { AuthContext } from "./AuthContext";
@@ -28,24 +28,21 @@ const Spinner = () => (
     </svg>
 );
 
-function CashfreeCheckoutButton({ selectedPlan }) {
+// CASHFREE CHECKOUT
+function CashfreeCheckoutForm({ selectedPlan }) {
     const [loading, setLoading] = useState(false);
-    const lock = useRef(false); // prevent double click
     const { user } = useContext(AuthContext);
 
     const handlePayment = async () => {
-        if (lock.current) return; // 🔥 double trigger lock
-        lock.current = true;
-
         if (!user || !user._id) {
             alert("Please login first");
-            lock.current = false;
             return;
         }
 
         setLoading(true);
 
         try {
+            // 1️⃣ Create session from backend
             const { data } = await axios.post(
                 "https://vistafluence.onrender.com/api/cashfree/create-order",
                 {
@@ -61,12 +58,15 @@ function CashfreeCheckoutButton({ selectedPlan }) {
             if (!data.payment_session_id) {
                 alert("Payment session missing!");
                 setLoading(false);
-                lock.current = false;
                 return;
             }
 
+            console.log("SESSION ID:", data.payment_session_id);
+
+            // 2️⃣ Load SDK
             const cashfree = await load({ mode: "production" });
 
+            // 3️⃣ Start payment
             await cashfree.checkout({
                 paymentSessionId: data.payment_session_id,
                 redirectTarget: "_self",
@@ -76,7 +76,6 @@ function CashfreeCheckoutButton({ selectedPlan }) {
             console.log("PAYMENT ERROR:", err);
             alert("Payment failed!");
             setLoading(false);
-            lock.current = false;
         }
     };
 
@@ -133,16 +132,14 @@ export default function SubscriptionPlans() {
                             <p className="mt-2 text-sm text-fuchsia-300">{plan.discount}</p>
 
                             {selectedPlan.name === plan.name && (
-                                <CashfreeCheckoutButton selectedPlan={selectedPlan} />
+                                <CashfreeCheckoutForm selectedPlan={selectedPlan} />
                             )}
                         </div>
                     ))}
                 </div>
 
                 <div className="mt-16 text-center">
-                    <h3 className="text-3xl font-bold mb-8 text-white">
-                        100K+ Influencers Already Taking The Benefits
-                    </h3>
+                    <h3 className="text-3xl font-bold mb-8 text-white">100K+ Influencers Already Taking The Benefits</h3>
 
                     <div className="flex flex-wrap justify-center gap-6">
                         {influencers.map((src, idx) => (
