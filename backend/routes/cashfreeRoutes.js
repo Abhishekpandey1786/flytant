@@ -2,6 +2,12 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const Order = require('../models/Order');
+const crypto = require("crypto");
+const PDFDocument = require("pdfkit");
+const fs = require("fs");
+const path = require("path");
+const nodemailer = require("nodemailer");
+
 require('dotenv').config();
 
 const APP_ID = process.env.CASHFREE_APP_ID;
@@ -19,21 +25,10 @@ const BASE_URL =
 // ======================
 router.post("/create-order", async (req, res) => {
   try {
-    const { 
-      amount, 
-      userId, 
-      planName, 
-      customerName, 
-      customerEmail, 
-      customerPhone 
-    } = req.body;
+    const { amount, userId, planName, customerName, customerEmail, customerPhone } = req.body;
 
     if (!APP_ID || !SECRET_KEY) {
       return res.status(500).json({ message: "Cashfree keys not configured." });
-    }
-
-    if (!amount || !userId || !planName) {
-      return res.status(400).json({ message: "Required fields missing." });
     }
 
     const orderId = "ORDER_" + Date.now();
@@ -44,8 +39,8 @@ router.post("/create-order", async (req, res) => {
       order_currency: "INR",
       customer_details: {
         customer_id: userId,
-        customer_email: customerEmail || "default@example.com",
-        customer_phone: customerPhone || "9999999999"
+        customer_email: customerEmail,
+        customer_phone: customerPhone
       },
       order_meta: {
         return_url: `https://vistafluence.com/payment-status?order_id=${orderId}`
@@ -65,12 +60,14 @@ router.post("/create-order", async (req, res) => {
       }
     );
 
-    // Save order as pending
     await Order.create({
       userId,
       planName,
       amount,
       orderId,
+      customerName,
+      customerEmail,
+      customerPhone,
       cfOrderId: response.data.cf_order_id,
       status: "pending"
     });
@@ -81,7 +78,6 @@ router.post("/create-order", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Cashfree Order Creation Failed:", error.response?.data || error.message);
     return res.status(500).json({
       message: "Order creation failed",
       details: error.response?.data || error.message
@@ -93,81 +89,126 @@ router.post("/create-order", async (req, res) => {
 // ======================
 // WEBHOOK HANDLER
 // ======================
-router.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
-  try {
-    const signature = req.headers["x-webhook-signature"];
+router.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    try {
+      const signature = req.headers["x-webhook-signature"];
+      if (!signature) return res.status(400).send("Missing signature");
 
-    if (!signature) {
-      console.log("❌ Missing signature");
-      return res.status(400).send("Missing signature");
+      const payload = req.body.toString("utf8");
+
+      const expectedSignature = crypto
+        .createHmac("sha256", WEBHOOK_SECRET)
+        .update(payload)
+        .digest("base64");
+
+      if (signature !== expectedSignature) {
+        console.log("❌ Signature mismatch");
+        return res.status(400).send("Invalid signature");
+      }
+
+      const event = JSON.parse(payload);
+      const orderId = event.data.order.order_id;
+      const orderStatus = event.data.order.order_status;
+      const paymentId = event.data.payment?.payment_id;
+
+      let updatedOrder = await Order.findOne({ orderId });
+
+      if (!updatedOrder) return res.status(200).send("Order not found");
+
+      if (orderStatus === "PAID") {
+        updatedOrder.status = "succeeded";
+        updatedOrder.paymentId = paymentId;
+        updatedOrder.paidAt = new Date();
+        await updatedOrder.save();
+
+        // ----------------------------
+        // 1️⃣ GENERATE PDF INVOICE
+        // ----------------------------
+        const pdfPath = path.join(__dirname, `../pdfs/${orderId}.pdf`);
+        const doc = new PDFDocument();
+        doc.pipe(fs.createWriteStream(pdfPath));
+
+        doc.fontSize(22).text("Payment Invoice", { align: "center" });
+        doc.moveDown();
+
+        doc.fontSize(14).text(`Order ID: ${orderId}`);
+        doc.text(`Payment ID: ${paymentId}`);
+        doc.text(`Amount: ₹${updatedOrder.amount}`);
+        doc.text(`Plan: ${updatedOrder.planName}`);
+        doc.text(`Customer: ${updatedOrder.customerName}`);
+        doc.text(`Email: ${updatedOrder.customerEmail}`);
+        doc.text(`Phone: ${updatedOrder.customerPhone}`);
+        doc.text(`Status: SUCCESS`);
+        doc.text(`Date: ${updatedOrder.paidAt.toLocaleString()}`);
+
+        doc.end();
+
+        updatedOrder.invoiceUrl = `/pdfs/${orderId}.pdf`;
+        await updatedOrder.save();
+
+        // ----------------------------
+        // 2️⃣ SEND EMAIL WITH INVO
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+            user: process.env.MAIL_ID,
+            pass: process.env.MAIL_PASS
+          }
+        });
+
+        await transporter.sendMail({
+          from: process.env.MAIL_ID,
+          to: updatedOrder.customerEmail,
+          subject: "Payment Successful - Receipt",
+          html: `
+            <h2>Payment Successful</h2>
+            <p>Thank you, ${updatedOrder.customerName}!</p>
+            <p><b>Order ID:</b> ${orderId}</p>
+            <p><b>Plan:</b> ${updatedOrder.planName}</p>
+            <p><b>Amount:</b> ₹${updatedOrder.amount}</p>
+            <p><b>Date:</b> ${updatedOrder.paidAt.toLocaleString()}</p>
+            <p>Your invoice is attached.</p>
+          `,
+          attachments: [
+            {
+              filename: `${orderId}.pdf`,
+              path: pdfPath
+            }
+          ]
+        });
+
+        console.log("📤 Invoice Email Sent!");
+
+      } else {
+        updatedOrder.status = "failed";
+        await updatedOrder.save();
+      }
+
+      return res.status(200).send("Webhook Processed");
+
+    } catch (error) {
+      console.error("Webhook Error:", error);
+      return res.status(500).send("Webhook error");
     }
-
-    // Convert raw buffer to string
-    const payload = req.body.toString("utf8");
-
-    // Calculate signature
-    const expectedSignature = crypto
-      .createHmac("sha256", WEBHOOK_SECRET)
-      .update(payload)
-      .digest("hex");
-
-    if (signature !== expectedSignature) {
-      console.log("❌ Invalid signature, webhook rejected");
-      return res.status(400).send("Invalid signature");
-    }
-
-    // Parse JSON manually (because express.raw is used)
-    const event = JSON.parse(payload);
-
-    const orderId = event.data?.order?.order_id;
-    const orderStatus = event.data?.order?.order_status;
-    const paymentId = event.data?.payment?.payment_id;
-
-    if (!orderId) {
-      console.log("❌ Invalid webhook: missing orderId");
-      return res.status(200).send("Webhook received");
-    }
-
-    if (orderStatus === "PAID") {
-      await Order.findOneAndUpdate(
-        { orderId },
-        { status: "succeeded", paymentId },
-        { new: true }
-      );
-      console.log(`✅ PAYMENT SUCCESS: Order ${orderId}`);
-    } 
-    else if (orderStatus === "FAILED" || orderStatus === "USER_DROPPED") {
-      await Order.findOneAndUpdate(
-        { orderId },
-        { status: "failed" }
-      );
-      console.log(`❌ PAYMENT FAILED: Order ${orderId}`);
-    }
-
-    return res.status(200).send("Webhook processed");
-
-  } catch (error) {
-    console.error("Webhook error:", error);
-    return res.status(500).send("Webhook error");
   }
-});
+);
+
 
 // ======================
 // GET USER ORDERS
 // ======================
 router.get('/orders/:userId', async (req, res) => {
   try {
-    const { userId } = req.params;
-
-    const orders = await Order.find({ userId })
+    const orders = await Order.find({ userId: req.params.userId })
       .sort({ createdAt: -1 });
 
     return res.status(200).json(orders);
-
   } catch (error) {
     return res.status(500).send("Error fetching orders: " + error.message);
   }
 });
-
 
 module.exports = router;
