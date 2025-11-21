@@ -65,7 +65,7 @@ router.post("/create-order", async (req, res) => {
         console.log(`⚠️ Pending order found for user ${userId}. Attempting to reuse Order ID: ${existingPendingOrder.orderId}`);
         
         try {
-            // Cashfree API call to get the latest session ID for the existing order
+            
             const getOrderResponse = await axios.get(
                 `${BASE_URL}/orders/${existingPendingOrder.orderId}`,
                 {
@@ -78,7 +78,7 @@ router.post("/create-order", async (req, res) => {
                 }
             );
 
-            // If the Cashfree order status is ACTIVE, we can reuse the session ID
+          
             if (getOrderResponse.data.order_status === "ACTIVE") {
                 return res.status(200).json({
                     message: "Pending order found. Reusing session ID.",
@@ -86,25 +86,22 @@ router.post("/create-order", async (req, res) => {
                     payment_session_id: getOrderResponse.data.payment_session_id
                 });
             } else {
-                // If Cashfree status is NOT active (e.g., EXPIRED, CANCELLED), 
-                // we update our database status and proceed to create a new one.
+               
                 await Order.updateOne({ _id: existingPendingOrder._id }, { status: "expired" });
                 console.log(`Old Cashfree order status was ${getOrderResponse.data.order_status}. Creating new order.`);
             }
 
         } catch (fetchError) {
             console.warn("Could not fetch or reuse old session ID. Proceeding to create a new order.", fetchError.message);
-            // Ignore error and fall through to creating a new order if fetching fails
+           
         }
     }
-    // 🛑 NEW LOGIC END
-    
-    // Proceed to create a new order only if no usable pending order was found
+  
     const orderId = "ORDER_" + Date.now();
 
     const payload = {
       order_id: orderId,
-      order_amount: amount,
+      order_amount: amount*100,
       order_currency: "INR",
       customer_details: {
         customer_id: userId,
