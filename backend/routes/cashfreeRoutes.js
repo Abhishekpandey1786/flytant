@@ -158,6 +158,10 @@ router.post("/create-order", async (req, res) => {
 // ======================
 // WEBHOOK HANDLER (Main Logic for Status Update, PDF, and Email)
 // ======================
+
+router.get("/webhook", (req, res) => {
+  res.status(200).send("Webhook endpoint is live");
+});
 router.post(
   "/webhook",
   express.raw({ type: "application/json" }),
