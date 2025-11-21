@@ -16,7 +16,7 @@ import p7 from "./image/p7.webp";
 import p8 from "./image/p8.webp";
 
 const plans = [
-    { name: "Basic", title: "Billed Monthly", price: 1, oldPrice: 4, discount: "Get 20% Off" },
+    { name: "Basic", title: "Billed Monthly", price: 100, oldPrice: 4, discount: "Get 20% Off" },
     { name: "Standard", title: "Billed Monthly", price: 5, oldPrice: 7, discount: "Get 30% Off" },
     { name: "Advance", title: "Billed Monthly", price: 9, oldPrice: 18, discount: "Get 40% Off" },
     { name: "Premium", title: "Billed Monthly", price: 19, oldPrice: 39, discount: "Get 50% Off" },
@@ -72,25 +72,17 @@ function CashfreeCheckoutForm({ selectedPlan }) {
 
             console.log("SESSION ID:", data.payment_session_id);
 
-            // 2️⃣ Load SDK
             const cashfree = await load({ mode: "production" });
 
-            // 3️⃣ Start payment
-            // NOTE: This call will typically cause a page redirect or a popup.
-            // If the transaction is completed, the user will be redirected to the return_url.
             await cashfree.checkout({
                 paymentSessionId: data.payment_session_id,
                 redirectTarget: "_self", 
             });
 
-            // If the checkout method successfully launched the payment window/redirected,
-            // we don't reset loading here because the page state is about to change.
-            // If the payment flow is aborted/dropped by the user without redirecting, 
-            // the 'catch' block should handle resetting 'loading'.
-
+          
         } catch (err) {
             console.log("PAYMENT ERROR:", err);
-            // Cashfree errors often come here if the SDK launch fails
+           
             alert("Payment failed! Please try again.");
             setLoading(false); // Reset loading state on failure
         }
