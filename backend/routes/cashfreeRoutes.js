@@ -166,6 +166,8 @@ router.post(
   "/webhook",
   express.raw({ type: "application/json" }),
   async (req, res) => {
+    console.log("🔥 Webhook POST HIT:", req.headers, req.body.toString());
+
     try {
       const signature = req.headers["x-webhook-signature"];
       if (!signature) return res.status(400).send("Missing signature");
