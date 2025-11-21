@@ -131,7 +131,7 @@ export default function SubscriptionPlans() {
                             </div>
 
                             <div className="mt-4 flex items-baseline">
-                                <span className="text-3xl font-bold">₹{plan.price}</span>
+                                <span className="text-3xl font-bold">${plan.price}</span>
                                 <span className="line-through ml-3 text-gray-500">₹{plan.oldPrice}</span>
                             </div>
 
