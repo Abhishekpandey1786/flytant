@@ -2,10 +2,7 @@ import React, { useState, useContext } from "react";
 import axios from "axios";
 import { load } from "@cashfreepayments/cashfree-js";
 import { AuthContext } from "./AuthContext";
-// NOTE: Use useNavigate for better UX (Make sure react-router-dom is installed)
-// import { useNavigate } from "react-router-dom"; 
 
-// --- Image Imports (Keep existing) ---
 import p1 from "./image/p1.webp";
 import p2 from "./image/p2.webp";
 import p3 from "./image/p3.webp";
