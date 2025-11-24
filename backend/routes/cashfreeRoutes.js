@@ -3,8 +3,6 @@ const router = express.Router();
 const axios = require('axios');
 const Order = require('../models/Order');
 const crypto = require("crypto");
-
-// PDF and Email dependencies
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
@@ -12,341 +10,287 @@ const nodemailer = require("nodemailer");
 
 require('dotenv').config();
 
+// CASHFREE CONFIG
 const APP_ID = process.env.CASHFREE_APP_ID;
 const SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
 const WEBHOOK_SECRET = process.env.CASHFREE_WEBHOOK_SECRET;
 
 const BASE_URL =
-  process.env.CASHFREE_ENV === "PROD"
-    ? "https://api.cashfree.com/pg"
-    : "https://sandbox.cashfree.com/pg";
+  process.env.CASHFREE_ENV === "PROD"
+    ? "https://api.cashfree.com/pg"
+    : "https://sandbox.cashfree.com/pg";
 
-// Nodemailer Transporter Setup
+// EMAIL CONFIG
 const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.MAIL_ID,
-    pass: process.env.MAIL_PASS
-  }
+  service: "gmail",
+  auth: {
+    user: process.env.MAIL_ID,
+    pass: process.env.MAIL_PASS
+  }
 });
 
-
-// ======================
-// CREATE ORDER (UPDATED WITH PENDING ORDER CHECK)
-// ======================
+/*
+=========================================================
+CREATE ORDER  (PENDING ORDER REUSE + NEW ORDER)
+=========================================================
+*/
 router.post("/create-order", async (req, res) => {
-  try {
-    const { 
-      amount, 
-      userId, 
-      planName, 
-      customerName, 
-      customerEmail, 
-      customerPhone 
-    } = req.body;
+  try {
+    const {
+      amount,
+      userId,
+      planName,
+      customerName,
+      customerEmail,
+      customerPhone
+    } = req.body;
 
-    if (!APP_ID || !SECRET_KEY) {
-      return res.status(500).json({ message: "Cashfree keys not configured." });
-    }
+    if (!APP_ID || !SECRET_KEY) {
+      return res.status(500).json({ message: "Cashfree keys missing" });
+    }
 
-    // customerEmail is essential for payment gateway and invoice
-    if (!amount || !userId || !planName || !customerEmail) {
-      return res.status(400).json({ message: "Required fields missing." });
-    }
+    if (!amount || !userId || !planName || !customerEmail) {
+      return res.status(400).json({ message: "Required fields missing" });
+    }
 
-    // 🛑 NEW LOGIC START: Check for an existing pending order for this user and plan
-    const existingPendingOrder = await Order.findOne({
-        userId: userId,
-        planName: planName,
-        status: "pending" 
+    // 🔥 CHECK EXISTING PENDING ORDER
+    const existingPending = await Order.findOne({
+      userId,
+      planName,
+      status: "pending"
     });
 
-    if (existingPendingOrder) {
-        console.log(`⚠️ Pending order found for user ${userId}. Attempting to reuse Order ID: ${existingPendingOrder.orderId}`);
-        
-        try {
-            
-            const getOrderResponse = await axios.get(
-                `${BASE_URL}/orders/${existingPendingOrder.orderId}`,
-                {
-                    headers: {
-                        "x-client-id": APP_ID,
-                        "x-client-secret": SECRET_KEY,
-                        "x-api-version": "2023-08-01",
-                        "Content-Type": "application/json"
-                    }
-                }
-            );
+    if (existingPending) {
+      try {
+        const checkRes = await axios.get(
+          `${BASE_URL}/orders/${existingPending.orderId}`,
+          {
+            headers: {
+              "x-client-id": APP_ID,
+              "x-client-secret": SECRET_KEY,
+              "x-api-version": "2023-08-01",
+            },
+          }
+        );
 
-          
-            if (getOrderResponse.data.order_status === "ACTIVE") {
-                return res.status(200).json({
-                    message: "Pending order found. Reusing session ID.",
-                    order_id: existingPendingOrder.orderId,
-                    payment_session_id: getOrderResponse.data.payment_session_id
-                });
-            } else {
-               
-                await Order.updateOne({ _id: existingPendingOrder._id }, { status: "expired" });
-                console.log(`Old Cashfree order status was ${getOrderResponse.data.order_status}. Creating new order.`);
-            }
-
-        } catch (fetchError) {
-            console.warn("Could not fetch or reuse old session ID. Proceeding to create a new order.", fetchError.message);
-           
+        if (checkRes.data.order_status === "ACTIVE") {
+          return res.status(200).json({
+            order_id: existingPending.orderId,
+            payment_session_id: checkRes.data.payment_session_id
+          });
         }
+
+        await Order.updateOne(
+          { _id: existingPending._id },
+          { status: "expired" }
+        );
+      } catch (err) {
+        console.log("Failed to reuse old order, creating new…");
+      }
     }
-  
-    const orderId = "ORDER_" + Date.now();
 
-    const payload = {
-      order_id: orderId,
-      order_amount: amount,
-      order_currency: "INR",
-      customer_details: {
-        customer_id: userId,
-        customer_email: customerEmail, // Using actual email as required
-        customer_phone: customerPhone || "9999999999"
-      },
-      order_meta: {
-        // User payment ke baad is URL par wapas aayega
-        return_url: `https://vistafluence.com/payment-status?order_id=${orderId}`
-      }
-    };
+    // 🔥 NEW ORDER
+    const orderId = "ORDER_" + Date.now();
 
-    const response = await axios.post(
-      `${BASE_URL}/orders`,
-      payload,
-      {
-        headers: {
-          "x-client-id": APP_ID,
-          "x-client-secret": SECRET_KEY,
-          "x-api-version": "2023-08-01",
-          "Content-Type": "application/json"
-        }
-      }
-    );
+    const payload = {
+      order_id: orderId,
+      order_amount: amount,
+      order_currency: "INR",
+      customer_details: {
+        customer_id: userId,
+        customer_email: customerEmail,
+        customer_phone: customerPhone || "9999999999",
+      },
+      order_meta: {
+        return_url: `https://vistafluence.com/payment-status?order_id=${orderId}`,
+      },
+    };
 
-    // Save new order as pending
-    await Order.create({
-      userId,
-      planName,
-      amount,
-      orderId,
-      cfOrderId: response.data.cf_order_id,
-      status: "pending",
-      customerName,
-      customerEmail,
-      customerPhone
-    });
+    const cfRes = await axios.post(
+      `${BASE_URL}/orders`,
+      payload,
+      {
+        headers: {
+          "x-client-id": APP_ID,
+          "x-client-secret": SECRET_KEY,
+          "x-api-version": "2023-08-01",
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    return res.status(200).json({
-      order_id: orderId,
-      payment_session_id: response.data.payment_session_id
-    });
+    await Order.create({
+      userId,
+      planName,
+      amount,
+      orderId,
+      cfOrderId: cfRes.data.cf_order_id,
+      status: "pending",
+      customerName,
+      customerEmail,
+      customerPhone
+    });
 
-  } catch (error) {
-    console.error("❌ Cashfree Order Creation Failed:", error.response?.data || error.message);
-    return res.status(500).json({
-      message: "Order creation failed",
-      details: error.response?.data || error.message
-    });
-  }
+    return res.status(200).json({
+      order_id: orderId,
+      payment_session_id: cfRes.data.payment_session_id
+    });
+
+  } catch (err) {
+    console.error("Order creation error:", err.response?.data || err.message);
+    return res.status(500).json({
+      message: "Order creation failed",
+      error: err.response?.data || err.message
+    });
+  }
 });
 
 
-// ======================
-// WEBHOOK HANDLER (Main Logic for Status Update, PDF, and Email)
-// ======================
 
+/*
+=========================================================
+CASHFREE WEBHOOK  (RAW BODY + SIGNATURE VERIFY)
+=========================================================
+*/
 router.get("/webhook", (req, res) => {
-  res.status(200).send("Webhook endpoint is live");
+  res.status(200).send("Webhook active");
 });
+
 router.post(
-  "/webhook",
-  express.raw({ type: "application/json" }),
-  async (req, res) => {
-    console.log("🔥 Webhook POST HIT:", req.headers, req.body.toString());
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
 
-    try {
-      const signature = req.headers["x-webhook-signature"];
-      if (!signature) return res.status(400).send("Missing signature");
+    try {
+      const signature = req.headers["x-webhook-signature"];
+      if (!signature) return res.status(400).send("Missing signature");
 
-      const payload = req.body.toString("utf8");
+      const rawPayload = req.body; // buffer
+      const expectedSignature = crypto
+        .createHmac("sha256", WEBHOOK_SECRET)
+        .update(rawPayload)
+        .digest("base64");
 
-      // Calculate signature using HMAC-SHA256 (Cashfree often uses hex, but base64 is sometimes used)
-      const expectedSignature = crypto
-        .createHmac("sha256", WEBHOOK_SECRET)
-        .update(payload)
-        .digest("base64"); 
+      if (signature !== expectedSignature) {
+        console.log("❌ Signature mismatch");
+        return res.status(400).send("Invalid signature");
+      }
 
-      if (signature !== expectedSignature) {
-        console.log("❌ Signature mismatch");
-        return res.status(400).send("Invalid signature");
-      }
+      const data = JSON.parse(rawPayload.toString("utf8"));
+      const orderId = data.data.order.order_id;
+      const orderStatus = data.data.order.order_status;
+      const paymentId = data.data.payment?.payment_id;
 
-      const event = JSON.parse(payload);
+      if (orderStatus === "PAID") {
+        const updatedOrder = await Order.findOneAndUpdate(
+          { orderId },
+          {
+            status: "succeeded",
+            paymentId,
+            paidAt: new Date()
+          },
+          { new: true }
+        );
 
-      const orderId = event.data.order.order_id;
-      const orderStatus = event.data.order.order_status;
-      const paymentId = event.data.payment?.payment_id;
+        if (!updatedOrder) {
+          return res.status(404).send("Order not found");
+        }
 
-      let updatedOrder = null;
+        // 🔥 PDF GENERATION
+        const pdfDir = path.join(__dirname, `../pdfs`);
+        if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir);
 
-      if (orderStatus === "PAID") {
-        // 1. Update status and paidAt (Database Update)
-        updatedOrder = await Order.findOneAndUpdate(
-          { orderId },
-          { status: "succeeded", paymentId, paidAt: new Date() },
-          { new: true } // Fetch the updated document
-        );
+        const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
+        const doc = new PDFDocument();
+        doc.pipe(fs.createWriteStream(pdfPath));
 
-        if (!updatedOrder) {
-          console.error(`Order not found for ID: ${orderId}`);
-          return res.status(404).send("Order not found");
-        }
-        
-        // 🛑 IMPORTANT: PDF GENERATION (FIXED LOCATION)
-        // Note: For production, you must use Cloud Storage (like AWS S3) 
-        // instead of the local file system (which is ephemeral on platforms like Render).
-        
-        const pdfDir = path.join(__dirname, `../pdfs`);
-        if (!fs.existsSync(pdfDir)){
-            fs.mkdirSync(pdfDir);
-        }
-        
-        const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
-        const doc = new PDFDocument();
+        doc.fontSize(22).text("Payment Invoice", { align: "center" });
+        doc.moveDown();
 
-        doc.pipe(fs.createWriteStream(pdfPath));
+        doc.fontSize(14).text(`Order ID: ${orderId}`);
+        doc.text(`Cashfree ID: ${updatedOrder.cfOrderId}`);
+        doc.text(`Payment ID: ${paymentId}`);
+        doc.text(`Plan: ${updatedOrder.planName}`);
+        doc.text(`Amount: ₹${updatedOrder.amount}`);
+        doc.text(`Customer: ${updatedOrder.customerName}`);
+        doc.text(`Status: SUCCESS`);
+        doc.text(`Paid At: ${updatedOrder.paidAt.toLocaleString()}`);
 
-        doc.fontSize(22).text("Payment Invoice", { align: "center" });
-        doc.moveDown();
+        doc.end();
+        await new Promise(r => doc.on("end", r));
 
-        doc.fontSize(14).text(`Order ID: ${orderId}`);
-        doc.text(`Cashfree ID: ${updatedOrder.cfOrderId || 'N/A'}`);
-        doc.text(`Payment ID: ${paymentId}`);
-        doc.text(`Plan: ${updatedOrder.planName}`);
-        doc.text(`Amount Paid: ₹${updatedOrder.amount}`);
-        doc.text(`Customer: ${updatedOrder.customerName || 'N/A'}`);
-        doc.text(`Status: SUCCESS`);
-        doc.text(`Date Paid: ${updatedOrder.paidAt.toLocaleString()}`);
+        // 🔥 SEND INVOICE EMAIL
+        await transporter.sendMail({
+          from: process.env.MAIL_ID,
+          to: updatedOrder.customerEmail,
+          subject: `Invoice - ${updatedOrder.planName}`,
+          html: `
+            <h2>Payment Successful</h2>
+            <p>Your payment for <b>${updatedOrder.planName}</b> is successful.</p>
+            <p><b>Order ID:</b> ${orderId}</p>
+            <p><b>Amount:</b> ₹${updatedOrder.amount}</p>
+          `,
+          attachments: [{ filename: `${orderId}.pdf`, path: pdfPath }]
+        });
 
-        doc.end();
+        console.log("Invoice Sent:", orderId);
+      } else {
+        await Order.findOneAndUpdate(
+          { orderId },
+          { status: "failed" }
+        );
+      }
 
-        // 3. Send Email with PDF Attachment
-        await new Promise((resolve) => doc.on('end', resolve)); // Wait for PDF to finish writing
+      return res.status(200).send("OK");
 
-        await transporter.sendMail({
-          from: process.env.MAIL_ID,
-          to: updatedOrder.customerEmail,
-          subject: `Payment Successful - Invoice for ${updatedOrder.planName}`,
-          html: `
-            <h2>Payment Successful</h2>
-            <p>Hello ${updatedOrder.customerName || 'Customer'},</p>
-            <p>Thank you for your purchase. Your payment for the <b>${updatedOrder.planName}</b> plan was successful.</p>
-            <p><b>Order ID:</b> ${orderId}</p>
-            <p><b>Amount Paid:</b> ₹${updatedOrder.amount}</p>
-            <p><b>Date:</b> ${updatedOrder.paidAt.toLocaleString()}</p>
-            <p>Please find the detailed invoice attached below.</p>
-             <p>Regards,<br>Vistafluence Team</p>
-          `,
-          attachments: [
-            {
-              filename: `${orderId}_invoice.pdf`,
-              path: pdfPath
-            }
-          ]
-        });
-        
-        console.log("✅ Payment Success & Invoice Sent:", orderId);
-
-      } else {
-        await Order.findOneAndUpdate(
-          { orderId },
-          { status: "failed" },
-        );
-        console.log("❌ Payment Failed:", orderId);
-      }
-
-      return res.status(200).send("Webhook Processed");
-    } catch (error) {
-      console.error("Webhook Error:", error);
-      // Return 200 even on error, so Cashfree doesn't keep retrying
-      return res.status(200).send("Webhook processing error");
-    }
-  }
+    } catch (err) {
+      console.error("Webhook Error:", err);
+      return res.status(200).send("Webhook processing error");
+    }
+  }
 );
 
-
-// ======================================
-// NEW ROUTE: CHECK STATUS FOR FRONTEND REDIRECTION
-// ======================================
 router.get('/check-status/:orderId', async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    
-    const order = await Order.findOne({ orderId })
-        .select('orderId status amount planName paidAt'); // Only return relevant info
+  try {
+    const { orderId } = req.params;
 
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
+    const order = await Order.findOne({ orderId })
+      .select("orderId status amount planName paidAt");
 
-    // Return the status (succeeded, pending, failed) for the frontend to navigate
-    return res.status(200).json(order);
+    if (!order) return res.status(404).json({ message: "Order not found" });
 
-  } catch (error) {
-    return res.status(500).send("Error fetching order status: " + error.message);
-  }
+    return res.status(200).json(order);
+
+  } catch (err) {
+    return res.status(500).send(err.message);
+  }
 });
 
+router.get('/orders/:userId', async (req, res) => {
+  try {
+    const orders = await Order.find({ userId: req.params.userId })
+      .sort({ createdAt: -1 });
 
-// ======================
-// GET USER ORDERS
-// ======================
-router.get('/orders/:userId',  async (req, res) => { 
-  try {
-    const { userId } = req.params;
-    
-    // SECURITY NOTE: In a real app, ensure req.user.id matches userId here
-    const orders = await Order.find({ userId })
-      .sort({ createdAt: -1 });
+    return res.status(200).json(orders);
 
-    return res.status(200).json(orders);
-
-  } catch (error) {
-    return res.status(500).send("Error fetching orders: " + error.message);
-  }
+  } catch (err) {
+    return res.status(500).send(err.message);
+  }
 });
-// ======================================
-// NEW ROUTE: DOWNLOAD INVOICE PDF
-// ======================================
+
 router.get('/download-invoice/:orderId', async (req, res) => {
-    try {
-        const { orderId } = req.params;
-        const pdfDir = path.join(__dirname, `../pdfs`);
-        const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
+  try {
+    const pdfPath = path.join(__dirname, `../pdfs/${req.params.orderId}.pdf`);
 
-        
-        if (!fs.existsSync(pdfPath)) {
-           
-            return res.status(404).json({ message: "Invoice not found. File may not exist on server or was deleted." });
-        }
-        
-        res.download(pdfPath, `${orderId}_invoice.pdf`, (err) => {
-            if (err) {
-                console.error("Error sending PDF:", err);
-                if (!res.headersSent) {
-                    return res.status(500).send("Error downloading file.");
-                }
-            }
-        });
+    if (!fs.existsSync(pdfPath)) {
+      return res.status(404).json({ message: "Invoice not found" });
+    }
 
-    } catch (error) {
-        console.error("Error in download-invoice route:", error);
-        return res.status(500).send("Server error during file download.");
-    }
+    res.download(pdfPath);
+
+  } catch (err) {
+    return res.status(500).send(err.message);
+  }
 });
 
 
