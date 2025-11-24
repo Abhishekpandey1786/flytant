@@ -13,7 +13,7 @@ import p7 from "./image/p7.webp";
 import p8 from "./image/p8.webp";
 
 const plans = [
-    { name: "Basic", title: "Billed Monthly", price: 3, oldPrice: 4, discount: "Get 20% Off" },
+    { name: "Basic", title: "Billed Monthly", price: 1, oldPrice: 4, discount: "Get 20% Off" },
     { name: "Standard", title: "Billed Monthly", price: 5, oldPrice: 7, discount: "Get 30% Off" },
     { name: "Advance", title: "Billed Monthly", price: 9, oldPrice: 18, discount: "Get 40% Off" },
     { name: "Premium", title: "Billed Monthly", price: 19, oldPrice: 39, discount: "Get 50% Off" },
@@ -131,8 +131,8 @@ export default function SubscriptionPlans() {
                             </div>
 
                             <div className="mt-4 flex items-baseline">
-                                <span className="text-3xl font-bold">${plan.price}</span>
-                                <span className="line-through ml-3 text-gray-500">${plan.oldPrice}</span>
+                                <span className="text-3xl font-bold">{plan.price}</span>
+                                <span className="line-through ml-3 text-gray-500">{plan.oldPrice}</span>
                             </div>
 
                             <p className="mt-2 text-sm text-fuchsia-300">{plan.discount}</p>
