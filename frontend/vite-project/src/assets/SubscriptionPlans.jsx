@@ -22,44 +22,33 @@ const plans = [
 const influencers = [p1, p2, p3, p4, p5, p6, p7, p8];
 
 const Spinner = () => (
-    <svg
-        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-    >
-        <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-        ></circle>
-        <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        ></path>
+    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
     </svg>
 );
 
-// CASHFREE PAYMENT CHECKOUT
+// CASHFREE CHECKOUT
 function CashfreeCheckoutForm({ selectedPlan }) {
     const [loading, setLoading] = useState(false);
     const { user } = useContext(AuthContext);
+    // const navigate = useNavigate(); // Uncomment if using React Router
 
     const handlePayment = async () => {
+        // 1. Login Check (Better UX implementation)
         if (!user || !user._id) {
-            alert("Please login first!");
+            alert("Please login first"); // Replace with navigate('/login') for production
+            // navigate('/login');
             return;
         }
 
-        if (loading) return; // avoid multiple clicks
+        // 2. Duplicate Click Prevention
+        if (loading) return; 
+
         setLoading(true);
 
         try {
-            // 1️⃣ Backend: Create Order + Session
+            // 1️⃣ Create session from backend
             const { data } = await axios.post(
                 "https://vistafluence.onrender.com/api/cashfree/create-order",
                 {
@@ -80,20 +69,19 @@ function CashfreeCheckoutForm({ selectedPlan }) {
 
             console.log("SESSION ID:", data.payment_session_id);
 
-            // 2️⃣ Cashfree SDK Load
-            const cashfree = await load({
-                mode: "production", // sandbox for testing
-            });
+            const cashfree = await load({ mode: "production" });
 
-            // 3️⃣ Open Checkout
             await cashfree.checkout({
                 paymentSessionId: data.payment_session_id,
-                redirectTarget: "_self",
+                redirectTarget: "_self", 
             });
-        } catch (error) {
-            console.log("PAYMENT ERROR:", error);
-            alert("Payment failed! Try again.");
-            setLoading(false);
+
+          
+        } catch (err) {
+            console.log("PAYMENT ERROR:", err);
+           
+            alert("Payment failed! Please try again.");
+            setLoading(false); // Reset loading state on failure
         }
     };
 
@@ -115,6 +103,7 @@ export default function SubscriptionPlans() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 px-4 sm:px-6 py-10">
             <div className="max-w-6xl mx-auto">
+
                 <h2 className="text-3xl font-extrabold text-white text-center mb-6">
                     Subscription Plans
                 </h2>
@@ -143,9 +132,7 @@ export default function SubscriptionPlans() {
 
                             <div className="mt-4 flex items-baseline">
                                 <span className="text-3xl font-bold">{plan.price}</span>
-                                <span className="line-through ml-3 text-gray-500">
-                                    {plan.oldPrice}
-                                </span>
+                                <span className="line-through ml-3 text-gray-500">{plan.oldPrice}</span>
                             </div>
 
                             <p className="mt-2 text-sm text-fuchsia-300">{plan.discount}</p>
@@ -158,20 +145,15 @@ export default function SubscriptionPlans() {
                 </div>
 
                 <div className="mt-16 text-center">
-                    <h3 className="text-3xl font-bold mb-8 text-white">
-                        100K+ Influencers Already Taking The Benefits
-                    </h3>
+                    <h3 className="text-3xl font-bold mb-8 text-white">100K+ Influencers Already Taking The Benefits</h3>
 
                     <div className="flex flex-wrap justify-center gap-6">
                         {influencers.map((src, idx) => (
-                            <img
-                                key={idx}
-                                src={src}
-                                className="w-20 h-20 rounded-full border-4 border-orange-400 shadow-lg object-cover"
-                            />
+                            <img key={idx} src={src} className="w-20 h-20 rounded-full border-4 border-orange-400 shadow-lg object-cover" />
                         ))}
                     </div>
                 </div>
+
             </div>
         </div>
     );
