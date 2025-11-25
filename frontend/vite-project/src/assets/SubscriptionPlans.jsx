@@ -1,6 +1,6 @@
 import React, { useState, useContext } from "react";
 import axios from "axios";
-import Cashfree from "@cashfreepayments/cashfree-js";   // ✅ FIXED
+import { load } from "@cashfreepayments/cashfree-js";
 import { AuthContext } from "./AuthContext";
 
 import p1 from "./image/p1.webp";
@@ -22,28 +22,44 @@ const plans = [
 const influencers = [p1, p2, p3, p4, p5, p6, p7, p8];
 
 const Spinner = () => (
-    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    <svg
+        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+    >
+        <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+        ></circle>
+        <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
     </svg>
 );
 
-// CASHFREE CHECKOUT
+// CASHFREE PAYMENT CHECKOUT
 function CashfreeCheckoutForm({ selectedPlan }) {
     const [loading, setLoading] = useState(false);
     const { user } = useContext(AuthContext);
 
     const handlePayment = async () => {
         if (!user || !user._id) {
-            alert("Please login first");
+            alert("Please login first!");
             return;
         }
 
-        if (loading) return;
+        if (loading) return; // avoid multiple clicks
         setLoading(true);
 
         try {
-            // Create Session from backend
+            // 1️⃣ Backend: Create Order + Session
             const { data } = await axios.post(
                 "https://vistafluence.onrender.com/api/cashfree/create-order",
                 {
@@ -62,20 +78,21 @@ function CashfreeCheckoutForm({ selectedPlan }) {
                 return;
             }
 
-            // 👉 NEW CASHFREE INITIALIZATION (No load())
-            const cashfree = new Cashfree({
-                mode: "production",
+            console.log("SESSION ID:", data.payment_session_id);
+
+            // 2️⃣ Cashfree SDK Load
+            const cashfree = await load({
+                mode: "production", // sandbox for testing
             });
 
-            // 👉 New Checkout Method
+            // 3️⃣ Open Checkout
             await cashfree.checkout({
                 paymentSessionId: data.payment_session_id,
                 redirectTarget: "_self",
             });
-
         } catch (error) {
             console.log("PAYMENT ERROR:", error);
-            alert("Payment failed! Please try again.");
+            alert("Payment failed! Try again.");
             setLoading(false);
         }
     };
@@ -98,7 +115,6 @@ export default function SubscriptionPlans() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 px-4 sm:px-6 py-10">
             <div className="max-w-6xl mx-auto">
-
                 <h2 className="text-3xl font-extrabold text-white text-center mb-6">
                     Subscription Plans
                 </h2>
@@ -127,7 +143,9 @@ export default function SubscriptionPlans() {
 
                             <div className="mt-4 flex items-baseline">
                                 <span className="text-3xl font-bold">{plan.price}</span>
-                                <span className="line-through ml-3 text-gray-500">{plan.oldPrice}</span>
+                                <span className="line-through ml-3 text-gray-500">
+                                    {plan.oldPrice}
+                                </span>
                             </div>
 
                             <p className="mt-2 text-sm text-fuchsia-300">{plan.discount}</p>
@@ -154,7 +172,6 @@ export default function SubscriptionPlans() {
                         ))}
                     </div>
                 </div>
-
             </div>
         </div>
     );
