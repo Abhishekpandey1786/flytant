@@ -94,7 +94,7 @@ router.post("/create-order", async (req, res) => {
 
     const payload = {
       order_id: orderId,
-      order_amount: amount,
+      order_amount:Number(amount),
       order_currency: "INR",
       customer_details: {
         customer_id: userId,
