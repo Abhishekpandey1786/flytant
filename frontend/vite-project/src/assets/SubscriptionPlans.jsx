@@ -92,7 +92,7 @@ function CashfreeCheckoutForm({ selectedPlan }) {
             className="w-full mt-4 py-3 rounded-xl font-semibold bg-fuchsia-700 text-white shadow-lg flex items-center justify-center disabled:opacity-50"
         >
             {loading && <Spinner />}
-            {loading ? "Processing..." : `Buy Now - $${selectedPlan.price}`}
+            {loading ? "Processing..." : `Buy Now - ${selectedPlan.price}`}
         </button>
     );
 }
