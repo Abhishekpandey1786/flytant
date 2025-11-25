@@ -31,35 +31,22 @@ const transporter = nodemailer.createTransport({
 
 /*
 =========================================================
-CREATE ORDER  (PENDING ORDER REUSE + NEW ORDER)
+CREATE ORDER (PENDING ORDER REUSE + NEW ORDER)
 =========================================================
 */
 router.post("/create-order", async (req, res) => {
   try {
-    const {
-      amount,
-      userId,
-      planName,
-      customerName,
-      customerEmail,
-      customerPhone
-    } = req.body;
+    const { amount, userId, planName, customerName, customerEmail, customerPhone } = req.body;
 
     if (!APP_ID || !SECRET_KEY) {
       return res.status(500).json({ message: "Cashfree keys missing" });
     }
-
     if (!amount || !userId || !planName || !customerEmail) {
       return res.status(400).json({ message: "Required fields missing" });
     }
 
     // 🔥 CHECK EXISTING PENDING ORDER
-    const existingPending = await Order.findOne({
-      userId,
-      planName,
-      status: "pending"
-    });
-
+    const existingPending = await Order.findOne({ userId, planName, status: "pending" });
     if (existingPending) {
       try {
         const checkRes = await axios.get(
@@ -80,10 +67,7 @@ router.post("/create-order", async (req, res) => {
           });
         }
 
-        await Order.updateOne(
-          { _id: existingPending._id },
-          { status: "expired" }
-        );
+        await Order.updateOne({ _id: existingPending._id }, { status: "expired" });
       } catch (err) {
         console.log("Failed to reuse old order, creating new…");
       }
@@ -94,7 +78,7 @@ router.post("/create-order", async (req, res) => {
 
     const payload = {
       order_id: orderId,
-      order_amount: amount,
+      order_amount: amount, // ensure this is rupees, not paise
       order_currency: "INR",
       customer_details: {
         customer_id: userId,
@@ -145,11 +129,9 @@ router.post("/create-order", async (req, res) => {
   }
 });
 
-
-
 /*
 =========================================================
-CASHFREE WEBHOOK  (RAW BODY + SIGNATURE VERIFY)
+CASHFREE WEBHOOK (RAW BODY + SIGNATURE VERIFY)
 =========================================================
 */
 router.get("/webhook", (req, res) => {
@@ -160,7 +142,6 @@ router.post(
   "/webhook",
   express.raw({ type: "application/json" }),
   async (req, res) => {
-
     try {
       const signature = req.headers["x-webhook-signature"];
       if (!signature) return res.status(400).send("Missing signature");
@@ -184,11 +165,7 @@ router.post(
       if (orderStatus === "PAID") {
         const updatedOrder = await Order.findOneAndUpdate(
           { orderId },
-          {
-            status: "succeeded",
-            paymentId,
-            paidAt: new Date()
-          },
+          { status: "succeeded", paymentId, paidAt: new Date() },
           { new: true }
         );
 
@@ -197,7 +174,7 @@ router.post(
         }
 
         // 🔥 PDF GENERATION
-        const pdfDir = path.join(__dirname, `../pdfs`);
+        const pdfDir = path.join(__dirname, "../pdfs");
         if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir);
 
         const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
@@ -216,8 +193,11 @@ router.post(
         doc.text(`Status: SUCCESS`);
         doc.text(`Paid At: ${updatedOrder.paidAt.toLocaleString()}`);
 
-        doc.end();
-        await new Promise(r => doc.on("end", r));
+        await new Promise((resolve, reject) => {
+          doc.on("finish", resolve);
+          doc.on("error", reject);
+          doc.end();
+        });
 
         // 🔥 SEND INVOICE EMAIL
         await transporter.sendMail({
@@ -235,10 +215,7 @@ router.post(
 
         console.log("Invoice Sent:", orderId);
       } else {
-        await Order.findOneAndUpdate(
-          { orderId },
-          { status: "failed" }
-        );
+        await Order.findOneAndUpdate({ orderId }, { status: "failed" });
       }
 
       return res.status(200).send("OK");
@@ -250,17 +227,18 @@ router.post(
   }
 );
 
+/*
+=========================================================
+ORDER STATUS & INVOICE ROUTES
+=========================================================
+*/
 router.get('/check-status/:orderId', async (req, res) => {
   try {
     const { orderId } = req.params;
-
     const order = await Order.findOne({ orderId })
       .select("orderId status amount planName paidAt");
-
     if (!order) return res.status(404).json({ message: "Order not found" });
-
     return res.status(200).json(order);
-
   } catch (err) {
     return res.status(500).send(err.message);
   }
@@ -270,9 +248,7 @@ router.get('/orders/:userId', async (req, res) => {
   try {
     const orders = await Order.find({ userId: req.params.userId })
       .sort({ createdAt: -1 });
-
     return res.status(200).json(orders);
-
   } catch (err) {
     return res.status(500).send(err.message);
   }
@@ -281,17 +257,13 @@ router.get('/orders/:userId', async (req, res) => {
 router.get('/download-invoice/:orderId', async (req, res) => {
   try {
     const pdfPath = path.join(__dirname, `../pdfs/${req.params.orderId}.pdf`);
-
     if (!fs.existsSync(pdfPath)) {
       return res.status(404).json({ message: "Invoice not found" });
     }
-
     res.download(pdfPath);
-
   } catch (err) {
     return res.status(500).send(err.message);
   }
 });
-
 
 module.exports = router;
