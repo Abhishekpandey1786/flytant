@@ -16,7 +16,7 @@ const plans = [
     { name: "Basic", title: "Billed Monthly", price: 1, oldPrice: 4, discount: "Get 20% Off" },
     { name: "Standard", title: "Billed Monthly", price: 5, oldPrice: 7, discount: "Get 30% Off" },
     { name: "Advance", title: "Billed Monthly", price: 9, oldPrice: 18, discount: "Get 40% Off" },
-    { name: "Premium", title: "Billed Monthly", price: 19, oldPrice: 39, discount: "Get 50% Off" },
+    { name: "Premium", title: "Billed Monthly", price: 1900, oldPrice: 39, discount: "Get 50% Off" },
 ];
 
 const influencers = [p1, p2, p3, p4, p5, p6, p7, p8];
