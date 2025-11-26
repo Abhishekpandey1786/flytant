@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 const plans = [
   {
     name: "Basic",
-    price: 1000,
+    price: 3,
     oldPrice: 4,
     discount: "Get 20% Off",
     features: [

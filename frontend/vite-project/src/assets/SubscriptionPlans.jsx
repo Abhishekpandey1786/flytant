@@ -13,10 +13,10 @@ import p7 from "./image/p7.webp";
 import p8 from "./image/p8.webp";
 
 const plans = [
-    { name: "Basic", title: "Billed Monthly", price: 8, oldPrice: 4, discount: "Get 20% Off" },
-    { name: "Standard", title: "Billed Monthly", price: 10, oldPrice: 7, discount: "Get 30% Off" },
-    { name: "Advance", title: "Billed Monthly", price: 12, oldPrice: 18, discount: "Get 40% Off" },
-    { name: "Premium", title: "Billed Monthly", price: 20, oldPrice: 39, discount: "Get 50% Off" },
+    { name: "Basic", title: "Billed Monthly", price: 1, oldPrice: 4, discount: "Get 20% Off" },
+    { name: "Standard", title: "Billed Monthly", price: 5, oldPrice: 7, discount: "Get 30% Off" },
+    { name: "Advance", title: "Billed Monthly", price: 9, oldPrice: 18, discount: "Get 40% Off" },
+    { name: "Premium", title: "Billed Monthly", price: 19, oldPrice: 39, discount: "Get 50% Off" },
 ];
 
 const influencers = [p1, p2, p3, p4, p5, p6, p7, p8];
@@ -28,27 +28,21 @@ const Spinner = () => (
     </svg>
 );
 
-// CASHFREE CHECKOUT
 function CashfreeCheckoutForm({ selectedPlan }) {
     const [loading, setLoading] = useState(false);
     const { user } = useContext(AuthContext);
-    // const navigate = useNavigate(); // Uncomment if using React Router
 
     const handlePayment = async () => {
-        // 1. Login Check (Better UX implementation)
+
         if (!user || !user._id) {
-            alert("Please login first"); // Replace with navigate('/login') for production
-            // navigate('/login');
+            alert("Please login first"); 
             return;
         }
-
-        // 2. Duplicate Click Prevention
         if (loading) return; 
 
         setLoading(true);
 
         try {
-            // 1️⃣ Create session from backend
             const { data } = await axios.post(
                 "https://vistafluence.onrender.com/api/cashfree/create-order",
                 {
@@ -81,7 +75,7 @@ function CashfreeCheckoutForm({ selectedPlan }) {
             console.log("PAYMENT ERROR:", err);
            
             alert("Payment failed! Please try again.");
-            setLoading(false); // Reset loading state on failure
+            setLoading(false); 
         }
     };
 
