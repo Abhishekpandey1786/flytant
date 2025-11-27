@@ -9,11 +9,8 @@ const path = require("path");
 const nodemailer = require("nodemailer");
 
 require('dotenv').config();
-
-// CASHFREE CONFIG
 const APP_ID = process.env.CASHFREE_APP_ID;
 const SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
-// ⚠️ WEBHOOK_SECRET: सुनिश्चित करें कि यह मान Render Environment Variables में Cashfree डैशबोर्ड के Secret से EXACTLY मेल खाता है।
 const WEBHOOK_SECRET = process.env.CASHFREE_WEBHOOK_SECRET; 
 
 const BASE_URL =
@@ -51,10 +48,6 @@ const generateInvoicePDF = async (orderData, pdfPath) => {
     return new Promise(r => doc.on("end", r));
 };
 
-
-// ------------------------------------------------------------------
-// ROUTE: CREATE ORDER 
-// ------------------------------------------------------------------
 router.post("/create-order", async (req, res) => {
     try {
         const {
@@ -73,8 +66,6 @@ router.post("/create-order", async (req, res) => {
         if (!amount || !userId || !planName || !customerEmail) {
             return res.status(400).json({ message: "Required fields missing" });
         }
-
-        // 🔥 NEW ORDER - Cashfree
         const orderId = "ORDER_" + Date.now();
 
         const payload = {
@@ -88,7 +79,6 @@ router.post("/create-order", async (req, res) => {
             },
             order_meta: {
                 return_url: `https://vistafluence.com/payment-status?order_id=${orderId}`,
-                // **Custom Meta Data is used to pass DB info to Webhook**
                 custom_meta: {
                     userId,
                     planName,
@@ -110,9 +100,6 @@ router.post("/create-order", async (req, res) => {
             }
         );
 
-        // Since the payment is handled via webhook, we don't create a 'pending' order here.
-        // The DB order will now ONLY be created upon successful payment via webhook.
-
         return res.status(200).json({
             order_id: orderId,
             payment_session_id: cfRes.data.payment_session_id
@@ -131,52 +118,39 @@ router.get("/webhook", (req, res) => {
     res.status(200).send("Webhook active");
 });
 
-// ------------------------------------------------------------------
-// ROUTE: WEBHOOK (FIXED for both errors)
-// ------------------------------------------------------------------
 router.post(
-    "/webhook",
-    express.raw({ type: "application/json" }), 
-    async (req, res) => {
+    "/webhook",
+    express.raw({ type: "application/json" }), 
+    async (req, res) => {
 
-        try {
-            const signature = req.headers["x-webhook-signature"];
-            if (!signature) {
-                console.log("❌ Missing signature");
-                return res.status(400).send("Missing signature");
-            }
+        try {
+            const signature = req.headers["x-webhook-signature"];
+            if (!signature) {
+                console.log("❌ Missing signature");
+                return res.status(400).send("Missing signature");
+            }
 
-            let payloadToHash;
+            const payloadToHash = req.body; 
 
-            // FIX 1: Handle ERR_INVALID_ARG_TYPE (when global express.json() runs) 
-            // FIX 2: Prevent Signature Mismatch by ensuring compact JSON string.
-            if (req.body instanceof Buffer) {
-                // Case 1: Ideal scenario (Raw Buffer received)
-                payloadToHash = req.body;
-            } else if (typeof req.body === 'object' && req.body !== null) {
-                // Case 2: Global parser ran (Object received). Must stringify it back.
-                const compactJsonString = JSON.stringify(req.body);
-                payloadToHash = Buffer.from(compactJsonString, 'utf8');
-            } else {
-                console.log("❌ Invalid payload format received");
-                return res.status(400).send("Invalid payload format");
-            }
+            if (!Buffer.isBuffer(payloadToHash)) {
+                 console.error("❌ Webhook body is not a Buffer. Middleware issue.");
+                 return res.status(400).send("Invalid payload format");
+            }
+            const expectedSignature = crypto
+                .createHmac("sha256", WEBHOOK_SECRET)
+                .update(payloadToHash) 
+                .digest("base64");
 
-            // --- Signature Calculation ---
-            const expectedSignature = crypto
-                .createHmac("sha256", WEBHOOK_SECRET)
-                .update(payloadToHash) 
-                .digest("base64");
+            if (signature !== expectedSignature) {
+                console.log("❌ Signature mismatch");
+            
+                console.log("Expected (Calculated) Signature:", expectedSignature);
+                console.log("Received (Cashfree) Signature:", signature); 
+                return res.status(400).send("Invalid signature");
+            }
 
-            if (signature !== expectedSignature) {
-                console.log("❌ Signature mismatch");
-                return res.status(400).send("Invalid signature");
-            }
-
-            // --- Signature Matched: Process Data ---
-            const data = JSON.parse(payloadToHash.toString("utf8")); 
+            const data = JSON.parse(payloadToHash.toString("utf8"));
             
-            // Data Extraction
             const orderId = data.data.order.order_id;
             const cfOrderId = data.data.order.cf_order_id; 
             const orderStatus = data.data.order.order_status;
@@ -197,8 +171,6 @@ router.post(
                     console.log(`Order ${orderId} already processed.`);
                     return res.status(200).send("OK - Already processed");
                 }
-
-                // **🔥 CREATE Order in DB only when payment is successful**
                 const updatedOrder = await Order.create({
                     userId,
                     planName,
@@ -213,13 +185,11 @@ router.post(
                     paidAt: new Date()
                 });
 
-                // 🔥 PDF GENERATION
                 const pdfDir = path.join(__dirname, `../pdfs`);
                 if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir);
                 const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
                 await generateInvoicePDF(updatedOrder, pdfPath);
                 
-                // 🔥 SEND INVOICE EMAIL
                 await transporter.sendMail({
                     from: process.env.MAIL_ID,
                     to: updatedOrder.customerEmail,
@@ -247,9 +217,6 @@ router.post(
     }
 );
 
-// ------------------------------------------------------------------
-// ROUTE: CHECK STATUS & GET ORDERS (Retained)
-// ------------------------------------------------------------------
 router.get('/check-status/:orderId', async (req, res) => {
     try {
         const { orderId } = req.params;
