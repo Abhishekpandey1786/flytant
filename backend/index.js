@@ -8,6 +8,7 @@ const connectDB = require("./config/db");
 
 dotenv.config();
 
+// ROUTES
 const chatRoutes = require('./routes/chatRoutes');
 const Chat = require('./models/Chat');
 const User = require('./models/User');
@@ -20,33 +21,39 @@ const usersRoutes = require('./routes/users');
 const advertiserRoutes = require('./routes/advertiser');
 const appliedRoutes = require("./routes/appliedcampaigns");
 const contactRoutes = require("./routes/contact");
-const cashfreeRoutes = require('./routes/cashfreeRoutes');
+const cashfreeRoutes = require('./routes/cashfreeRoutes'); // webhook included
 const publicRoutes = require('./routes/notifications');
 
 // EXPRESS + SOCKET.IO
 const app = express();
 const server = http.createServer(app);
 
-// ---------------------
-// CASHFREE WEBHOOK FIRST
-// ---------------------
-app.use(
+connectDB();
+
+/*
+|--------------------------------------------------------------------------
+|  FIX #1 — Only webhook route must use RAW body
+|--------------------------------------------------------------------------
+*/
+app.post(
   '/api/cashfree/webhook',
-  express.raw({ type: 'application/json' }),
+  express.raw({ type: '*/*' }),
   cashfreeRoutes
 );
 
-// Other middlewares
+/*
+|--------------------------------------------------------------------------
+| FIX #2 — Other routes use JSON
+|--------------------------------------------------------------------------
+*/
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
-// Normal cashfree APIs (NOT webhook)
+// Normal cashfree APIs
 app.use('/api/cashfree', cashfreeRoutes);
 
-connectDB();
-
-// Routes
+// Other routes
 app.get("/", (req, res) => {
   res.send("Welcome to the backend API!");
 });
@@ -63,10 +70,11 @@ app.use('/api/admin', adminRoutes);
 app.use("/api", publicRoutes);
 app.use("/api/contact", contactRoutes);
 
-// -----------------------
-// SOCKET.IO
-// -----------------------
-
+/*
+|--------------------------------------------------------------------------
+|  SOCKET.IO — NO CHANGES NEEDED
+|--------------------------------------------------------------------------
+*/
 const io = new Server(server, {
   cors: {
     origin: "https://vistafluence.netlify.app/",
@@ -129,4 +137,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Server running on ${PORT}`));
