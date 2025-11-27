@@ -120,7 +120,7 @@ router.get("/webhook", (req, res) => {
 
 router.post(
     "/webhook",
-    // express.raw({ type: "application/json" }), 
+    express.raw({ type: "application/json" }),   // REQUIRED
     async (req, res) => {
 
         try {
@@ -130,91 +130,94 @@ router.post(
                 return res.status(400).send("Missing signature");
             }
 
-            const payloadToHash = req.body; 
+            const payloadToHash = req.body;
 
             if (!Buffer.isBuffer(payloadToHash)) {
-                 console.error("❌ Webhook body is not a Buffer. Middleware issue.");
-                 return res.status(400).send("Invalid payload format");
+                console.error("❌ Webhook body is not buffer");
+                return res.status(400).send("Invalid payload");
             }
+
             const expectedSignature = crypto
                 .createHmac("sha256", WEBHOOK_SECRET)
-                .update(payloadToHash) 
+                .update(payloadToHash)
                 .digest("base64");
 
             if (signature !== expectedSignature) {
                 console.log("❌ Signature mismatch");
-            
-                console.log("Expected (Calculated) Signature:", expectedSignature);
-                console.log("Received (Cashfree) Signature:", signature); 
+                console.log("Expected:", expectedSignature);
+                console.log("Received:", signature);
                 return res.status(400).send("Invalid signature");
             }
 
             const data = JSON.parse(payloadToHash.toString("utf8"));
-            
-            const orderId = data.data.order.order_id;
-            const cfOrderId = data.data.order.cf_order_id; 
-            const orderStatus = data.data.order.order_status;
-            const paymentId = data.data.payment?.payment_id;
-            const amount = data.data.order.order_amount;
-            const customerDetails = data.data.customer_details;
 
-            const customMeta = data.data.order.order_meta.custom_meta;
-            const { userId, planName, customerName } = customMeta;
-            const customerEmail = customerDetails.customer_email;
-            const customerPhone = customerDetails.customer_phone;
+            // ----------- Extract fields -----------
+            const orderId = data.data.order.order_id;
+            const cfOrderId = data.data.order.cf_order_id;
+            const orderStatus = data.data.order.order_status;
+            const paymentId = data.data.payment?.payment_id;
+            const amount = data.data.order.order_amount;
 
+            const customerEmail = data.data.customer_details.customer_email;
+            const customerPhone = data.data.customer_details.customer_phone;
 
-            if (orderStatus === "PAID") {
-                
-                const existingOrder = await Order.findOne({ orderId });
-                if (existingOrder) {
-                    console.log(`Order ${orderId} already processed.`);
-                    return res.status(200).send("OK - Already processed");
-                }
-                const updatedOrder = await Order.create({
-                    userId,
-                    planName,
-                    amount,
-                    orderId,
-                    cfOrderId,
-                    paymentId,
-                    status: "succeeded",
-                    customerName,
-                    customerEmail,
-                    customerPhone,
-                    paidAt: new Date()
-                });
+            const customMeta = data.data.order.order_meta.custom_meta;
+            const { userId, planName, customerName } = customMeta;
 
-                const pdfDir = path.join(__dirname, `../pdfs`);
-                if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir);
-                const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
-                await generateInvoicePDF(updatedOrder, pdfPath);
-                
-                await transporter.sendMail({
-                    from: process.env.MAIL_ID,
-                    to: updatedOrder.customerEmail,
-                    subject: `Invoice - ${updatedOrder.planName}`,
-                    html: `
-                        <h2>Payment Successful</h2>
-                        <p>Your payment for <b>${updatedOrder.planName}</b> is successful.</p>
-                        <p><b>Order ID:</b> ${orderId}</p>
-                        <p><b>Amount:</b> ₹${updatedOrder.amount}</p>
-                    `,
-                    attachments: [{ filename: `${orderId}.pdf`, path: pdfPath }]
-                });
+            // ----------- SUCCESS CASE -----------
+            if (orderStatus === "PAID") {
 
-                console.log("Invoice Sent:", orderId);
-            } else if (orderStatus === "FAILED" || orderStatus === "USER_DROPPED") {
-                 console.log(`Order ${orderId} failed or dropped. No DB entry needed.`);
-            }
+                const exists = await Order.findOne({ orderId });
+                if (exists) {
+                    console.log("Already processed");
+                    return res.status(200).send("OK");
+                }
 
-            return res.status(200).send("OK");
+                const saved = await Order.create({
+                    userId,
+                    planName,
+                    amount,
+                    orderId,
+                    cfOrderId,
+                    paymentId,
+                    status: "succeeded",
+                    customerName,
+                    customerEmail,
+                    customerPhone,
+                    paidAt: new Date()
+                });
 
-        } catch (err) {
-            console.error("Webhook Error:", err);
-            return res.status(200).send("Webhook processing error"); 
-        }
-    }
+                // ------ Generate PDF ------
+                const pdfDir = path.join(__dirname, "../pdfs");
+                if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir);
+
+                const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
+                await generateInvoicePDF(saved, pdfPath);
+
+                // ------ Send Email ------
+                await transporter.sendMail({
+                    from: process.env.MAIL_ID,
+                    to: customerEmail,
+                    subject: `Invoice - ${planName}`,
+                    html: `
+                        <h2>Payment Successful</h2>
+                        <p>Your payment for <b>${planName}</b> is completed.</p>
+                        <p><b>Order ID:</b> ${orderId}</p>
+                        <p><b>Amount:</b> ₹${amount}</p>
+                    `,
+                    attachments: [{ filename: `${orderId}.pdf`, path: pdfPath }]
+                });
+
+                console.log("Invoice sent:", orderId);
+            }
+
+            return res.status(200).send("OK");
+
+        } catch (err) {
+            console.error("Webhook error:", err);
+            return res.status(200).send("Webhook error");
+        }
+    }
 );
 
 router.get('/check-status/:orderId', async (req, res) => {
