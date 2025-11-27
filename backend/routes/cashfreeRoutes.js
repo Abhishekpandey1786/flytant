@@ -120,7 +120,7 @@ router.get("/webhook", (req, res) => {
 
 router.post(
     "/webhook",
-    express.raw({ type: "application/json" }), 
+    // express.raw({ type: "application/json" }), 
     async (req, res) => {
 
         try {

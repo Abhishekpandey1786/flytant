@@ -38,6 +38,10 @@ const io = new Server(server, {
 });
 
 connectDB();
+app.use(
+    '/api/cashfree/webhook', 
+    express.raw({ type: 'application/json' }),
+    require('./routes/cashfreeRoutes'))
 
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
