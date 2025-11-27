@@ -19,7 +19,7 @@ const BASE_URL =
         ? "https://api.cashfree.com/pg"
         : "https://sandbox.cashfree.com/pg";
 
-// ------------------- EMAIL CONFIG -------------------
+// ------------------- EMAIL -------------------
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -28,25 +28,27 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// ------------------- PDF GENERATOR -------------------
-const generateInvoicePDF = async (orderData, pdfPath) => {
-    const doc = new PDFDocument();
-    doc.pipe(fs.createWriteStream(pdfPath));
+// ------------------- PDF -------------------
+const generatePDF = async (orderData, pdfPath) => {
+    return new Promise((resolve) => {
+        const doc = new PDFDocument();
+        doc.pipe(fs.createWriteStream(pdfPath));
 
-    doc.fontSize(22).text("Payment Invoice", { align: "center" });
-    doc.moveDown();
+        doc.fontSize(22).text("Payment Invoice", { align: "center" });
+        doc.moveDown();
 
-    doc.fontSize(14).text(`Order ID: ${orderData.orderId}`);
-    doc.text(`Cashfree ID: ${orderData.cfOrderId}`);
-    doc.text(`Payment ID: ${orderData.paymentId}`);
-    doc.text(`Plan: ${orderData.planName}`);
-    doc.text(`Amount: ₹${orderData.amount}`);
-    doc.text(`Customer: ${orderData.customerName}`);
-    doc.text(`Status: SUCCESS`);
-    doc.text(`Paid At: ${orderData.paidAt.toLocaleString()}`);
+        doc.fontSize(14).text(`Order ID: ${orderData.orderId}`);
+        doc.text(`Cashfree ID: ${orderData.cfOrderId}`);
+        doc.text(`Payment ID: ${orderData.paymentId}`);
+        doc.text(`Plan: ${orderData.planName}`);
+        doc.text(`Amount: ₹${orderData.amount}`);
+        doc.text(`Customer: ${orderData.customerName}`);
+        doc.text(`Status: SUCCESS`);
+        doc.text(`Paid At: ${orderData.paidAt}`);
 
-    doc.end();
-    return new Promise(resolve => doc.on("end", resolve));
+        doc.end();
+        doc.on("finish", resolve);
+    });
 };
 
 // ------------------- CREATE ORDER -------------------
@@ -113,15 +115,15 @@ router.post("/create-order", async (req, res) => {
     }
 });
 
-// ------------------- WEBHOOK TEST -------------------
+// ------------------- WEBHOOK CHECK -------------------
 router.get("/webhook", (req, res) => {
-    res.status(200).send("Webhook Active");
+    res.status(200).send("Webhook OK");
 });
 
-// ------------------- WEBHOOK RECEIVER -------------------
+// ------------------- WEBHOOK -------------------
 router.post(
     "/webhook",
-    express.raw({ type: "application/json" }),   // MUST HAVE
+    express.raw({ type: "*/*" }),   // FIXED
     async (req, res) => {
 
         try {
@@ -131,47 +133,44 @@ router.post(
                 return res.status(400).send("Missing signature");
             }
 
-            const payload = req.body; // RAW BUFFER
+            const rawBody = req.body;
 
-            if (!Buffer.isBuffer(payload)) {
-                console.error("❌ Webhook body not buffer");
-                return res.status(400).send("Payload must be buffer");
+            if (!Buffer.isBuffer(rawBody)) {
+                console.log("❌ Body not buffer");
+                return res.status(400).send("Body must be buffer");
             }
 
-            // Validate signature
-            const expectedSignature = crypto
+            const expected = crypto
                 .createHmac("sha256", WEBHOOK_SECRET)
-                .update(payload)
+                .update(rawBody)
                 .digest("base64");
 
-            if (signature !== expectedSignature) {
+            if (signature !== expected) {
                 console.log("❌ Signature mismatch");
-                console.log("Expected:", expectedSignature);
-                console.log("Received:", signature);
+                console.log("Expected:", expected);
+                console.log("Got:", signature);
                 return res.status(400).send("Invalid signature");
             }
 
-            // Parse JSON
-            const data = JSON.parse(payload.toString());
+            const data = JSON.parse(rawBody.toString());
 
-            const orderId = data.data.order.order_id;
-            const cfOrderId = data.data.order.cf_order_id;
             const orderStatus = data.data.order.order_status;
+            const orderId = data.data.order.order_id;
+
+            const cfOrderId = data.data.order.cf_order_id;
             const paymentId = data.data.payment?.payment_id;
             const amount = data.data.order.order_amount;
-            const customerDetails = data.data.customer_details;
+            const customer = data.data.customer_details;
 
-            const customMeta = data.data.order.order_meta.custom_meta;
-            const { userId, planName, customerName } = customMeta;
-            const customerEmail = customerDetails.customer_email;
-            const customerPhone = customerDetails.customer_phone;
+            const { userId, planName, customerName } =
+                data.data.order.order_meta.custom_meta;
 
-            // ------------------- IF PAYMENT SUCCESS -------------------
+            // SUCCESS BLOCK
             if (orderStatus === "PAID") {
 
                 const exists = await Order.findOne({ orderId });
                 if (exists) {
-                    console.log("Already processed:", orderId);
+                    console.log("Duplicate webhook ignored");
                     return res.status(200).send("OK");
                 }
 
@@ -184,45 +183,48 @@ router.post(
                     paymentId,
                     status: "succeeded",
                     customerName,
-                    customerEmail,
-                    customerPhone,
+                    customerEmail: customer.customer_email,
+                    customerPhone: customer.customer_phone,
                     paidAt: new Date()
                 });
 
-                // Create invoice folder
-                const pdfDir = path.join(__dirname, `../pdfs`);
+                // PDF
+                const pdfDir = path.join(__dirname, "../pdfs");
                 if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir);
 
                 const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
-                await generateInvoicePDF(newOrder, pdfPath);
+                await generatePDF(newOrder, pdfPath);
 
+                // EMAIL
                 await transporter.sendMail({
                     from: process.env.MAIL_ID,
                     to: newOrder.customerEmail,
                     subject: `Invoice - ${newOrder.planName}`,
                     html: `
-                        <h2>Payment Successful</h2>
-                        <p>Your payment for <b>${newOrder.planName}</b> is successful.</p>
+                        <h2>Payment Successful 🎉</h2>
+                        <p>Your payment for <b>${newOrder.planName}</b> was successful.</p>
                         <p><b>Order ID:</b> ${orderId}</p>
                         <p><b>Amount:</b> ₹${newOrder.amount}</p>
                     `,
-                    attachments: [{ filename: `${orderId}.pdf`, path: pdfPath }]
+                    attachments: [
+                        { filename: `${orderId}.pdf`, path: pdfPath }
+                    ]
                 });
 
-                console.log("Invoice sent:", orderId);
+                console.log("Invoice sent ✔");
             }
 
             return res.status(200).send("OK");
 
         } catch (err) {
-            console.error("Webhook Error:", err);
-            return res.status(200).send("Webhook error");
+            console.error("Webhook error:", err);
+            return res.status(200).send("OK");
         }
     }
 );
 
 // ------------------- CHECK STATUS -------------------
-router.get('/check-status/:orderId', async (req, res) => {
+router.get("/check-status/:orderId", async (req, res) => {
     try {
         const order = await Order.findOne({ orderId: req.params.orderId })
             .select("orderId status amount planName paidAt");
@@ -230,26 +232,14 @@ router.get('/check-status/:orderId', async (req, res) => {
         if (!order)
             return res.status(404).json({ message: "Order not found" });
 
-        return res.status(200).json(order);
+        res.status(200).json(order);
     } catch (err) {
-        return res.status(500).send(err.message);
+        res.status(500).send(err.message);
     }
 });
 
-// ------------------- USER ORDERS -------------------
-router.get('/orders/:userId', async (req, res) => {
-    try {
-        const orders = await Order.find({ userId: req.params.userId })
-            .sort({ createdAt: -1 });
-
-        return res.status(200).json(orders);
-    } catch (err) {
-        return res.status(500).send(err.message);
-    }
-});
-
-// ------------------- DOWNLOAD INVOICE -------------------
-router.get('/download-invoice/:orderId', async (req, res) => {
+// ------------------- DOWNLOAD PDF -------------------
+router.get("/download-invoice/:orderId", async (req, res) => {
     try {
         const pdfPath = path.join(__dirname, `../pdfs/${req.params.orderId}.pdf`);
 
@@ -259,7 +249,7 @@ router.get('/download-invoice/:orderId', async (req, res) => {
 
         res.download(pdfPath);
     } catch (err) {
-        return res.status(500).send(err.message);
+        res.status(500).send(err.message);
     }
 });
 
