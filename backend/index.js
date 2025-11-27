@@ -21,10 +21,10 @@ const usersRoutes = require('./routes/users');
 const advertiserRoutes = require('./routes/advertiser');
 const appliedRoutes = require("./routes/appliedcampaigns");
 const contactRoutes = require("./routes/contact");
-const cashfreeRoutes = require('./routes/cashfreeRoutes'); // webhook included
-const publicRoutes = require('./routes/notifications');
 
-// EXPRESS + SOCKET.IO
+// 📌 THIS FILE ALREADY CONTAINS /webhook ROUTE
+const cashfreeRoutes = require('./routes/cashfreeRoutes');
+
 const app = express();
 const server = http.createServer(app);
 
@@ -32,31 +32,33 @@ connectDB();
 
 /*
 |--------------------------------------------------------------------------
-|  FIX #1 — Only webhook route must use RAW body
+|  FIXED — RAW BODY ONLY FOR WEBHOOK
 |--------------------------------------------------------------------------
 */
-app.post(
-  '/api/cashfree/webhook',
-  express.raw({ type: '*/*' }),
-  cashfreeRoutes
-);
+app.use("/api/cashfree/webhook", express.raw({ type: "application/json" }));
 
 /*
 |--------------------------------------------------------------------------
-| FIX #2 — Other routes use JSON
+| NORMAL JSON PARSER FOR THE REST
 |--------------------------------------------------------------------------
 */
 app.use(cors());
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ limit: "10mb", extended: true }));
+app.use(express.json());  
+app.use(express.urlencoded({ extended: true }));
 
-// Normal cashfree APIs
-app.use('/api/cashfree', cashfreeRoutes);
+/*
+|--------------------------------------------------------------------------
+| CASHFREE ROUTES (CREATE ORDER + STATUS + WEBHOOK)
+|--------------------------------------------------------------------------
+*/
+app.use("/api/cashfree", cashfreeRoutes);
 
-// Other routes
-app.get("/", (req, res) => {
-  res.send("Welcome to the backend API!");
-});
+/*
+|--------------------------------------------------------------------------
+| OTHER ROUTES
+|--------------------------------------------------------------------------
+*/
+app.get("/", (req, res) => { res.send("Welcome to backend API!"); });
 
 app.use("/api/applied", appliedRoutes);
 app.use("/api/auth", authRoutes);
@@ -67,12 +69,12 @@ app.use('/api/users', usersRoutes);
 app.use('/api/advertiser', advertiserRoutes);
 app.use("/api/news", newsRoutes);
 app.use('/api/admin', adminRoutes);
-app.use("/api", publicRoutes);
+app.use("/api", require('./routes/notifications'));
 app.use("/api/contact", contactRoutes);
 
 /*
 |--------------------------------------------------------------------------
-|  SOCKET.IO — NO CHANGES NEEDED
+|  SOCKET.IO
 |--------------------------------------------------------------------------
 */
 const io = new Server(server, {
@@ -100,14 +102,7 @@ io.on('connection', (socket) => {
 
   socket.on('send_message', async (data) => {
     try {
-      const message = new Chat({
-        roomId: data.roomId,
-        text: data.text,
-        sender: data.sender,
-        receiver: data.receiver,
-        senderName: data.senderName
-      });
-
+      const message = new Chat(data);
       await message.save();
 
       io.to(data.roomId).emit('message_received', message);
@@ -120,7 +115,6 @@ io.on('connection', (socket) => {
           from: data.senderName,
           roomId: data.roomId
         });
-        console.log(`📨 Inbox ping sent to ${data.receiver}`);
       }
     } catch (error) {
       console.error('❌ Error sending message:', error);
@@ -131,7 +125,7 @@ io.on('connection', (socket) => {
     console.log(`⚠️ Socket disconnected: ${socket.id}`);
     if (socket.userId) {
       connectedUsers.delete(socket.userId);
-      console.log(`❌ User ${socket.userId} removed from connected users`);
+      console.log(`❌ User ${socket.userId} removed`);
     }
   });
 });
