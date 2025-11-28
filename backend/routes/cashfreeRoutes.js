@@ -14,9 +14,6 @@ const APP_ID = (process.env.CASHFREE_APP_ID || "").trim();
 const SECRET_KEY = (process.env.CASHFREE_SECRET_KEY || "").trim();
 const WEBHOOK_SECRET = (process.env.CASHFREE_WEBHOOK_SECRET || "").trim();
 
-// Your backend public base URL for webhook notify_url
-const BACKEND_BASE_URL = (process.env.BACKEND_BASE_URL || "").trim();
-
 const BASE_URL =
   process.env.CASHFREE_ENV === "PROD"
     ? "https://api.cashfree.com/pg"
@@ -77,10 +74,6 @@ router.post("/create-order", async (req, res) => {
       return res.status(400).json({ message: "Required fields missing" });
     }
 
-    if (!BACKEND_BASE_URL) {
-      return res.status(500).json({ message: "BACKEND_BASE_URL missing for webhook notify_url" });
-    }
-
     const orderId = "ORDER_" + Date.now();
 
     const payload = {
@@ -94,7 +87,6 @@ router.post("/create-order", async (req, res) => {
       },
       order_meta: {
         return_url: `https://vistafluence.com/payment-status?order_id=${orderId}`,
-        notify_url: `${BACKEND_BASE_URL}/api/cashfree/webhook`,
         custom_meta: {
           userId,
           planName,
@@ -135,7 +127,7 @@ router.post("/create-order", async (req, res) => {
 });
 
 // =========================================================
-// WEBHOOK (raw parser applied here)
+// WEBHOOK
 // =========================================================
 router.post(
   "/webhook",
@@ -157,55 +149,39 @@ router.post(
         return res.status(400).send("Invalid payload");
       }
 
-      // Cashfree expects base64 signatures
+      // Compute signature (legacy and versioned)
       const sigLegacy = crypto.createHmac("sha256", WEBHOOK_SECRET)
         .update(rawPayload)
         .digest("base64");
 
-      // Also try with string payload
-      const sigString = crypto.createHmac("sha256", WEBHOOK_SECRET)
-        .update(rawPayload.toString("utf8"))
-        .digest("base64");
-
-      let sigVersioned = null;
-      let sigAlt = null;
-
-      if (version && timestamp) {
-        // versioned scheme: timestamp + ":" + payload
-        const msg1 = Buffer.concat([Buffer.from(timestamp + ":", "utf8"), rawPayload]);
+      let sigVersioned = sigLegacy;
+      if (version) {
+        const msg = Buffer.concat([Buffer.from(timestamp + ":", "utf8"), rawPayload]);
         sigVersioned = crypto.createHmac("sha256", WEBHOOK_SECRET)
-          .update(msg1)
-          .digest("base64");
-
-        // alternate scheme: payload + ":" + timestamp
-        const msg2 = Buffer.concat([rawPayload, Buffer.from(":" + timestamp, "utf8")]);
-        sigAlt = crypto.createHmac("sha256", WEBHOOK_SECRET)
-          .update(msg2)
+          .update(msg)
           .digest("base64");
       }
 
-      console.log("Signature check:", { received: signature, sigLegacy, sigString, sigVersioned, sigAlt });
+      console.log("Signature check:", { received: signature, sigLegacy, sigVersioned });
 
-      // Accept if any signature matches
-      if (![sigLegacy, sigString, sigVersioned, sigAlt].includes(signature)) {
+      if (signature !== sigLegacy && signature !== sigVersioned) {
         console.log("❌ Signature mismatch");
         return res.status(400).send("Invalid signature");
       }
 
-      const dataStr = rawPayload.toString("utf8");
-      const data = JSON.parse(dataStr);
-      console.log("👉 Webhook event received:", dataStr.length, "bytes");
+      const data = JSON.parse(rawPayload.toString("utf8"));
+      console.log("👉 Webhook event received:", data);
 
-      const orderId = data?.data?.order?.order_id;
-      const cfOrderId = data?.data?.order?.cf_order_id;
-      const orderStatus = data?.data?.order?.order_status;
-      const paymentId = data?.data?.payment?.payment_id;
-      const amount = data?.data?.order?.order_amount;
+      const orderId = data.data.order.order_id;
+      const cfOrderId = data.data.order.cf_order_id;
+      const orderStatus = data.data.order.order_status;
+      const paymentId = data.data.payment?.payment_id;
+      const amount = data.data.order.order_amount;
 
-      const customerEmail = data?.data?.customer_details?.customer_email;
-      const customerPhone = data?.data?.customer_details?.customer_phone;
+      const customerEmail = data.data.customer_details.customer_email;
+      const customerPhone = data.data.customer_details.customer_phone;
 
-      const customMeta = data?.data?.order?.order_meta?.custom_meta || {};
+      const customMeta = data.data.order.order_meta.custom_meta || {};
       const { userId, planName, customerName } = customMeta;
 
       if (orderStatus === "PAID") {
@@ -230,7 +206,7 @@ router.post(
         });
 
         const pdfDir = path.join(__dirname, "../pdfs");
-        if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
+        if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir);
 
         const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
         await generateInvoicePDF(saved, pdfPath);
@@ -255,7 +231,7 @@ router.post(
 
     } catch (err) {
       console.error("Webhook error:", err);
-      return res.status(500).send("Webhook error");
+      return res.status(200).send("Webhook error");
     }
   }
 );
