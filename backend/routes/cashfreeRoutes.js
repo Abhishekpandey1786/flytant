@@ -125,14 +125,6 @@ router.post("/create-order", async (req, res) => {
     });
   }
 });
-
-// =========================================================
-// WEBHOOK
-// =========================================================
-// =========================================================
-// =========================================================
-// WEBHOOK
-// =========================================================
 router.post(
   "/webhook",
   express.raw({ type: "application/json" }),
@@ -153,32 +145,74 @@ router.post(
         return res.status(400).send("Invalid payload");
       }
 
-      // Compute signatures (Cashfree expects base64 only)
-      const sigLegacy = crypto.createHmac("sha256", WEBHOOK_SECRET)
-        .update(rawPayload)
-        .digest("base64");
+      // Compute signatures in multiple formats
+      // Cashfree expects base64 signatures only
+const sigLegacy = crypto.createHmac("sha256", WEBHOOK_SECRET)
+  .update(rawPayload)
+  .digest("base64");
 
-      let sigVersioned = null;
-      let sigAlt = null;
+// Also try with string payload
+const sigString = crypto.createHmac("sha256", WEBHOOK_SECRET)
+  .update(rawPayload.toString("utf8"))
+  .digest("base64");
+
+let sigVersioned = null;
+let sigAlt = null;
+
+if (version && timestamp) {
+  // versioned scheme: timestamp + ":" + payload
+  const msg1 = Buffer.concat([Buffer.from(timestamp + ":", "utf8"), rawPayload]);
+  sigVersioned = crypto.createHmac("sha256", WEBHOOK_SECRET)
+    .update(msg1)
+    .digest("base64");
+
+  // alternate scheme: payload + ":" + timestamp
+  const msg2 = Buffer.concat([rawPayload, Buffer.from(":" + timestamp, "utf8")]);
+  sigAlt = crypto.createHmac("sha256", WEBHOOK_SECRET)
+    .update(msg2)
+    .digest("base64");
+}
+
+console.log("Signature check:", { received: signature, sigLegacy, sigString, sigVersioned, sigAlt });
+
+// Accept if any signature matches
+if (![sigLegacy, sigString, sigVersioned, sigAlt].includes(signature)) {
+  console.log("❌ Signature mismatch");
+  return res.status(400).send("Invalid signature");
+}
 
       if (version && timestamp) {
         // versioned scheme: timestamp + ":" + payload
         const msg1 = Buffer.concat([Buffer.from(timestamp + ":", "utf8"), rawPayload]);
-        sigVersioned = crypto.createHmac("sha256", WEBHOOK_SECRET)
+        sigVersionedBase64 = crypto.createHmac("sha256", WEBHOOK_SECRET)
           .update(msg1)
           .digest("base64");
+        sigVersionedHex = crypto.createHmac("sha256", WEBHOOK_SECRET)
+          .update(msg1)
+          .digest("hex");
 
         // alternate scheme: payload + ":" + timestamp
         const msg2 = Buffer.concat([rawPayload, Buffer.from(":" + timestamp, "utf8")]);
-        sigAlt = crypto.createHmac("sha256", WEBHOOK_SECRET)
+        sigAltBase64 = crypto.createHmac("sha256", WEBHOOK_SECRET)
           .update(msg2)
           .digest("base64");
+        sigAltHex = crypto.createHmac("sha256", WEBHOOK_SECRET)
+          .update(msg2)
+          .digest("hex");
       }
 
-      console.log("Signature check:", { received: signature, sigLegacy, sigVersioned, sigAlt });
+      console.log("Signature check:", {
+        received: signature,
+        sigLegacyBase64,
+        sigLegacyHex,
+        sigVersionedBase64,
+        sigVersionedHex,
+        sigAltBase64,
+        sigAltHex
+      });
 
       // Accept if any signature matches
-      if (![sigLegacy, sigVersioned, sigAlt].includes(signature)) {
+      if (![sigLegacyBase64, sigLegacyHex, sigVersionedBase64, sigVersionedHex, sigAltBase64, sigAltHex].includes(signature)) {
         console.log("❌ Signature mismatch");
         return res.status(400).send("Invalid signature");
       }
@@ -249,7 +283,6 @@ router.post(
     }
   }
 );
-
 
 // =========================================================
 // STATUS & INVOICE ROUTES
