@@ -129,6 +129,9 @@ router.post("/create-order", async (req, res) => {
 // =========================================================
 // WEBHOOK
 // =========================================================
+// =========================================================
+// WEBHOOK
+// =========================================================
 router.post(
   "/webhook",
   express.raw({ type: "application/json" }),
@@ -149,22 +152,31 @@ router.post(
         return res.status(400).send("Invalid payload");
       }
 
-      // Compute signature (legacy and versioned)
+      // Compute signatures
       const sigLegacy = crypto.createHmac("sha256", WEBHOOK_SECRET)
         .update(rawPayload)
         .digest("base64");
 
-      let sigVersioned = sigLegacy;
-      if (version) {
-        const msg = Buffer.concat([Buffer.from(timestamp + ":", "utf8"), rawPayload]);
+      let sigVersioned = null;
+      let sigAlt = null;
+
+      if (version && timestamp) {
+        // versioned scheme: timestamp + ":" + payload
+        const msg1 = Buffer.concat([Buffer.from(timestamp + ":", "utf8"), rawPayload]);
         sigVersioned = crypto.createHmac("sha256", WEBHOOK_SECRET)
-          .update(msg)
+          .update(msg1)
+          .digest("base64");
+
+        // alternate scheme: payload + ":" + timestamp
+        const msg2 = Buffer.concat([rawPayload, Buffer.from(":" + timestamp, "utf8")]);
+        sigAlt = crypto.createHmac("sha256", WEBHOOK_SECRET)
+          .update(msg2)
           .digest("base64");
       }
 
-      console.log("Signature check:", { received: signature, sigLegacy, sigVersioned });
+      console.log("Signature check:", { received: signature, sigLegacy, sigVersioned, sigAlt });
 
-      if (signature !== sigLegacy && signature !== sigVersioned) {
+      if (![sigLegacy, sigVersioned, sigAlt].includes(signature)) {
         console.log("❌ Signature mismatch");
         return res.status(400).send("Invalid signature");
       }
@@ -231,7 +243,7 @@ router.post(
 
     } catch (err) {
       console.error("Webhook error:", err);
-      return res.status(200).send("Webhook error");
+      return res.status(500).send("Webhook error");
     }
   }
 );
