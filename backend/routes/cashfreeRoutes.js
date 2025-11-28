@@ -58,75 +58,77 @@ const generateInvoicePDF = async (orderData, pdfPath) => {
 // CREATE ORDER
 // =========================================================
 router.post("/create-order", async (req, res) => {
-  try {
-    const {
-      amount,
-      userId,
-      planName,
-      customerName,
-      customerEmail,
-      customerPhone
-    } = req.body;
+  try {
+    const {
+      amount,
+      userId,
+      planName,
+      customerName,
+      customerEmail,
+      customerPhone
+    } = req.body;
 
-    if (!APP_ID || !SECRET_KEY || !WEBHOOK_SECRET) {
-      return res.status(500).json({ message: "Cashfree keys missing" });
-    }
+    if (!APP_ID || !SECRET_KEY || !WEBHOOK_SECRET) {
+      return res.status(500).json({ message: "Cashfree keys missing" });
+    }
 
-    if (!amount || !userId || !planName || !customerEmail) {
-      return res.status(400).json({ message: "Required fields missing" });
-    }
+    if (!amount || !userId || !planName || !customerEmail) {
+      return res.status(400).json({ message: "Required fields missing" });
+    }
 
-    const orderId = "ORDER_" + Date.now();
+    const orderId = "ORDER_" + Date.now();
 
-    const payload = {
-      order_id: orderId,
-      order_amount: Number(amount), // rupees only
-      order_currency: "INR",
-      customer_details: {
-        customer_id: userId,
-        customer_email: customerEmail,
-        customer_phone: customerPhone || "9999999999",
-      },
-      order_meta: {
-        // सुनिश्चित करें कि return_url सही है और इसमें order_id शामिल है
-        return_url: `https://vistafluence.com/payment-status?order_id={order_id}`, 
-        custom_meta: {
-          userId,
-          planName,
-          customerName,
-        }
-      },
-    };
+    const payload = {
+      order_id: orderId,
+      order_amount: Number(amount),
+      order_currency: "INR",
+      customer_details: {
+        customer_id: userId,
+        customer_email: customerEmail,
+        customer_phone: customerPhone || "9999999999",
+      },
+      order_meta: {
+        // ✅ Correct dynamic return_url
+        return_url: `https://vistafluence.com/payment-status?order_id=${orderId}`,
+        // ✅ Add notify_url so webhook triggers
+        notify_url: `${process.env.BACKEND_BASE_URL}/api/cashfree/webhook`,
+        custom_meta: {
+          userId,
+          planName,
+          customerName,
+        }
+      },
+    };
 
-    console.log("👉 Sending payload to Cashfree:", payload);
+    console.log("👉 Sending payload to Cashfree:", payload);
 
-    const cfRes = await axios.post(
-      `${BASE_URL}/orders`,
-      payload,
-      {
-        headers: {
-          "x-client-id": APP_ID,
-          "x-client-secret": SECRET_KEY,
-          "x-api-version": "2023-08-01",
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const cfRes = await axios.post(
+      `${BASE_URL}/orders`,
+      payload,
+      {
+        headers: {
+          "x-client-id": APP_ID,
+          "x-client-secret": SECRET_KEY,
+          "x-api-version": "2023-08-01",
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    console.log("✅ Cashfree order created:", cfRes.data);
+    console.log("✅ Cashfree order created:", cfRes.data);
 
-    return res.status(200).json({
-      order_id: orderId,
-      payment_session_id: cfRes.data.payment_session_id
-    });
+    return res.status(200).json({
+      order_id: orderId,
+      payment_session_id: cfRes.data.payment_session_id
+    });
 
-  } catch (err) {
-    console.error("❌ Order creation error:", err.response?.data || err.message);
-    return res.status(500).json({
-      message: "Order creation failed",
-      error: err.response?.data || err.message
-    });
-  }
+  } catch (err) {
+    console.error("❌ Order creation error:", err.response?.data || err.message);
+    return res.status(500).json({
+      message: "Order creation failed",
+      error: err.response?.data || err.message
+    });
+  }
 });
 
 // =========================================================
