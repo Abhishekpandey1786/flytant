@@ -40,10 +40,7 @@ connectDB();
 
 app.use(cors());
 
-// ✅ Raw parser only for webhook BEFORE global parsers
-app.use("/api/cashfree/webhook", express.raw({ type: "application/json" }));
-
-// ✅ Global parsers for rest of the routes
+// ✅ Global parsers for rest of the routes (webhook raw parser is inside cashfreeRoutes)
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
@@ -54,14 +51,16 @@ app.get("/", (req, res) => {
 app.use("/api/applied", appliedRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users/", userRoutes);
-app.use('/api/campaigns', campaignRoutes);
-app.use('/api/chats', chatRoutes);
-app.use('/api/users', usersRoutes);
-app.use('/api/advertiser', advertiserRoutes);
+app.use("/api/campaigns", campaignRoutes);
+app.use("/api/chats", chatRoutes);
+app.use("/api/users", usersRoutes);
+app.use("/api/advertiser", advertiserRoutes);
 app.use("/api/news", newsRoutes);
-app.use('/api/admin', adminRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api", publicRoutes);
 app.use("/api/contact", contactRoutes);
+
+// ✅ Cashfree routes (webhook raw parser is defined inside the routes file)
 app.use('/api/cashfree', cashfreeRoutes);
 
 // Socket.io logic
