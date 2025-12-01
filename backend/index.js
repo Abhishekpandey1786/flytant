@@ -1,4 +1,3 @@
-
 const http = require('http');
 const { Server } = require('socket.io');
 const express = require("express");
@@ -16,7 +15,6 @@ const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const campaignRoutes = require("./routes/campaigns");
 const adminRoutes = require('./routes/admin');
-
 
 const usersRoutes = require('./routes/users');
 const advertiserRoutes = require('./routes/advertiser');
@@ -40,11 +38,17 @@ const io = new Server(server, {
 connectDB();
 
 app.use(cors());
+
+// 🔥 CRITICAL FIX: Cashfree Routes MUST be registered here (BEFORE express.json())
+app.use('/api/cashfree', cashfreeRoutes); 
+// यह सुनिश्चित करेगा कि /api/cashfree/webhook route पहले मैच हो जाए।
+
+// ग्लोबल पार्सर (अब अन्य सभी रूट्स के लिए)
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 
-// 5. All API routes go here.
+// 5. All other API routes go here.
 app.get("/", (req, res) => {
   res.send("Welcome to the backend API!");
 });
@@ -54,12 +58,13 @@ app.use("/api/users/", userRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/users', usersRoutes);
-app.use('/api/advertiser', advertiserRoutes); // ✅ Correctly placed AFTER `const app = express()`
+app.use('/api/advertiser', advertiserRoutes);
 app.use("/api/news", newsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use("/api", publicRoutes);
 app.use("/api/contact", contactRoutes);
-app.use('/api/cashfree', cashfreeRoutes);
+// app.use('/api/cashfree', cashfreeRoutes); // ❌ पुरानी, गलत जगह
+
 
 // 6. Socket.io logic.
 const connectedUsers = new Map();
@@ -67,6 +72,7 @@ const connectedUsers = new Map();
 io.on('connection', (socket) => {
   console.log(`⚡ Socket connected: ${socket.id}`);
 
+  // ... (Socket.io logic remains the same) ...
   socket.on('register', (userId) => {
     connectedUsers.set(userId, socket.id);
     socket.userId = userId;
