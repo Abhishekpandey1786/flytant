@@ -35,7 +35,7 @@ const server = http.createServer(app);
 // ---------------------------
 // 1️⃣ RAW WEBHOOK FIRST (VERY IMPORTANT)
 // ---------------------------
-app.post(
+app.use(
   "/api/cashfree/webhook", 
   express.raw({ type: "application/json" })
 );
