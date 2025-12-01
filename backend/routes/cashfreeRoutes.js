@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const Order = require('../models/Order'); 
+const Order = require('../models/Order'); // Assuming you have an Order model
 const crypto = require("crypto");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
@@ -13,7 +13,7 @@ require('dotenv').config();
 // CASHFREE CONFIG
 const APP_ID = process.env.CASHFREE_APP_ID;
 const SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
-// ⚠️ WEBHOOK_SECRET: सुनिश्चित करें कि यह मान Cashfree डैशबोर्ड के Secret से EXACTLY मेल खाता है।
+// ⚠️ WEBHOOK_SECRET: सुनिश्चित करें कि यह मान Render Environment Variables में Cashfree डैशबोर्ड के Secret से EXACTLY मेल खाता है।
 const WEBHOOK_SECRET = process.env.CASHFREE_WEBHOOK_SECRET; 
 
 const BASE_URL =
@@ -32,23 +32,23 @@ const transporter = nodemailer.createTransport({
 
 // --- HELPER FUNCTION: PDF GENERATION ---
 const generateInvoicePDF = async (orderData, pdfPath) => {
-    const doc = new PDFDocument();
-    doc.pipe(fs.createWriteStream(pdfPath));
+    const doc = new PDFDocument();
+    doc.pipe(fs.createWriteStream(pdfPath));
 
-    doc.fontSize(22).text("Payment Invoice", { align: "center" });
-    doc.moveDown();
+    doc.fontSize(22).text("Payment Invoice", { align: "center" });
+    doc.moveDown();
 
-    doc.fontSize(14).text(`Order ID: ${orderData.orderId}`);
-    doc.text(`Cashfree ID: ${orderData.cfOrderId}`);
-    doc.text(`Payment ID: ${orderData.paymentId}`);
-    doc.text(`Plan: ${orderData.planName}`);
-    doc.text(`Amount: ₹${orderData.amount}`);
-    doc.text(`Customer: ${orderData.customerName}`);
-    doc.text(`Status: SUCCESS`);
-    doc.text(`Paid At: ${orderData.paidAt.toLocaleString()}`);
+    doc.fontSize(14).text(`Order ID: ${orderData.orderId}`);
+    doc.text(`Cashfree ID: ${orderData.cfOrderId}`);
+    doc.text(`Payment ID: ${orderData.paymentId}`);
+    doc.text(`Plan: ${orderData.planName}`);
+    doc.text(`Amount: ₹${orderData.amount}`);
+    doc.text(`Customer: ${orderData.customerName}`);
+    doc.text(`Status: SUCCESS`);
+    doc.text(`Paid At: ${orderData.paidAt.toLocaleString()}`);
 
-    doc.end();
-    return new Promise(r => doc.on("end", r));
+    doc.end();
+    return new Promise(r => doc.on("end", r));
 };
 
 
@@ -110,6 +110,9 @@ router.post("/create-order", async (req, res) => {
             }
         );
 
+        // Since the payment is handled via webhook, we don't create a 'pending' order here.
+        // The DB order will now ONLY be created upon successful payment via webhook.
+
         return res.status(200).json({
             order_id: orderId,
             payment_session_id: cfRes.data.payment_session_id
@@ -129,24 +132,35 @@ router.get("/webhook", (req, res) => {
 });
 
 // ------------------------------------------------------------------
-// 🔥 ROUTE: WEBHOOK (FIXED) 
+// ROUTE: WEBHOOK (FIXED for both errors)
 // ------------------------------------------------------------------
 router.post(
     "/webhook",
-    // केवल इस रूट पर Raw Parser लागू करें 
     express.raw({ type: "application/json" }), 
     async (req, res) => {
 
         try {
             const signature = req.headers["x-webhook-signature"];
-            
-            if (!signature || !req.body) {
-                console.log("❌ Missing signature or body");
-                return res.status(400).send("Missing signature or body");
+            if (!signature) {
+                console.log("❌ Missing signature");
+                return res.status(400).send("Missing signature");
             }
-            
-            // req.body यहाँ हमेशा एक Buffer होना चाहिए क्योंकि हमने express.raw का उपयोग किया है।
-            const payloadToHash = req.body; 
+
+            let payloadToHash;
+
+            // FIX 1: Handle ERR_INVALID_ARG_TYPE (when global express.json() runs) 
+            // FIX 2: Prevent Signature Mismatch by ensuring compact JSON string.
+            if (req.body instanceof Buffer) {
+                // Case 1: Ideal scenario (Raw Buffer received)
+                payloadToHash = req.body;
+            } else if (typeof req.body === 'object' && req.body !== null) {
+                // Case 2: Global parser ran (Object received). Must stringify it back.
+                const compactJsonString = JSON.stringify(req.body);
+                payloadToHash = Buffer.from(compactJsonString, 'utf8');
+            } else {
+                console.log("❌ Invalid payload format received");
+                return res.status(400).send("Invalid payload format");
+            }
 
             // --- Signature Calculation ---
             const expectedSignature = crypto
@@ -155,15 +169,14 @@ router.post(
                 .digest("base64");
 
             if (signature !== expectedSignature) {
-                console.log("❌ Signature mismatch. Expected:", expectedSignature, "Received:", signature);
+                console.log("❌ Signature mismatch");
                 return res.status(400).send("Invalid signature");
             }
 
             // --- Signature Matched: Process Data ---
-            // Buffer को JSON ऑब्जेक्ट में Parse करें
             const data = JSON.parse(payloadToHash.toString("utf8")); 
             
-            // Data Extraction
+            // Data Extraction
             const orderId = data.data.order.order_id;
             const cfOrderId = data.data.order.cf_order_id; 
             const orderStatus = data.data.order.order_status;
@@ -202,10 +215,10 @@ router.post(
 
                 // 🔥 PDF GENERATION
                 const pdfDir = path.join(__dirname, `../pdfs`);
-                if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
+                if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir);
                 const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
                 await generateInvoicePDF(updatedOrder, pdfPath);
-                
+                
                 // 🔥 SEND INVOICE EMAIL
                 await transporter.sendMail({
                     from: process.env.MAIL_ID,
@@ -216,7 +229,6 @@ router.post(
                         <p>Your payment for <b>${updatedOrder.planName}</b> is successful.</p>
                         <p><b>Order ID:</b> ${orderId}</p>
                         <p><b>Amount:</b> ₹${updatedOrder.amount}</p>
-                        <p>कृपया संलग्न (attached) PDF में अपना चालान (invoice) देखें।</p>
                     `,
                     attachments: [{ filename: `${orderId}.pdf`, path: pdfPath }]
                 });
