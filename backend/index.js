@@ -36,6 +36,10 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   }
 });
+app.use(cors());
+
+// ⚠️ Webhook को सबसे पहले raw parser के साथ mount करो
+app.use("/api/cashfree/webhook", express.raw({ type: "application/json" }));
 
 connectDB();
 
