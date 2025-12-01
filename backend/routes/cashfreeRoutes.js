@@ -126,7 +126,7 @@ router.post("/create-order", async (req, res) => {
 // ----------------------------
 router.post(
     "/webhook",
-    express.raw({ type: "application/json" }),
+
     async (req, res) => {
         try {
             const signature = req.headers["x-webhook-signature"];
