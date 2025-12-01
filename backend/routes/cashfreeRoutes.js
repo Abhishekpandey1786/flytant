@@ -138,8 +138,18 @@ router.post(
                 return res.status(400).send("Missing signature");
             }
 
-            // Always use raw buffer
-            const payloadBuffer = req.body;
+            // Ensure payload is always Buffer
+            let payloadBuffer;
+            if (Buffer.isBuffer(req.body)) {
+                payloadBuffer = req.body;
+            } else if (typeof req.body === "object" && req.body !== null) {
+                payloadBuffer = Buffer.from(JSON.stringify(req.body), "utf8");
+            } else if (typeof req.body === "string") {
+                payloadBuffer = Buffer.from(req.body, "utf8");
+            } else {
+                console.log("❌ Invalid payload format");
+                return res.status(400).send("Invalid payload format");
+            }
 
             const expectedSignature = crypto
                 .createHmac("sha256", WEBHOOK_SECRET)
