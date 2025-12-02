@@ -2,8 +2,8 @@ import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import { AuthContext } from "./AuthContext";
 
-// Define the correct base URL for the API
-const API_BASE_URL = "https://vistafluence.onrender.com/api/cashfree"; 
+// Define the base URL for the API
+const API_BASE_URL = "https://vistafluence.onrender.com/api/cashfree";
 
 export default function MyOrders() {
     const { user } = useContext(AuthContext);
@@ -40,17 +40,17 @@ export default function MyOrders() {
     };
     
     /**
-     * Function to handle invoice download (Correct URL)
+     * Function to handle invoice download (New Logic)
      */
     const handleDownloadInvoice = (orderId) => {
-        // Correct URL: https://vistafluence.onrender.com/api/cashfree/download-invoice/ORDER_ID
         const downloadUrl = `${API_BASE_URL}/download-invoice/${orderId}`;
         // Triggers the browser to navigate to the Express route, which forces a download.
         window.open(downloadUrl, '_blank');
     };
 
     useEffect(() => {
-        if (!user || !user.userId) { // Assuming user has a 'userId' property
+        // 💡 सुधार 1: user._id के बजाय user.userId का उपयोग करें (जो MongoDB फील्ड से मेल खाता है)
+        if (!user || !user.userId) { // ⬅️ यहाँ user.userId चेक किया जा रहा है
             setLoading(false);
             setError("Please log in to view your orders.");
             return;
@@ -58,9 +58,9 @@ export default function MyOrders() {
 
         const fetchOrders = async () => {
             try {
-                // Correct fetch URL: https://vistafluence.onrender.com/api/cashfree/orders/:userId
                 const response = await axios.get(
-                    `${API_BASE_URL}/orders/${user.userId}` // ⬅️ Corrected API_BASE_URL usage
+                    // 💡 सुधार 2: API कॉल में भी user.userId का उपयोग करें
+                    `${API_BASE_URL}/orders/${user.userId}` // ⬅️ API कॉल में user.userId
                 );
                 setOrders(response.data);
             } catch (err) {
@@ -72,7 +72,7 @@ export default function MyOrders() {
         };
 
         fetchOrders();
-        // Assuming user data is watched for changes, using user.userId for dependency array
+        // 💡 Dependency array में भी user.userId का उपयोग करें
     }, [user.userId]); 
 
     if (loading) {
