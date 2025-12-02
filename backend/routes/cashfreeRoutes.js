@@ -7,7 +7,6 @@ const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
 const nodemailer = require("nodemailer");
-const bodyParser = require("body-parser");
 
 require('dotenv').config();
 
@@ -73,7 +72,6 @@ router.post("/create-order", async (req, res) => {
 
         const orderId = "ORDER_" + Date.now();
 
-        // Correct Cashfree meta_data (not order_meta.custom_meta)
         const payload = {
             order_id: orderId,
             order_amount: amount,
@@ -123,20 +121,26 @@ router.post("/create-order", async (req, res) => {
 });
 
 // ----------------------------
-// WEBHOOK
+// WEBHOOK (use express.raw)
 // ----------------------------
-router.use("/webhook", bodyParser.raw({ type: "*/*" }));
-
-router.post("/webhook", async (req, res) => {
+router.post("/webhook", express.raw({ type: "*/*" }), async (req, res) => {
     try {
         const signature = req.headers["x-webhook-signature"];
         if (!signature) return res.status(400).send("Missing signature");
+
+        // Debug logs
+        console.log("📩 Raw body buffer:", req.body);
+        console.log("📩 Raw body string:", req.body.toString("utf8"));
+        console.log("📩 Headers:", req.headers);
 
         // Validate HMAC Signature using raw buffer
         const expectedSignature = crypto
             .createHmac("sha256", WEBHOOK_SECRET)
             .update(req.body)   // raw buffer
             .digest("base64");
+
+        console.log("🔑 Expected:", expectedSignature);
+        console.log("🔑 Received:", signature);
 
         if (signature !== expectedSignature) {
             console.log("❌ Signature mismatch");
@@ -145,6 +149,7 @@ router.post("/webhook", async (req, res) => {
 
         // Parse JSON only after signature verified
         const data = JSON.parse(req.body.toString("utf8"));
+        console.log("✅ Parsed webhook data:", JSON.stringify(data, null, 2));
 
         const orderId = data.data.order.order_id;
         const cfOrderId = data.data.order.cf_order_id;
@@ -153,7 +158,6 @@ router.post("/webhook", async (req, res) => {
         const amount = data.data.order.order_amount;
 
         const customerDetails = data.data.customer_details;
-
         const customMeta = JSON.parse(data.data.order.meta_data.custom_data);
         const { userId, planName, customerName } = customMeta;
 
@@ -204,7 +208,7 @@ router.post("/webhook", async (req, res) => {
                 ]
             });
 
-            console.log(`Invoice sent for ${orderId}`);
+            console.log(`✅ Invoice sent for ${orderId}`);
         }
 
         return res.status(200).send("OK");
@@ -259,6 +263,5 @@ router.get('/download-invoice/:orderId', async (req, res) => {
         res.status(500).send(err.message);
     }
 });
-
 
 module.exports = router;
