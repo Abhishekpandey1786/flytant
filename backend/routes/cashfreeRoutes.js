@@ -218,17 +218,24 @@ router.get('/check-status/:orderId', async (req, res) => {
     }
 });
 
-router.get('/orders/:userId', async (req, res) => {
-    try {
-        const orders = await Order.find({ userId: req.params.userId })
-            .sort({ createdAt: -1 });
+router.get("/orders/:userId", async (req, res) => {
+    // 💡 यहाँ सुनिश्चित करें कि आप वही फ़ील्ड नाम उपयोग कर रहे हैं जो AuthContext से आ रहा है (जैसे 'user.userId')
+    const { userId } = req.params; 
+    
+    try {
+        // 'userId' फ़ील्ड के आधार पर ऑर्डर्स खोजें और नवीनतम को पहले दिखाएँ
+        const orders = await Order.find({ userId }).sort({ createdAt: -1 });
 
-        res.status(200).json(orders);
-    } catch (err) {
-        res.status(500).send(err.message);
-    }
+        if (!orders || orders.length === 0) {
+            return res.status(404).json([]); // No orders found, return empty array
+        }
+
+        res.status(200).json(orders);
+    } catch (error) {
+        console.error("Error fetching user orders:", error);
+        res.status(500).json({ message: "Server error fetching orders." });
+    }
 });
-
 router.get('/download-invoice/:orderId', async (req, res) => {
     try {
         // 🚀 FIX: Absolute path using process.cwd() for Render
