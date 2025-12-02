@@ -229,8 +229,9 @@ router.get('/orders/:userId', async (req, res) => {
 
 router.get('/download-invoice/:orderId', async (req, res) => {
     try {
-        const pdfPath = path.join(__dirname, `../pdfs/${req.params.orderId}.pdf`);
-
+        // 💡 यहाँ भी process.cwd() का उपयोग करें
+        const pdfPath = path.join(process.cwd(), `pdfs/${req.params.orderId}.pdf`);
+        
         if (!fs.existsSync(pdfPath)) {
             return res.status(404).json({ message: "Invoice not found" });
         }
