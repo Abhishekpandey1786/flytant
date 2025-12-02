@@ -9,14 +9,9 @@ const path = require("path");
 const nodemailer = require("nodemailer");
 
 require('dotenv').config();
-
-// CASHFREE CONFIG
 const APP_ID = process.env.CASHFREE_APP_ID;
 const SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
-
-// 🛑 FIX: Hardcode the secret key for local/Postman debugging.
-// इसे Production में वापस 'process.env.CASHFREE_WEBHOOK_SECRET' में बदलें और Render पर जांच करें।
-const WEBHOOK_SECRET = "ssbhmoyw2yo7x8li5e7m"; 
+const WEBHOOK_SECRET = process.env.CASHFREE_WEBHOOK_SECRET; 
 
 const BASE_URL =
     process.env.CASHFREE_ENV === "PROD"
@@ -52,9 +47,6 @@ const generateInvoicePDF = async (orderData, pdfPath) => {
     return new Promise((r) => doc.on("end", r));
 };
 
-// ----------------------------
-// CREATE ORDER
-// ----------------------------
 router.post("/create-order", async (req, res) => {
     try {
         const {
@@ -120,21 +112,14 @@ router.post("/create-order", async (req, res) => {
     }
 });
 
-// ----------------------------
-// WEBHOOK (Now relies on index.js for Raw Body parsing)
-// ----------------------------
 router.post("/webhook", async (req, res) => {
     try {
         const signature = req.headers["x-webhook-signature"];
         if (!signature) return res.status(400).send("Missing signature");
-
-        // ⭐ RAW BUFFER: req.body is a Buffer because of middleware in index.js
         const payload = req.body; 
-
-        // ⭐ HMAC SHA256 hashing
         const expectedSignature = crypto
-            .createHmac("sha256", WEBHOOK_SECRET) // Use Hardcoded/Correct Secret
-            .update(payload) // Use the precise Raw Buffer
+            .createHmac("sha256", WEBHOOK_SECRET) 
+            .update(payload) 
             .digest("base64");
 
         console.log("Expected:", expectedSignature);
@@ -142,12 +127,10 @@ router.post("/webhook", async (req, res) => {
 
         if (signature !== expectedSignature) {
             console.log("❌ Signature mismatch");
-            // Logging the payload being hashed is helpful for debugging whitespace/newline issues
             console.log("Payload Hashed:", payload.toString('utf8'));
             return res.status(400).send("Invalid signature");
         }
 
-        // ⭐ Convert buffer → JSON
         const data = JSON.parse(payload.toString("utf8"));
 
         const orderId = data.data.order.order_id;
@@ -159,14 +142,14 @@ router.post("/webhook", async (req, res) => {
         const customerEmail = data.data.customer_details.customer_email;
         const customerPhone = data.data.customer_details.customer_phone;
 
-        // ⭐ meta_data.custom_data
+     
         const meta = JSON.parse(
             data.data.order.meta_data.custom_data
         );
 
         const { userId, planName, customerName } = meta;
 
-        // ⭐ Process order
+
         if (orderStatus === "PAID") {
             const exists = await Order.findOne({ orderId });
             if (exists) return res.status(200).send("OK - Already processed");
@@ -222,9 +205,6 @@ router.post("/webhook", async (req, res) => {
     }
 });
 
-// ----------------------------
-// GET ORDER STATUS
-// ----------------------------
 router.get('/check-status/:orderId', async (req, res) => {
     try {
         const order = await Order.findOne({ orderId: req.params.orderId });
@@ -236,9 +216,6 @@ router.get('/check-status/:orderId', async (req, res) => {
     }
 });
 
-// ----------------------------
-// GET ALL ORDERS OF USER
-// ----------------------------
 router.get('/orders/:userId', async (req, res) => {
     try {
         const orders = await Order.find({ userId: req.params.userId })
@@ -250,9 +227,6 @@ router.get('/orders/:userId', async (req, res) => {
     }
 });
 
-// ----------------------------
-// DOWNLOAD INVOICE
-// ----------------------------
 router.get('/download-invoice/:orderId', async (req, res) => {
     try {
         const pdfPath = path.join(__dirname, `../pdfs/${req.params.orderId}.pdf`);
