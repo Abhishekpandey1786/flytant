@@ -40,17 +40,16 @@ export default function MyOrders() {
     };
     
     /**
-     * Function to handle invoice download (New Logic)
+     * Function to handle invoice download
      */
     const handleDownloadInvoice = (orderId) => {
         const downloadUrl = `${API_BASE_URL}/download-invoice/${orderId}`;
-        // Triggers the browser to navigate to the Express route, which forces a download.
         window.open(downloadUrl, '_blank');
     };
 
     useEffect(() => {
-        // 💡 सुधार 1: user._id के बजाय user.userId का उपयोग करें (जो MongoDB फील्ड से मेल खाता है)
-        if (!user || !user.userId) { // ⬅️ यहाँ user.userId चेक किया जा रहा है
+        // 💡 सुधार: user._id का उपयोग करें (जो AuthContext से मिलने की सबसे अधिक संभावना है)
+        if (!user || !user._id) { 
             setLoading(false);
             setError("Please log in to view your orders.");
             return;
@@ -58,9 +57,9 @@ export default function MyOrders() {
 
         const fetchOrders = async () => {
             try {
+                // API कॉल में user._id का उपयोग करें
                 const response = await axios.get(
-                    // 💡 सुधार 2: API कॉल में भी user.userId का उपयोग करें
-                    `${API_BASE_URL}/orders/${user.userId}` // ⬅️ API कॉल में user.userId
+                    `${API_BASE_URL}/orders/${user._id}`
                 );
                 setOrders(response.data);
             } catch (err) {
@@ -72,8 +71,8 @@ export default function MyOrders() {
         };
 
         fetchOrders();
-        // 💡 Dependency array में भी user.userId का उपयोग करें
-    }, [user.userId]); 
+        // Dependency array में भी user._id का उपयोग करें
+    }, [user._id]); // 💡 सुधार: Dependency array
 
     if (loading) {
         return (
