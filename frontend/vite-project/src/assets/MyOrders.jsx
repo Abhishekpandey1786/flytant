@@ -3,7 +3,7 @@ import axios from "axios";
 import { AuthContext } from "./AuthContext";
 
 // Define the base URL for the API
-const API_BASE_URL = "https://vistafluence.onrender.com/api/cashfree";
+const API_BASE_URL = "https://vistafluence.onrender.com/api/cashfree/webhook";
 
 export default function MyOrders() {
     const { user } = useContext(AuthContext);
