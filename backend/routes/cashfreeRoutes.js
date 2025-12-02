@@ -169,8 +169,10 @@ router.post("/webhook", async (req, res) => {
             });
 
             // Generate Invoice
-            const pdfDir = path.join(__dirname, "../pdfs");
-            if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir);
+            // 🚀 FIX: Absolute path using process.cwd() for Render
+            const pdfDir = path.join(process.cwd(), "pdfs"); 
+            
+            if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true }); // added recursive: true
 
             const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
             await generateInvoicePDF(newOrder, pdfPath);
@@ -229,9 +231,9 @@ router.get('/orders/:userId', async (req, res) => {
 
 router.get('/download-invoice/:orderId', async (req, res) => {
     try {
-        // 💡 यहाँ भी process.cwd() का उपयोग करें
-        const pdfPath = path.join(process.cwd(), `pdfs/${req.params.orderId}.pdf`);
-        
+        // 🚀 FIX: Absolute path using process.cwd() for Render
+        const pdfPath = path.join(process.cwd(), `pdfs/${req.params.orderId}.pdf`);
+        
         if (!fs.existsSync(pdfPath)) {
             return res.status(404).json({ message: "Invoice not found" });
         }
