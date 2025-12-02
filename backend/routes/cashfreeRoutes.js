@@ -20,7 +20,7 @@ const BASE_URL =
         ? "https://api.cashfree.com/pg"
         : "https://sandbox.cashfree.com/pg";
 
-// EMAIL CONFIG
+
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -29,9 +29,6 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// ----------------------------
-// PDF INVOICE GENERATOR
-// ----------------------------
 const generateInvoicePDF = async (orderData, pdfPath) => {
     const doc = new PDFDocument();
     doc.pipe(fs.createWriteStream(pdfPath));
@@ -52,9 +49,6 @@ const generateInvoicePDF = async (orderData, pdfPath) => {
     return new Promise((r) => doc.on("end", r));
 };
 
-// ----------------------------
-// CREATE ORDER
-// ----------------------------
 router.post("/create-order", async (req, res) => {
     try {
         const {
@@ -120,50 +114,48 @@ router.post("/create-order", async (req, res) => {
     }
 });
 
-// ----------------------------
-// WEBHOOK (use express.raw)
-// ----------------------------
-router.post("/webhook", express.raw({ type: "*/*" }), async (req, res) => {
+router.post("/webhook", async (req, res) => {
     try {
         const signature = req.headers["x-webhook-signature"];
         if (!signature) return res.status(400).send("Missing signature");
 
-        // Debug logs
-        console.log("📩 Raw body buffer:", req.body);
-        console.log("📩 Raw body string:", req.body.toString("utf8"));
-        console.log("📩 Headers:", req.headers);
+        // ⭐ RAW BUFFER (Express JSON नहीं!)
+        const payload = req.body; 
 
-        // Validate HMAC Signature using raw buffer
+        // ⭐ HMAC SHA256 hashing
         const expectedSignature = crypto
             .createHmac("sha256", WEBHOOK_SECRET)
-            .update(req.body)   // raw buffer
+            .update(payload)
             .digest("base64");
 
-        console.log("🔑 Expected:", expectedSignature);
-        console.log("🔑 Received:", signature);
+        console.log("Expected:", expectedSignature);
+        console.log("Received:", signature);
 
         if (signature !== expectedSignature) {
             console.log("❌ Signature mismatch");
             return res.status(400).send("Invalid signature");
         }
 
-        // Parse JSON only after signature verified
-        const data = JSON.parse(req.body.toString("utf8"));
-        console.log("✅ Parsed webhook data:", JSON.stringify(data, null, 2));
+        // ⭐ Convert buffer → JSON
+        const data = JSON.parse(payload.toString("utf8"));
 
         const orderId = data.data.order.order_id;
         const cfOrderId = data.data.order.cf_order_id;
         const orderStatus = data.data.order.order_status;
-        const paymentId = data.data.payment?.payment_id;
         const amount = data.data.order.order_amount;
 
-        const customerDetails = data.data.customer_details;
-        const customMeta = JSON.parse(data.data.order.meta_data.custom_data);
-        const { userId, planName, customerName } = customMeta;
+        const paymentId = data.data.payment?.payment_id;
+        const customerEmail = data.data.customer_details.customer_email;
+        const customerPhone = data.data.customer_details.customer_phone;
 
-        const customerEmail = customerDetails.customer_email;
-        const customerPhone = customerDetails.customer_phone;
+        // ⭐ meta_data.custom_data
+        const meta = JSON.parse(
+            data.data.order.meta_data.custom_data
+        );
 
+        const { userId, planName, customerName } = meta;
+
+        // ⭐ Process order
         if (orderStatus === "PAID") {
             const exists = await Order.findOne({ orderId });
             if (exists) return res.status(200).send("OK - Already processed");
@@ -182,14 +174,14 @@ router.post("/webhook", express.raw({ type: "*/*" }), async (req, res) => {
                 paidAt: new Date()
             });
 
-            // PDF Generation
+            // Generate Invoice
             const pdfDir = path.join(__dirname, "../pdfs");
             if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir);
 
             const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
             await generateInvoicePDF(newOrder, pdfPath);
 
-            // Send Email
+            // Email
             await transporter.sendMail({
                 from: process.env.MAIL_ID,
                 to: newOrder.customerEmail,
@@ -203,12 +195,12 @@ router.post("/webhook", express.raw({ type: "*/*" }), async (req, res) => {
                 attachments: [
                     {
                         filename: `${orderId}.pdf`,
-                        path: pdfPath
+                        path: pdfPath,
                     }
                 ]
             });
 
-            console.log(`✅ Invoice sent for ${orderId}`);
+            console.log("Invoice sent:", orderId);
         }
 
         return res.status(200).send("OK");
@@ -218,10 +210,6 @@ router.post("/webhook", express.raw({ type: "*/*" }), async (req, res) => {
         return res.status(200).send("Webhook processing error");
     }
 });
-
-// ----------------------------
-// GET ORDER STATUS
-// ----------------------------
 router.get('/check-status/:orderId', async (req, res) => {
     try {
         const order = await Order.findOne({ orderId: req.params.orderId });
@@ -233,9 +221,6 @@ router.get('/check-status/:orderId', async (req, res) => {
     }
 });
 
-// ----------------------------
-// GET ALL ORDERS OF USER
-// ----------------------------
 router.get('/orders/:userId', async (req, res) => {
     try {
         const orders = await Order.find({ userId: req.params.userId })
@@ -247,9 +232,6 @@ router.get('/orders/:userId', async (req, res) => {
     }
 });
 
-// ----------------------------
-// DOWNLOAD INVOICE
-// ----------------------------
 router.get('/download-invoice/:orderId', async (req, res) => {
     try {
         const pdfPath = path.join(__dirname, `../pdfs/${req.params.orderId}.pdf`);

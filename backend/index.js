@@ -1,3 +1,4 @@
+
 const http = require('http');
 const { Server } = require('socket.io');
 const express = require("express");
@@ -6,9 +7,6 @@ const dotenv = require("dotenv");
 const path = require("path");
 const connectDB = require("./config/db");
 
-dotenv.config();
-
-// ROUTES
 const chatRoutes = require('./routes/chatRoutes');
 const Chat = require('./models/Chat');
 const User = require('./models/User'); 
@@ -19,49 +17,18 @@ const userRoutes = require("./routes/userRoutes");
 const campaignRoutes = require("./routes/campaigns");
 const adminRoutes = require('./routes/admin');
 
+
 const usersRoutes = require('./routes/users');
 const advertiserRoutes = require('./routes/advertiser');
 const appliedRoutes = require("./routes/appliedcampaigns");
 const contactRoutes = require("./routes/contact");
 const cashfreeRoutes = require('./routes/cashfreeRoutes');
 const publicRoutes = require('./routes/notifications');
+dotenv.config();
 
-
+// 2. Define the 'app' and 'server' objects FIRST.
 const app = express();
 const server = http.createServer(app);
-
-connectDB();
-
-
-app.use(cors());
-
-// 🛑 FIX 1: Add the cashfree webhook route first. 
-// This allows the raw parser inside cashfreeRoutes.js to execute before the global parsers.
-app.use("/api/cashfree", cashfreeRoutes); 
-
-// 🛑 FIX 2: Place global JSON/URL parsers AFTER the specific route where raw buffer is needed.
-// This ensures that req.body for the Webhook route remains a raw Buffer.
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ limit: "10mb", extended: true }));
-
-
-app.get("/", (req, res) => {
-  res.send("Welcome to the backend API!");
-});
-
-
-app.use("/api/applied", appliedRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/users/", userRoutes);
-app.use('/api/campaigns', campaignRoutes);
-app.use('/api/chats', chatRoutes);
-app.use('/api/users', usersRoutes);
-app.use('/api/advertiser', advertiserRoutes);
-app.use("/api/news", newsRoutes);
-app.use('/api/admin', adminRoutes);
-app.use("/api", publicRoutes);
-app.use("/api/contact", contactRoutes);
-
 
 const io = new Server(server, {
   cors: {
@@ -70,6 +37,34 @@ const io = new Server(server, {
   }
 });
 
+connectDB();
+
+app.use(cors());
+app.use("/api/cashfree/webhook",
+    express.raw({ type: 'application/json' })
+);
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
+
+
+// 5. All API routes go here.
+app.get("/", (req, res) => {
+  res.send("Welcome to the backend API!");
+});
+app.use("/api/applied", appliedRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/users/", userRoutes);
+app.use('/api/campaigns', campaignRoutes);
+app.use('/api/chats', chatRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/advertiser', advertiserRoutes); // ✅ Correctly placed AFTER `const app = express()`
+app.use("/api/news", newsRoutes);
+app.use('/api/admin', adminRoutes);
+app.use("/api", publicRoutes);
+app.use("/api/contact", contactRoutes);
+app.use('/api/cashfree', cashfreeRoutes);
+
+// 6. Socket.io logic.
 const connectedUsers = new Map();
 
 io.on('connection', (socket) => {
@@ -95,7 +90,6 @@ io.on('connection', (socket) => {
         receiver: data.receiver,
         senderName: data.senderName 
       });
-
       await message.save();
 
       io.to(data.roomId).emit('message_received', message);
@@ -105,7 +99,7 @@ io.on('connection', (socket) => {
         io.to(receiverSocketId).emit('inbox_ping', {
           id: Date.now(),
           text: data.text,
-          from: data.senderName,
+          from: data.senderName, 
           roomId: data.roomId 
         });
         console.log(`📨 Inbox ping sent to ${data.receiver}`);
@@ -124,7 +118,6 @@ io.on('connection', (socket) => {
     }
   });
 });
-
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
