@@ -30,15 +30,17 @@ const publicRoutes = require('./routes/notifications');
 const app = express();
 const server = http.createServer(app);
 
-// 🛑 FIX: Removed the incorrect global raw middleware here.
-// Cashfree Webhook parsing should ONLY happen inside cashfreeRoutes.js 
-// using 'router.post("/webhook", express.raw({ type: "*/*" }), ...)'
-
 connectDB();
 
 
 app.use(cors());
-// Global JSON and URL-encoded parsers for all other routes
+
+// 🛑 FIX 1: Add the cashfree webhook route first. 
+// This allows the raw parser inside cashfreeRoutes.js to execute before the global parsers.
+app.use("/api/cashfree", cashfreeRoutes); 
+
+// 🛑 FIX 2: Place global JSON/URL parsers AFTER the specific route where raw buffer is needed.
+// This ensures that req.body for the Webhook route remains a raw Buffer.
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
@@ -47,7 +49,7 @@ app.get("/", (req, res) => {
   res.send("Welcome to the backend API!");
 });
 
-app.use("/api/cashfree", cashfreeRoutes);   // Now webhook parsing relies solely on cashfreeRoutes.js
+
 app.use("/api/applied", appliedRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users/", userRoutes);
