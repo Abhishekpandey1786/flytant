@@ -29,25 +29,25 @@ const publicRoutes = require('./routes/notifications');
 
 const app = express();
 const server = http.createServer(app);
-app.use(
-  "/api/cashfree/webhook", 
-  express.raw({ type: "application/json" })
-);
 
+// 🛑 FIX: Removed the incorrect global raw middleware here.
+// Cashfree Webhook parsing should ONLY happen inside cashfreeRoutes.js 
+// using 'router.post("/webhook", express.raw({ type: "*/*" }), ...)'
 
 connectDB();
 
 
 app.use(cors());
+// Global JSON and URL-encoded parsers for all other routes
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 
 app.get("/", (req, res) => {
-  res.send("Welcome to the backend API!");
+  res.send("Welcome to the backend API!");
 });
 
-app.use("/api/cashfree", cashfreeRoutes);   // webhook is already raw above
+app.use("/api/cashfree", cashfreeRoutes);   // Now webhook parsing relies solely on cashfreeRoutes.js
 app.use("/api/applied", appliedRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users/", userRoutes);
@@ -62,68 +62,67 @@ app.use("/api/contact", contactRoutes);
 
 
 const io = new Server(server, {
-  cors: {
-    origin: "https://vistafluence.netlify.app/",
-    methods: ["GET", "POST"]
-  }
+  cors: {
+    origin: "https://vistafluence.netlify.app/",
+    methods: ["GET", "POST"]
+  }
 });
 
 const connectedUsers = new Map();
 
 io.on('connection', (socket) => {
-  console.log(`⚡ Socket connected: ${socket.id}`);
+  console.log(`⚡ Socket connected: ${socket.id}`);
 
-  socket.on('register', (userId) => {
-    connectedUsers.set(userId, socket.id);
-    socket.userId = userId;
-    console.log(`✅ User ${userId} registered with socket ${socket.id}`);
-  });
+  socket.on('register', (userId) => {
+    connectedUsers.set(userId, socket.id);
+    socket.userId = userId;
+    console.log(`✅ User ${userId} registered with socket ${socket.id}`);
+  });
 
-  socket.on('join_room', (roomId) => {
-    socket.join(roomId);
-    console.log(`👥 Socket ${socket.id} joined room ${roomId}`);
-  });
+  socket.on('join_room', (roomId) => {
+    socket.join(roomId);
+    console.log(`👥 Socket ${socket.id} joined room ${roomId}`);
+  });
 
-  socket.on('send_message', async (data) => {
-    try {
-      const message = new Chat({
-        roomId: data.roomId,
-        text: data.text,
-        sender: data.sender,
-        receiver: data.receiver,
-        senderName: data.senderName 
-      });
+  socket.on('send_message', async (data) => {
+    try {
+      const message = new Chat({
+        roomId: data.roomId,
+        text: data.text,
+        sender: data.sender,
+        receiver: data.receiver,
+        senderName: data.senderName 
+      });
 
-      await message.save();
+      await message.save();
 
-      io.to(data.roomId).emit('message_received', message);
+      io.to(data.roomId).emit('message_received', message);
 
-      const receiverSocketId = connectedUsers.get(data.receiver);
-      if (receiverSocketId && receiverSocketId !== socket.id) {
-        io.to(receiverSocketId).emit('inbox_ping', {
-          id: Date.now(),
-          text: data.text,
-          from: data.senderName,
-          roomId: data.roomId 
-        });
-        console.log(`📨 Inbox ping sent to ${data.receiver}`);
-      }
-    } catch (error) {
-      console.error('❌ Error sending message:', error);
-    }
-  });
+      const receiverSocketId = connectedUsers.get(data.receiver);
+      if (receiverSocketId && receiverSocketId !== socket.id) {
+        io.to(receiverSocketId).emit('inbox_ping', {
+          id: Date.now(),
+          text: data.text,
+          from: data.senderName,
+          roomId: data.roomId 
+        });
+        console.log(`📨 Inbox ping sent to ${data.receiver}`);
+      }
+    } catch (error) {
+      console.error('❌ Error sending message:', error);
+    }
+  });
 
-  socket.on('disconnect', () => {
-    console.log(`⚠️ Socket disconnected: ${socket.id}`);
-  
-    if (socket.userId) {
-      connectedUsers.delete(socket.userId);
-      console.log(`❌ User ${socket.userId} removed from connected users`);
-    }
-  });
+  socket.on('disconnect', () => {
+    console.log(`⚠️ Socket disconnected: ${socket.id}`);
+  
+    if (socket.userId) {
+      connectedUsers.delete(socket.userId);
+      console.log(`❌ User ${socket.userId} removed from connected users`);
+    }
+  });
 });
 
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-

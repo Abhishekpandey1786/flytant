@@ -13,7 +13,8 @@ require('dotenv').config();
 // CASHFREE CONFIG
 const APP_ID = process.env.CASHFREE_APP_ID;
 const SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
-const WEBHOOK_SECRET = process.env.CASHFREE_WEBHOOK_SECRET;
+// 🛑 IMPORTANT FIX: Hardcoding the secret key temporarily to bypass the Render Environment Variable loading issue.
+const WEBHOOK_SECRET = "ssbhmoyw2yo7x8li5e7m"; 
 
 const BASE_URL =
     process.env.CASHFREE_ENV === "PROD"
@@ -128,15 +129,10 @@ router.post("/webhook", express.raw({ type: "*/*" }), async (req, res) => {
         const signature = req.headers["x-webhook-signature"];
         if (!signature) return res.status(400).send("Missing signature");
 
-        // Debug logs
-        console.log("📩 Raw body buffer:", req.body);
-        console.log("📩 Raw body string:", req.body.toString("utf8"));
-        console.log("📩 Headers:", req.headers);
-
         // Validate HMAC Signature using raw buffer
         const expectedSignature = crypto
             .createHmac("sha256", WEBHOOK_SECRET)
-            .update(req.body)   // raw buffer
+            .update(req.body)  // raw buffer
             .digest("base64");
 
         console.log("🔑 Expected:", expectedSignature);
@@ -144,7 +140,8 @@ router.post("/webhook", express.raw({ type: "*/*" }), async (req, res) => {
 
         if (signature !== expectedSignature) {
             console.log("❌ Signature mismatch");
-            return res.status(400).send("Invalid signature");
+            // If the mismatch still happens, this 400 response is the correct action for security.
+            return res.status(400).send("Invalid signature"); 
         }
 
         // Parse JSON only after signature verified
@@ -152,14 +149,25 @@ router.post("/webhook", express.raw({ type: "*/*" }), async (req, res) => {
         console.log("✅ Parsed webhook data:", JSON.stringify(data, null, 2));
 
         const orderId = data.data.order.order_id;
-        const cfOrderId = data.data.order.cf_order_id;
+        // In the updated API (2023-08-01), cf_order_id is inside data.data.order
+        const cfOrderId = data.data.order.cf_order_id; 
         const orderStatus = data.data.order.order_status;
-        const paymentId = data.data.payment?.payment_id;
+        const paymentId = data.data.payment?.cf_payment_id; // Using cf_payment_id as per logs
         const amount = data.data.order.order_amount;
 
         const customerDetails = data.data.customer_details;
-        const customMeta = JSON.parse(data.data.order.meta_data.custom_data);
-        const { userId, planName, customerName } = customMeta;
+        const customDataString = data.data.order.meta_data?.custom_data;
+        
+        let userId, planName, customerName;
+
+        try {
+            const customMeta = customDataString ? JSON.parse(customDataString) : {};
+            userId = customMeta.userId;
+            planName = customMeta.planName;
+            customerName = customMeta.customerName;
+        } catch (e) {
+            console.error("Error parsing custom_data:", e);
+        }
 
         const customerEmail = customerDetails.customer_email;
         const customerPhone = customerDetails.customer_phone;
@@ -215,6 +223,7 @@ router.post("/webhook", express.raw({ type: "*/*" }), async (req, res) => {
 
     } catch (err) {
         console.error("Webhook Error:", err);
+        // Returning 200 on error prevents Cashfree from retrying constantly
         return res.status(200).send("Webhook processing error");
     }
 });
