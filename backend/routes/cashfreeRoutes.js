@@ -7,6 +7,7 @@ const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
 const nodemailer = require("nodemailer");
+const bodyParser = require("body-parser");
 
 require('dotenv').config();
 
