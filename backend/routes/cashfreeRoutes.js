@@ -113,9 +113,6 @@ router.post("/create-order", async (req, res) => {
     }
 });
 
-// --- Route 2: Cashfree Webhook (Signature Verification) ---
-// **ध्यान दें:** अब यह Webhook रूट app.js में express.raw() के साथ मैप किया जाएगा।
-// यह सुनिश्चित करता है कि req.body यहाँ एक Buffer हो।
 router.post("/webhook", async (req, res) => {
     try {
         
@@ -127,8 +124,7 @@ router.post("/webhook", async (req, res) => {
             console.log("❌ Missing Cashfree signature or timestamp header.");
             return res.status(400).send("Missing signature/timestamp");
         }
-        
-        // **सुधार:** req.body अब express.raw() के कारण एक Buffer है।
+    
         const payloadBuffer = req.body; 
         const payloadString = payloadBuffer.toString('utf8'); // Buffer को String में कन्वर्ट करें
         const dataToHash = timestamp + payloadString;
@@ -239,7 +235,6 @@ router.get('/check-status/:orderId', async (req, res) => {
     }
 });
 
-// --- Route 4: Fetch User Orders ---
 router.get("/orders/:userId", async (req, res) => {
     const { userId } = req.params; 
     
@@ -257,7 +252,6 @@ router.get("/orders/:userId", async (req, res) => {
     }
 });
 
-// --- Route 5: Download Invoice ---
 router.get('/download-invoice/:orderId', async (req, res) => {
     try {
         const pdfPath = path.join(__dirname, "..", `pdfs/${req.params.orderId}.pdf`);
