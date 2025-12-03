@@ -123,50 +123,59 @@ router.post("/create-order", async (req, res) => {
 // -------------------
 // 2. Webhook Handler (Optimized for signature check)
 // -------------------
+// -------------------
+// 2. Webhook Handler (FIXED for signature check)
+// -------------------
 router.post("/webhook", async (req, res) => {
-    try {
-        const signature = req.headers["x-webhook-signature"];
-        
-        // 💡 Check 1: Ensure signature exists
-        if (!signature) {
-            console.log("❌ Missing X-Webhook-Signature header.");
-            return res.status(400).send("Missing signature");
-        }
-        
-        // 💡 OPTIMIZATION: Use the raw Buffer (req.body) directly for Hashing
-        const payloadBuffer = req.body; 
-        const payloadString = payloadBuffer.toString('utf8'); 
-        
-        const expectedSignature = crypto
-            .createHmac("sha256", WEBHOOK_SECRET) 
-            .update(payloadBuffer) // Use Buffer here
-            .digest("base64");
+    try {
+        // 🚨 सुधार 1: सही हेडर नाम का उपयोग करें
+        const signature = req.headers["x-cashfree-signature"];
+        const timestamp = req.headers["x-cashfree-timestamp"]; // 💡 टाइमस्टैम्प हेडर प्राप्त करें
+        
+        // 💡 Check 1: Ensure signature exists
+        if (!signature || !timestamp) {
+            console.log("❌ Missing Cashfree signature or timestamp header.");
+            return res.status(400).send("Missing signature/timestamp");
+        }
+        
+        // Raw Buffer को स्ट्रिंग में बदलें
+        const payloadBuffer = req.body; 
+        const payloadString = payloadBuffer.toString('utf8'); 
+        
+        // 🚨 सुधार 2: टाइमस्टैम्प को रॉ बॉडी के साथ concatenate करें 
+        // और फिर इसे हैश करें
+        const dataToHash = timestamp + payloadString;
+
+        const expectedSignature = crypto
+            .createHmac("sha256", WEBHOOK_SECRET) 
+            .update(dataToHash) // Concatenated string का उपयोग करें
+            .digest("base64");
 
         // 💡 Logging: Diagnostic signatures
         console.log("--- Webhook Signature Check ---");
         console.log("Received Sig:", signature);
         console.log("Calculated Sig:", expectedSignature);
         
-        if (signature !== expectedSignature) {
-            console.log("❌ Signature mismatch. Webhook rejected.");
-            return res.status(400).send("Invalid signature");
-        }
+        if (signature !== expectedSignature) {
+            console.log("❌ Signature mismatch. Webhook rejected.");
+            return res.status(400).send("Invalid signature");
+        }
         console.log("✅ Signature matched. Processing payload.");
 
-        // Raw String को JSON में पार्स करें
-        const data = JSON.parse(payloadString); 
+        // Raw String को JSON में पार्स करें
+        const data = JSON.parse(payloadString); 
 
-        const orderId = data.data.order.order_id;
-        const orderStatus = data.data.order.order_status;
+        const orderId = data.data.order.order_id;
+        const orderStatus = data.data.order.order_status;
         
-        const MONGO_USER_ID = data.data.customer_details.customer_id; 
-        
-        // Ensure we only process PAID events
-        if (orderStatus === "PAID") {
+        const MONGO_USER_ID = data.data.customer_details.customer_id; 
+        
+        // Ensure we only process PAID events
+        if (orderStatus === "PAID") {
             console.log(`[Webhook PAID] Order ID: ${orderId} | User ID: ${MONGO_USER_ID}`);
             
-            const exists = await Order.findOne({ orderId });
-            if (exists) {
+            const exists = await Order.findOne({ orderId });
+            if (exists) {
                 console.log(`[Webhook PAID] Order ${orderId} already processed. Skipping.`);
                 return res.status(200).send("OK - Already processed");
             }
@@ -180,59 +189,59 @@ router.post("/webhook", async (req, res) => {
             const meta = JSON.parse(data.data.order.meta_data.custom_data);
             const { planName, customerName } = meta; 
 
-            const newOrder = await Order.create({
-                userId: MONGO_USER_ID, 
-                planName,
-                amount,
-                orderId,
-                cfOrderId,
-                paymentId,
-                status: "succeeded",
-                customerName,
-                customerEmail,
-                customerPhone,
-                paidAt: new Date()
-            });
+            const newOrder = await Order.create({
+                userId: MONGO_USER_ID, 
+                planName,
+                amount,
+                orderId,
+                cfOrderId,
+                paymentId,
+                status: "succeeded",
+                customerName,
+                customerEmail,
+                customerPhone,
+                paidAt: new Date()
+            });
             console.log(`[Webhook PAID] New Order saved successfully: ${orderId}`);
 
-            // Generate Invoice
-            const pdfDir = path.join(__dirname, "..", "pdfs"); 
-            if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
+            // Generate Invoice
+            const pdfDir = path.join(__dirname, "..", "pdfs"); 
+            if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
 
-            const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
-            await generateInvoicePDF(newOrder, pdfPath);
+            const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
+            await generateInvoicePDF(newOrder, pdfPath);
 
-            // Email
-            await transporter.sendMail({
-                from: process.env.MAIL_ID,
-                to: newOrder.customerEmail,
-                subject: `Invoice - ${newOrder.planName}`,
-                html: `
-                    <h2>Payment Successful</h2>
-                    <p>Your payment for <b>${newOrder.planName}</b> is successful.</p>
-                    <p><b>Order ID:</b> ${orderId}</p>
-                    <p><b>Amount:</b> ₹${newOrder.amount}</p>
-                `,
-                attachments: [
-                    {
-                        filename: `${orderId}.pdf`,
-                        path: pdfPath,
-                    }
-                ]
-            });
+            // Email (Rest of the email logic remains the same)
+            await transporter.sendMail({
+                from: process.env.MAIL_ID,
+                to: newOrder.customerEmail,
+                subject: `Invoice - ${newOrder.planName}`,
+                html: `
+                    <h2>Payment Successful</h2>
+                    <p>Your payment for <b>${newOrder.planName}</b> is successful.</p>
+                    <p><b>Order ID:</b> ${orderId}</p>
+                    <p><b>Amount:</b> ₹${newOrder.amount}</p>
+                `,
+                attachments: [
+                    {
+                        filename: `${orderId}.pdf`,
+                        path: pdfPath,
+                    }
+                ]
+            });
 
-            console.log(`[Webhook PAID] Invoice and Email sent for ${orderId}.`);
-        } else {
+            console.log(`[Webhook PAID] Invoice and Email sent for ${orderId}.`);
+        } else {
             console.log(`[Webhook EVENT] Received order status: ${orderStatus}. No action taken.`);
         }
 
-        return res.status(200).send("OK");
+        return res.status(200).send("OK");
 
-    } catch (err) {
-        console.error("❌ Webhook Internal Error:", err.message);
-        // Send 200 OK to Cashfree to avoid repeated notifications
-        return res.status(200).send("Webhook processing error"); 
-    }
+    } catch (err) {
+        console.error("❌ Webhook Internal Error:", err.message);
+        // Send 200 OK to Cashfree to avoid repeated notifications
+        return res.status(200).send("Webhook processing error"); 
+    }
 });
 
 // -------------------
