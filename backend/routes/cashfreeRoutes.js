@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const Order = require('../models/Order'); // सुनिश्चित करें कि यह पाथ सही है
+const Order = require('../models/Order'); 
 const crypto = require("crypto");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
@@ -46,6 +46,8 @@ const generateInvoicePDF = async (orderData, pdfPath) => {
     doc.end();
     return new Promise((resolve) => doc.on("end", resolve));
 };
+
+// --- Route 1: Create Order ---
 router.post("/create-order", async (req, res) => {
     try {
         const {
@@ -111,6 +113,9 @@ router.post("/create-order", async (req, res) => {
     }
 });
 
+// --- Route 2: Cashfree Webhook (Signature Verification) ---
+// **ध्यान दें:** अब यह Webhook रूट app.js में express.raw() के साथ मैप किया जाएगा।
+// यह सुनिश्चित करता है कि req.body यहाँ एक Buffer हो।
 router.post("/webhook", async (req, res) => {
     try {
         
@@ -122,8 +127,10 @@ router.post("/webhook", async (req, res) => {
             console.log("❌ Missing Cashfree signature or timestamp header.");
             return res.status(400).send("Missing signature/timestamp");
         }
+        
+        // **सुधार:** req.body अब express.raw() के कारण एक Buffer है।
         const payloadBuffer = req.body; 
-        const payloadString = payloadBuffer.toString('utf8'); 
+        const payloadString = payloadBuffer.toString('utf8'); // Buffer को String में कन्वर्ट करें
         const dataToHash = timestamp + payloadString;
 
         const expectedSignature = crypto
@@ -141,6 +148,8 @@ router.post("/webhook", async (req, res) => {
             return res.status(400).send("Invalid signature");
         }
         console.log("✅ Signature matched. Processing payload.");
+        
+        // **सुधार:** अब हम स्ट्रिंग को मैन्युअल रूप से पार्स करते हैं
         const data = JSON.parse(payloadString); 
 
         const orderId = data.data.order.order_id;
@@ -213,9 +222,12 @@ router.post("/webhook", async (req, res) => {
 
     } catch (err) {
         console.error("❌ Webhook Internal Error:", err.message);
+        // Cashfree को 200 OK ही भेजना चाहिए, भले ही प्रोसेसिंग फेल हो जाए, ताकि वह रीट्राई न करे।
         return res.status(200).send("Webhook processing error"); 
     }
 });
+
+// --- Route 3: Check Status ---
 router.get('/check-status/:orderId', async (req, res) => {
     try {
         const order = await Order.findOne({ orderId: req.params.orderId });
@@ -227,6 +239,7 @@ router.get('/check-status/:orderId', async (req, res) => {
     }
 });
 
+// --- Route 4: Fetch User Orders ---
 router.get("/orders/:userId", async (req, res) => {
     const { userId } = req.params; 
     
@@ -244,6 +257,7 @@ router.get("/orders/:userId", async (req, res) => {
     }
 });
 
+// --- Route 5: Download Invoice ---
 router.get('/download-invoice/:orderId', async (req, res) => {
     try {
         const pdfPath = path.join(__dirname, "..", `pdfs/${req.params.orderId}.pdf`);
