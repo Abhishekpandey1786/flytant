@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const Order = require('../models/Order'); 
+const Order = require('../models/Order'); // सुनिश्चित करें कि यह पाथ सही है
 const crypto = require("crypto");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
@@ -9,12 +9,9 @@ const path = require("path");
 const nodemailer = require("nodemailer");
 
 require('dotenv').config();
-
-// यहाँ, WEBHOOK_SECRET को सीधे Hardcode किया गया है
 const APP_ID = process.env.CASHFREE_APP_ID;
 const SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
-// 🔑 HARDCODED FOR DEBUGGING: यह सुनिश्चित करता है कि सही Key का उपयोग हो
-const WEBHOOK_SECRET = 'ssbhmoyw2yo7x8li5e7m'; 
+const WEBHOOK_SECRET = process.env.CASHFREE_WEBHOOK_SECRET; 
 
 const BASE_URL =
     process.env.CASHFREE_ENV === "PROD"
@@ -51,7 +48,7 @@ const generateInvoicePDF = async (orderData, pdfPath) => {
 };
 
 // ----------------------------------------------------
-// 1. Create Order Endpoint (अपरिवर्तित)
+// 1. Create Order Endpoint
 // ----------------------------------------------------
 router.post("/create-order", async (req, res) => {
     try {
@@ -142,7 +139,7 @@ router.post("/webhook", async (req, res) => {
         const dataToHash = timestamp + payloadString;
 
         const expectedSignature = crypto
-            .createHmac("sha256", WEBHOOK_SECRET) // यहाँ Hardcoded Key का उपयोग होगा
+            .createHmac("sha256", WEBHOOK_SECRET) 
             .update(dataToHash) 
             .digest("base64");
 
@@ -240,7 +237,7 @@ router.post("/webhook", async (req, res) => {
 });
 
 // ----------------------------------------------------
-// 3. Status and Orders Endpoints (अपरिवर्तित)
+// 3. Status and Orders Endpoints
 // ----------------------------------------------------
 
 router.get('/check-status/:orderId', async (req, res) => {
