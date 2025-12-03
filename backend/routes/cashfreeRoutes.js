@@ -28,7 +28,7 @@ const transporter = nodemailer.createTransport({
 });
 
 /**
- * PDF Generation Utility
+ * PDF Generation Utility (No Changes)
  */
 const generateInvoicePDF = async (orderData, pdfPath) => {
     const doc = new PDFDocument();
@@ -57,7 +57,7 @@ router.post("/create-order", async (req, res) => {
     try {
         const {
             amount,
-            userId, // 💡 यह MongoDB User ID है
+            userId,
             planName,
             customerName,
             customerEmail,
@@ -69,14 +69,16 @@ router.post("/create-order", async (req, res) => {
         }
 
         const orderId = "ORDER_" + Date.now();
+        
+        // 💡 Logging: Log the user ID being sent
+        console.log(`[Order Creation] Initiating payment for User ID: ${userId}`);
 
         const payload = {
             order_id: orderId,
             order_amount: amount,
             order_currency: "INR",
             customer_details: {
-                // Cashfree को भेजते समय, customer_id में MongoDB user ID डालें
-                customer_id: userId, 
+                customer_id: userId, // Ensure this is the actual MongoDB ID
                 customer_email: customerEmail,
                 customer_phone: customerPhone || "9999999999",
             },
@@ -84,7 +86,6 @@ router.post("/create-order", async (req, res) => {
                 return_url: `https://vistafluence.com/payment-status?order_id=${orderId}`,
             },
             meta_data: {
-                // meta_data में सिर्फ प्लान का नाम और कस्टमर का नाम रखें
                 custom_data: JSON.stringify({
                     planName,
                     customerName
@@ -111,7 +112,7 @@ router.post("/create-order", async (req, res) => {
         });
 
     } catch (err) {
-        console.error("Order creation error:", err.response?.data || err.message);
+        console.error("[Order Creation Error]:", err.response?.data || err.message);
         return res.status(500).json({
             message: "Order creation failed",
             error: err.response?.data || err.message
@@ -120,47 +121,64 @@ router.post("/create-order", async (req, res) => {
 });
 
 // -------------------
-// 2. Webhook Handler (FIXED)
+// 2. Webhook Handler (Optimized for signature check)
 // -------------------
 router.post("/webhook", async (req, res) => {
     try {
         const signature = req.headers["x-webhook-signature"];
-        if (!signature) return res.status(400).send("Missing signature");
         
-        // 💡 सुधार 1: Raw Buffer को String में बदलें
-        const payload = req.body.toString('utf8'); 
+        // 💡 Check 1: Ensure signature exists
+        if (!signature) {
+            console.log("❌ Missing X-Webhook-Signature header.");
+            return res.status(400).send("Missing signature");
+        }
+        
+        // 💡 OPTIMIZATION: Use the raw Buffer (req.body) directly for Hashing
+        const payloadBuffer = req.body; 
+        const payloadString = payloadBuffer.toString('utf8'); 
         
         const expectedSignature = crypto
             .createHmac("sha256", WEBHOOK_SECRET) 
-            .update(payload) // Raw String पर गणना
+            .update(payloadBuffer) // Use Buffer here
             .digest("base64");
 
+        // 💡 Logging: Diagnostic signatures
+        console.log("--- Webhook Signature Check ---");
+        console.log("Received Sig:", signature);
+        console.log("Calculated Sig:", expectedSignature);
+        
         if (signature !== expectedSignature) {
-            console.log("❌ Signature mismatch");
+            console.log("❌ Signature mismatch. Webhook rejected.");
             return res.status(400).send("Invalid signature");
         }
+        console.log("✅ Signature matched. Processing payload.");
 
         // Raw String को JSON में पार्स करें
-        const data = JSON.parse(payload); 
+        const data = JSON.parse(payloadString); 
 
         const orderId = data.data.order.order_id;
-        const cfOrderId = data.data.order.cf_order_id;
         const orderStatus = data.data.order.order_status;
-        const amount = data.data.order.order_amount;
-        const paymentId = data.data.payment?.payment_id;
-        
+        
         const MONGO_USER_ID = data.data.customer_details.customer_id; 
         
-        const customerEmail = data.data.customer_details.customer_email;
-        const customerPhone = data.data.customer_details.customer_phone;
-
-        // meta_data से केवल non-ID fields निकालें
-        const meta = JSON.parse(data.data.order.meta_data.custom_data);
-        const { planName, customerName } = meta; 
-
+        // Ensure we only process PAID events
         if (orderStatus === "PAID") {
+            console.log(`[Webhook PAID] Order ID: ${orderId} | User ID: ${MONGO_USER_ID}`);
+            
             const exists = await Order.findOne({ orderId });
-            if (exists) return res.status(200).send("OK - Already processed");
+            if (exists) {
+                console.log(`[Webhook PAID] Order ${orderId} already processed. Skipping.`);
+                return res.status(200).send("OK - Already processed");
+            }
+            
+            // Extract remaining fields after existence check
+            const cfOrderId = data.data.order.cf_order_id;
+            const amount = data.data.order.order_amount;
+            const paymentId = data.data.payment?.payment_id;
+            const customerEmail = data.data.customer_details.customer_email;
+            const customerPhone = data.data.customer_details.customer_phone;
+            const meta = JSON.parse(data.data.order.meta_data.custom_data);
+            const { planName, customerName } = meta; 
 
             const newOrder = await Order.create({
                 userId: MONGO_USER_ID, 
@@ -175,9 +193,9 @@ router.post("/webhook", async (req, res) => {
                 customerPhone,
                 paidAt: new Date()
             });
+            console.log(`[Webhook PAID] New Order saved successfully: ${orderId}`);
 
             // Generate Invoice
-            // 💡 सुधार 2: __dirname का उपयोग करें ताकि पाथ डिप्लॉयमेंट में सुरक्षित रहे
             const pdfDir = path.join(__dirname, "..", "pdfs"); 
             if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
 
@@ -203,20 +221,22 @@ router.post("/webhook", async (req, res) => {
                 ]
             });
 
-            console.log("Invoice sent:", orderId);
-        }
+            console.log(`[Webhook PAID] Invoice and Email sent for ${orderId}.`);
+        } else {
+            console.log(`[Webhook EVENT] Received order status: ${orderStatus}. No action taken.`);
+        }
 
         return res.status(200).send("OK");
 
     } catch (err) {
-        console.error("Webhook Error:", err);
-        // Cashfree को 200 OK ही भेजना चाहिए, भले ही हमारे साइड पर एरर हो।
+        console.error("❌ Webhook Internal Error:", err.message);
+        // Send 200 OK to Cashfree to avoid repeated notifications
         return res.status(200).send("Webhook processing error"); 
     }
 });
 
 // -------------------
-// 3. Check Status
+// 3. Check Status (Unchanged)
 // -------------------
 router.get('/check-status/:orderId', async (req, res) => {
     try {
@@ -230,7 +250,7 @@ router.get('/check-status/:orderId', async (req, res) => {
 });
 
 // -------------------
-// 4. Fetch User Orders
+// 4. Fetch User Orders (Unchanged)
 // -------------------
 router.get("/orders/:userId", async (req, res) => {
     const { userId } = req.params; 
@@ -250,11 +270,10 @@ router.get("/orders/:userId", async (req, res) => {
 });
 
 // -------------------
-// 5. Download Invoice
+// 5. Download Invoice (Path logic is correct)
 // -------------------
 router.get('/download-invoice/:orderId', async (req, res) => {
     try {
-        // 💡 सुधार: डाउनलोड के लिए भी सुरक्षित पाथ का उपयोग करें
         const pdfPath = path.join(__dirname, "..", `pdfs/${req.params.orderId}.pdf`);
         
         if (!fs.existsSync(pdfPath)) {
