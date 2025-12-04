@@ -114,10 +114,13 @@ router.post("/create-order", async (req, res) => {
 });
 
 router.post("/webhook", async (req, res) => {
-    try {
-        console.log("---- Incoming Webhook Request ----");
+    
+    console.log("---- Incoming Webhook Request ----");
     console.log("Headers:", req.headers);
     console.log("Raw body (string):", req.body.toString('utf8'));
+
+    try {
+        
         const signature = req.headers["x-webhook-signature"];
         const timestamp = req.headers["x-webhook-timestamp"];
         
