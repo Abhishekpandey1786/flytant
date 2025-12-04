@@ -126,7 +126,7 @@ router.post("/webhook", async (req, res) => {
         }
     
         const payloadBuffer = req.body; 
-        const payloadString = payloadBuffer.toString('utf8'); // Buffer को String में कन्वर्ट करें
+        const payloadString = payloadBuffer.toString('utf8').trim(); // Buffer को String में कन्वर्ट करें
         const dataToHash = timestamp + payloadString;
 
         const expectedSignature = crypto
@@ -140,7 +140,7 @@ router.post("/webhook", async (req, res) => {
         console.log("Calculated Sig:", expectedSignature);
         
         if (signature !== expectedSignature) {
-            console.log("❌ Signature mismatch. Webhook rejected.");
+            console.log("❌ Signature mismatch. Webhook rejected.(Key/Payload Mismatch)");
             return res.status(400).send("Invalid signature");
         }
         console.log("✅ Signature matched. Processing payload.");
