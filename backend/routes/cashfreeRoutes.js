@@ -115,7 +115,7 @@ router.post("/create-order", async (req, res) => {
 
 router.post("/webhook", async (req, res) => {
     try {
-        
+        const WEBHOOK_SECRET = process.env.CASHFREE_SECRET_KEY;
         const signature = req.headers["x-cashfree-signature"];
         const timestamp = req.headers["x-cashfree-timestamp"];
         
@@ -125,10 +125,9 @@ router.post("/webhook", async (req, res) => {
             return res.status(400).send("Missing signature/timestamp");
         }
     
-        const payloadBuffer = req.body; 
-        const payloadString = payloadBuffer.toString('utf8').trim(); // Buffer को String में कन्वर्ट करें
+        // const payloadBuffer = req.body; 
+        const rawBody = req.body.toString('utf8').trim(); // Buffer को String में कन्वर्ट करें
         const dataToHash = timestamp + payloadString;
-
         const expectedSignature = crypto
             .createHmac("sha256", WEBHOOK_SECRET) 
             .update(dataToHash) 
