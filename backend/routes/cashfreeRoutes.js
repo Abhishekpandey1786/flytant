@@ -155,8 +155,7 @@ router.post("/webhook", async (req, res) => {
         const orderId = data.data.order.order_id;
         const orderStatus = data.data.order.order_status;
         
-        const MONGO_USER_ID = data.data.customer_details.customer_id; 
-        
+       const MONGO_USER_ID = data.data.order.customer_details.customer_id; 
         if (orderStatus === "PAID") {
             console.log(`[Webhook PAID] Order ID: ${orderId} | User ID: ${MONGO_USER_ID}`);
             const exists = await Order.findOne({ orderId });
