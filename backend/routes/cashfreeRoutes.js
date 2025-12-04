@@ -11,7 +11,8 @@ const nodemailer = require("nodemailer");
 require('dotenv').config();
 const APP_ID = process.env.CASHFREE_APP_ID;
 const SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
-const WEBHOOK_SECRET = process.env.CASHFREE_WEBHOOK_SECRET; 
+// const WEBHOOK_SECRET = process.env.CASHFREE_WEBHOOK_SECRET; 
+const WEBHOOK_SECRET = 'TESTING_KEY_MATCH_12345';
 
 const BASE_URL =
     process.env.CASHFREE_ENV === "PROD"
