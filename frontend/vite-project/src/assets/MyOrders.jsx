@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
+// यदि आप React Router का उपयोग कर रहे हैं, तो Link को import करें 
+// import { Link } from "react-router-dom"; 
 import { AuthContext } from "./AuthContext";
 
 // Define the base URL for the API
@@ -11,19 +13,20 @@ export default function MyOrders() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // ... (formatDate, getStatusClasses, handleDownloadInvoice फंक्शन्स वही रहेंगे) ...
-
     /**
      * Helper function to format the date/time
+     * यह function ISO Date string को लेता है और User-friendly format में बदलता है।
      */
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
+        // new Date() ISO string को सफलतापूर्वक Parse कर लेता है
         return new Date(dateString).toLocaleDateString('en-IN', {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
             hour: '2-digit',
             minute: '2-digit',
+            hour12: true, // 12-घंटे का format (जैसे AM/PM)
         });
     };
 
@@ -31,18 +34,23 @@ export default function MyOrders() {
      * Helper function to determine the color class for the order status badge
      */
     const getStatusClasses = (status) => {
-        switch (status) {
+        const lowerStatus = status ? status.toLowerCase() : '';
+        switch (lowerStatus) {
             case "succeeded":
-                return "bg-green-500 text-white";
+                return "bg-green-600 text-white"; 
             case "failed":
-                return "bg-red-500 text-white";
+                return "bg-red-600 text-white";   
+            case "pending": 
+            case "created": // यदि API 'created' status भेजता है
+            case "processing":
             default:
-                return "bg-yellow-500 text-slate-900";
+                return "bg-yellow-500 text-slate-900"; 
         }
     };
     
     /**
      * Function to handle invoice download
+     * यह Cashfree order ID का उपयोग करके Backend API को कॉल करता है
      */
     const handleDownloadInvoice = (orderId) => {
         const downloadUrl = `${API_BASE_URL}/download-invoice/${orderId}`;
@@ -51,45 +59,41 @@ export default function MyOrders() {
 
 
     useEffect(() => {
-        // user object null या _id missing होने पर रुकें
+        // 1. Logged in न होने पर तुरंत रोकें
         if (!user || !user._id) { 
             setLoading(false);
             setError("Please log in to view your orders.");
-            // 💡 डीबगिंग: अगर user._id नहीं है, तो लॉग करें
-            console.log("[MyOrders] User not logged in or missing _id.");
             return;
         }
         
-        // setLoading को true पर रीसेट करें जब user सफलतापूर्वक लोड हो जाए
+        // 2. Loading state सेट करें
         setLoading(true);
         setError(null);
-
-        // 💡 डीबगिंग: API को कॉल करने से पहले ID प्रिंट करें
-        console.log(`[MyOrders] Attempting to fetch orders for User ID: ${user._id}`);
         
         const fetchOrders = async () => {
             try {
-                // API कॉल में user._id का उपयोग करें
+                // API कॉल में authenticated user ID का उपयोग करें
                 const response = await axios.get(
                     `${API_BASE_URL}/orders/${user._id}`
                 );
+                // 3. Data state में सेट करें
                 setOrders(response.data);
-                console.log("[MyOrders] API Response Data:", response.data); // 💡 डीबगिंग: प्राप्त डेटा को लॉग करें
 
             } catch (err) {
+                // 4. Error प्रबंधन
                 setError("Failed to fetch orders. Please try again later.");
                 console.error("[MyOrders] Fetch Orders Error:", err.response?.data || err.message);
             } finally {
+                // 5. Loading समाप्त
                 setLoading(false);
             }
         };
 
         fetchOrders();
-        // 🚀 सुधार 1: डिपेंडेंसी को user._id पर सेट करें, ताकि user ऑब्जेक्ट में 
-        // किसी अन्य परिवर्तन पर अनावश्यक रूप से री-रन न हो।
+        
+        // Dependency Array: केवल user._id बदलने पर fetch करें
     }, [user?._id]); 
 
-    // ... (UI रेंडरिंग लॉजिक वही रहेगा) ...
     
     if (loading) {
         return (
@@ -120,9 +124,19 @@ export default function MyOrders() {
                 <hr className="border-gray-700" />
                 
                 {orders.length === 0 ? (
-                    <p className="text-center text-gray-400 mt-10 p-4 border border-dashed border-gray-600 rounded-md">
-                        You have no orders yet. Go purchase a plan!
-                    </p>
+                    // खाली ऑर्डर्स के लिए बेहतर UI
+                    <div className="text-center text-gray-400 mt-10 p-6 border border-dashed border-fuchsia-600 rounded-lg max-w-md mx-auto">
+                        <p className="mb-4 text-lg">
+                            <span role="img" aria-label="gift">🎁</span> **Looks like you haven't placed any orders yet!**
+                        </p>
+                        <p className="text-sm">
+                            Go explore our plans to start your journey.
+                        </p>
+                        {/* /plans को अपनी वास्तविक routing path से बदलें */}
+                        <a href="/plans" className="mt-4 inline-block px-6 py-2 bg-fuchsia-600 text-white rounded-md hover:bg-fuchsia-700 transition duration-150 font-semibold shadow-lg">
+                            View Plans
+                        </a>
+                    </div>
                 ) : (
                     <div className="space-y-6 mt-6">
                         {orders.map((order) => (
@@ -132,12 +146,12 @@ export default function MyOrders() {
                             >
                                 <div className="flex justify-between items-start mb-4 flex-wrap gap-2">
                                     <h3 className="text-2xl font-bold text-fuchsia-400">
-                                        {order.planName} Plan
+                                        {order.planName || 'N/A'} Plan
                                     </h3>
                                     <span
                                         className={`px-3 py-1 rounded-full text-sm font-medium uppercase tracking-wider ${getStatusClasses(order.status)}`}
                                     >
-                                        {order.status}
+                                        {order.status || 'N/A'}
                                     </span>
                                 </div>
 
@@ -150,7 +164,7 @@ export default function MyOrders() {
                                     </p>
                                     <p className="sm:col-span-2 md:col-span-1">
                                         <span className="font-semibold text-white">Order ID:</span>{" "}
-                                        {order.orderId}
+                                        {order.orderId || 'N/A'}
                                     </p>
                                     <p>
                                         <span className="font-semibold text-white">Cashfree ID:</span>{" "}
@@ -187,6 +201,7 @@ export default function MyOrders() {
                                         <span className="font-semibold text-white">Order Created:</span>{" "}
                                         {formatDate(order.createdAt)}
                                     </p>
+                                    {/* यहाँ formatDate का उपयोग किया जा रहा है, जो सही है */}
                                     {order.paidAt && order.status === 'succeeded' && (
                                         <p>
                                             <span className="font-semibold text-white">Paid On:</span>{" "}

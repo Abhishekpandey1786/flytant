@@ -222,19 +222,47 @@ router.post("/webhook", async (req, res) => {
         return res.status(200).send("Webhook processing error"); 
     }
 });
-
-// --- Route 3: Check Status ---
 router.get('/check-status/:orderId', async (req, res) => {
     try {
-        const order = await Order.findOne({ orderId: req.params.orderId });
-        if (!order) return res.status(404).json({ message: "Order not found" });
+        const { orderId } = req.params;
+        const cfRes = await axios.get(
+            `${BASE_URL}/orders/${orderId}`,
+            {
+                headers: {
+                    "x-client-id": APP_ID,
+                    "x-client-secret": SECRET_KEY,
+                    "x-api-version": "2025-01-01", 
+                    "Content-Type": "application/json",
+                }
+            }
+        );
 
-        res.status(200).json(order);
+        const cfOrderData = cfRes.data;
+        const statusFromCF = cfOrderData.order_status;
+        
+        console.log(`[Check Status] Order ID: ${orderId}, Status: ${statusFromCF}`);
+        let localOrder = await Order.findOne({ orderId });
+        if (statusFromCF === "PAID" && !localOrder) {
+           
+        }
+        return res.status(200).json({
+            message: "Order status fetched from Cashfree successfully.",
+            cashfree_data: cfOrderData,
+            db_status: localOrder ? localOrder.status : "NOT_IN_DB"
+        });
+
     } catch (err) {
-        res.status(500).send(err.message);
+        console.error("[Get Order Error]:", err.response?.data || err.message);
+        if (err.response?.status === 404) {
+             return res.status(404).json({ message: "Order not found on Cashfree." });
+        }
+        
+        return res.status(500).json({
+            message: "Failed to fetch order status from Cashfree.",
+            error: err.response?.data || err.message
+        });
     }
 });
-
 router.get("/orders/:userId", async (req, res) => {
     const { userId } = req.params; 
     
@@ -249,6 +277,102 @@ router.get("/orders/:userId", async (req, res) => {
     } catch (error) {
         console.error("Error fetching user orders:", error);
         res.status(500).json({ message: "Server error fetching orders." });
+    }
+});
+
+router.patch('/terminate-order/:orderId', async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        
+        console.log(`[Terminate Order] Request received for Order ID: ${orderId}`);
+        const payload = {
+            order_status: "TERMINATED"
+        };
+
+        const cfRes = await axios.patch(
+            `${BASE_URL}/orders/${orderId}`, 
+            payload,
+            {
+                headers: {
+                    "x-client-id": APP_ID,
+                    "x-client-secret": SECRET_KEY,
+                    "x-api-version": "2025-01-01", 
+                    "Content-Type": "application/json",
+                }
+            }
+        );
+
+        const cfOrderData = cfRes.data;
+
+        if (cfOrderData.order_status === "TERMINATED") {
+            await Order.updateOne(
+                { orderId: orderId },
+                { $set: { status: "terminated" } }
+            );
+            console.log(`[Terminate Order] Successfully terminated and updated local DB for ${orderId}.`);
+        } else if (cfOrderData.order_status === "TERMINATION_REQUESTED") {
+            
+            console.log(`[Terminate Order] Termination requested for ${orderId}. Current status: ${cfOrderData.order_status}`);
+        }
+        return res.status(200).json({
+            message: `Order termination request status: ${cfOrderData.order_status}`,
+            cashfree_data: cfOrderData
+        });
+
+    } catch (err) {
+        console.error("[Terminate Order Error]:", err.response?.data || err.message);
+        if (err.response?.status) {
+            return res.status(err.response.status).json({ 
+                message: "Failed to terminate order.",
+                error: err.response?.data || err.message
+            });
+        }
+        
+        return res.status(500).json({
+            message: "Internal server error during order termination.",
+            error: err.message
+        });
+    }
+});
+// --- New Route: Get Order Extended ---
+router.get('/get-extended-details/:orderId', async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        
+        console.log(`[Get Extended] Fetching extended details for Order ID: ${orderId}`);
+
+        // Cashfree Get Order Extended API Call
+        const cfRes = await axios.get(
+            `${BASE_URL}/orders/${orderId}/extended`, // सही ENDPOINT: /orders/{order_id}/extended
+            {
+                headers: {
+                    "x-client-id": APP_ID,
+                    "x-client-secret": SECRET_KEY,
+                    "x-api-version": "2025-01-01", 
+                    "Content-Type": "application/json",
+                }
+            }
+        );
+
+        const extendedOrderData = cfRes.data;
+
+        return res.status(200).json({
+            message: "Extended order details fetched from Cashfree successfully.",
+            extended_data: extendedOrderData
+        });
+
+    } catch (err) {
+        console.error("[Get Extended Error]:", err.response?.data || err.message);
+
+        // 404 (Not Found) को हैंडल करें
+        if (err.response?.status === 404) {
+            return res.status(404).json({ message: "Order or extended data not found on Cashfree." });
+        }
+        
+        return res.status(500).json({
+            message: "Failed to fetch extended order details from Cashfree.",
+            error: err.response?.data || err.message
+        });
     }
 });
 
