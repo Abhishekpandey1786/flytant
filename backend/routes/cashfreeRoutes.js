@@ -113,7 +113,7 @@ router.post("/create-order", async (req, res) => {
     }
 });
 
-// --- Route 2: Webhook (महत्वपूर्ण सुधार) ---
+// --- Route 2: Webhook (महत्वपूर्ण सुधार लागू) ---
 router.post("/webhook", async (req, res) => {
     
     console.log("---- Incoming Webhook Request ----");
@@ -123,18 +123,25 @@ router.post("/webhook", async (req, res) => {
         const signature = req.headers["x-webhook-signature"];
         const timestamp = req.headers["x-webhook-timestamp"];
         
-        // 🚨 सुधार 1: Raw Body String का उपयोग करें, जो app.js में कैप्चर की गई थी।
-        const payloadString = req.rawBodyString; 
-        
-        // सुरक्षा जांच: यदि Raw Body String मौजूद नहीं है, तो तुरंत 200 OK भेजें (मिडिलवेयर कॉन्फ़िगरेशन की जाँच करें)
-        if (!payloadString) {
-            console.log("❌ Raw payload string not found. Check Express middleware configuration.");
-            return res.status(200).send("OK - Raw Payload Missing (Config Error)");
+        // 🚨 सुधार 1: req.rawBodyString की बजाय, req.body (Buffer) को String में बदलें।
+        let payloadString;
+        if (Buffer.isBuffer(req.body)) {
+            payloadString = req.body.toString('utf8').trim(); 
+        } else {
+             // Fallback: यदि किसी कारणवश Buffer न हो, तो यह त्रुटि देगा।
+             console.log("❌ Raw payload is not a Buffer. Check app.js middleware order.");
+             return res.status(200).send("OK - Raw Payload Type Error");
         }
-        
+        
+        // सुरक्षा जांच: यदि Raw Body String खाली है।
+        if (!payloadString) {
+            console.log("❌ Raw payload string is empty.");
+            return res.status(200).send("OK - Empty Payload");
+        }
+        
         if (!signature || !timestamp) {
             console.log("❌ Missing Cashfree signature or timestamp header.");
-            // 🚨 सुधार 2: 400 के बजाय 200 भेजें
+            // 🚨 200 OK वापस भेजना जारी रखें
             return res.status(200).send("Missing signature/timestamp acknowledged");
         }
     
@@ -152,12 +159,12 @@ router.post("/webhook", async (req, res) => {
         
         if (signature !== expectedSignature) {
             console.log("❌ Signature mismatch. Webhook rejected.(Key/Payload Mismatch)");
-            // 🚨 सुधार 3: 400 के बजाय 200 भेजें
+            // 🚨 200 OK वापस भेजना जारी रखें
             return res.status(200).send("Invalid signature acknowledged");
         }
         console.log("✅ Signature matched. Processing payload.");
         
-        // अब हम raw string को पार्स करके डेटा प्राप्त करते हैं
+        // Raw string को पार्स करके डेटा प्राप्त करें
         const data = JSON.parse(payloadString); 
 
         const orderId = data.data.order.order_id;
@@ -172,7 +179,7 @@ router.post("/webhook", async (req, res) => {
                 return res.status(200).send("OK - Already processed");
             }
             
-            // डेटा पार्स करें (req.body की बजाय सीधे data ऑब्जेक्ट से)
+            // डेटा पार्स करें
             const cfOrderId = data.data.order.cf_order_id;
             const amount = data.data.order.order_amount;
             const paymentId = data.data.payment?.payment_id;
@@ -229,7 +236,7 @@ router.post("/webhook", async (req, res) => {
 
     } catch (err) {
         console.error("❌ Webhook Internal Error:", err.message);
-        // 🚨 सुधार 4: कैशफ़्री को 200 OK ही भेजना चाहिए, भले ही प्रोसेसिंग फेल हो जाए।
+        // 🚨 200 OK वापस भेजना जारी रखें
         return res.status(200).send("Webhook processing error acknowledged"); 
     }
 });
