@@ -113,25 +113,25 @@ router.post("/create-order", async (req, res) => {
     }
 });
 
-// --- Route 2: Webhook (महत्वपूर्ण सुधार लागू) ---
+// --- Route 2: Webhook (V5 Signature Verification के लिए अपडेट किया गया) ---
 router.post("/webhook", async (req, res) => {
     
     console.log("---- Incoming Webhook Request ----");
     
     try {
         
-        const signature = req.headers["x-webhook-signature"];
-        const timestamp = req.headers["x-webhook-timestamp"];
+        // 🛑 महत्वपूर्ण V5 सुधार 1: V5 Webhook Headers का उपयोग करें
+        const signature = req.headers["x-cf-signature-v5"]; // नया V5 सिग्नेचर हेडर
+        const timestamp = req.headers["x-cf-timestamp"];     // नया V5 टाइमस्टैम्प हेडर
         
-        // 🚨 सुधार 1: req.rawBodyString की बजाय, req.body (Buffer) को String में बदलें।
+        // सुनिश्चित करें कि raw body Buffer के रूप में उपलब्ध है
         let payloadString;
-        if (Buffer.isBuffer(req.body)) {
-            payloadString = req.body.toString('utf8').trim(); 
-        } else {
-             // Fallback: यदि किसी कारणवश Buffer न हो, तो यह त्रुटि देगा।
-             console.log("❌ Raw payload is not a Buffer. Check app.js middleware order.");
-             return res.status(200).send("OK - Raw Payload Type Error");
-        }
+        if (Buffer.isBuffer(req.body)) {
+            payloadString = req.body.toString('utf8').trim(); 
+        } else {
+            console.log("❌ Raw payload is not a Buffer. Check app.js middleware order.");
+            return res.status(200).send("OK - Raw Payload Type Error");
+        }
         
         // सुरक्षा जांच: यदि Raw Body String खाली है।
         if (!payloadString) {
@@ -141,25 +141,26 @@ router.post("/webhook", async (req, res) => {
         
         if (!signature || !timestamp) {
             console.log("❌ Missing Cashfree signature or timestamp header.");
-            // 🚨 200 OK वापस भेजना जारी रखें
+            // 200 OK वापस भेजना जारी रखें
             return res.status(200).send("Missing signature/timestamp acknowledged");
         }
     
-        
-        const dataToHash = timestamp + payloadString;
+        // 🛑 महत्वपूर्ण V5 सुधार 2: V5 Signature Format: timestamp + "." + payload
+        const dataToHash = timestamp + "." + payloadString; 
+
         const expectedSignature = crypto
             .createHmac("sha256", WEBHOOK_SECRET) 
             .update(dataToHash) 
             .digest("base64");
 
         
-        console.log("--- Webhook Signature Check ---");
+        console.log("--- Webhook Signature Check (V5) ---");
         console.log("Received Sig:", signature);
         console.log("Calculated Sig:", expectedSignature);
         
         if (signature !== expectedSignature) {
             console.log("❌ Signature mismatch. Webhook rejected.(Key/Payload Mismatch)");
-            // 🚨 200 OK वापस भेजना जारी रखें
+            // 200 OK वापस भेजना जारी रखें
             return res.status(200).send("Invalid signature acknowledged");
         }
         console.log("✅ Signature matched. Processing payload.");
@@ -236,7 +237,7 @@ router.post("/webhook", async (req, res) => {
 
     } catch (err) {
         console.error("❌ Webhook Internal Error:", err.message);
-        // 🚨 200 OK वापस भेजना जारी रखें
+        // 200 OK वापस भेजना जारी रखें
         return res.status(200).send("Webhook processing error acknowledged"); 
     }
 });
