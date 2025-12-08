@@ -29,8 +29,32 @@ import AdminDashboard from "./assets/AdminDashboard.jsx";
 import UserNotifications from "./assets/UserNotifications.jsx";
 import MyOrders from "./assets/MyOrders.jsx";
 import PaymentSuccess from "./assets/PaymentSuccess.jsx";
+import { BallTriangle } from 'react-loader-spinner';
 function App() {
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 1000); // 1 second loader
+    return () => clearTimeout(timeout);
+  }, []);
   return (
+    <>
+      {loading ? (
+        <div className="flex items-center justify-center h-screen bg-slate-900">
+          <BallTriangle
+            height={100}
+            width={100}
+            radius={5}
+            color="#d946ef"
+            ariaLabel="ball-triangle-loading"
+            visible={true}
+          />
+        </div>
+      ) : (
+
     <BrowserRouter>
       <NotificationProvider>
         <AuthProvider>
@@ -73,6 +97,8 @@ function App() {
         </AuthProvider>
       </NotificationProvider>
     </BrowserRouter>
+     )}
+    </>
   );
 }
 
