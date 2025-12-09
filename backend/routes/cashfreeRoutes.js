@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const Order = require('../models/Order'); // सुनिश्चित करें कि यह पाथ सही हो
+const Order = require('../models/Order');
 const crypto = require("crypto");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
@@ -46,8 +46,6 @@ const generateInvoicePDF = async (orderData, pdfPath) => {
     doc.end();
     return new Promise((resolve) => doc.on("end", resolve));
 };
-
-// --- Route 1: Create Order (कोई बदलाव नहीं) ---
 router.post("/create-order", async (req, res) => {
     try {
         const {
@@ -111,20 +109,13 @@ router.post("/create-order", async (req, res) => {
             error: err.response?.data || err.message
         });
     }
-});
-
-// --- Route 2: Webhook (V5 Signature Verification के लिए अपडेट किया गया) ---
-router.post("/webhook", async (req, res) => {
+});router.post("/webhook", async (req, res) => {
     
     console.log("---- Incoming Webhook Request ----");
     
     try {
-        
-        // 🛑 महत्वपूर्ण V5 सुधार 1: V5 Webhook Headers का उपयोग करें
-        const signature = req.headers["x-cf-signature-v5"]; // नया V5 सिग्नेचर हेडर
-        const timestamp = req.headers["x-cf-timestamp"];     // नया V5 टाइमस्टैम्प हेडर
-        
-        // सुनिश्चित करें कि raw body Buffer के रूप में उपलब्ध है
+        const signature = req.headers["x-webhook-signature"]; 
+        const timestamp = req.headers["x-webhook-timestamp"]; 
         let payloadString;
         if (Buffer.isBuffer(req.body)) {
             payloadString = req.body.toString('utf8').trim(); 
@@ -132,8 +123,6 @@ router.post("/webhook", async (req, res) => {
             console.log("❌ Raw payload is not a Buffer. Check app.js middleware order.");
             return res.status(200).send("OK - Raw Payload Type Error");
         }
-        
-        // सुरक्षा जांच: यदि Raw Body String खाली है।
         if (!payloadString) {
             console.log("❌ Raw payload string is empty.");
             return res.status(200).send("OK - Empty Payload");
@@ -141,11 +130,8 @@ router.post("/webhook", async (req, res) => {
         
         if (!signature || !timestamp) {
             console.log("❌ Missing Cashfree signature or timestamp header.");
-            // 200 OK वापस भेजना जारी रखें
             return res.status(200).send("Missing signature/timestamp acknowledged");
         }
-    
-        // 🛑 महत्वपूर्ण V5 सुधार 2: V5 Signature Format: timestamp + "." + payload
         const dataToHash = timestamp + "." + payloadString; 
 
         const expectedSignature = crypto
@@ -160,12 +146,9 @@ router.post("/webhook", async (req, res) => {
         
         if (signature !== expectedSignature) {
             console.log("❌ Signature mismatch. Webhook rejected.(Key/Payload Mismatch)");
-            // 200 OK वापस भेजना जारी रखें
             return res.status(200).send("Invalid signature acknowledged");
         }
         console.log("✅ Signature matched. Processing payload.");
-        
-        // Raw string को पार्स करके डेटा प्राप्त करें
         const data = JSON.parse(payloadString); 
 
         const orderId = data.data.order.order_id;
@@ -179,8 +162,6 @@ router.post("/webhook", async (req, res) => {
                 console.log(`[Webhook PAID] Order ${orderId} already processed. Skipping.`);
                 return res.status(200).send("OK - Already processed");
             }
-            
-            // डेटा पार्स करें
             const cfOrderId = data.data.order.cf_order_id;
             const amount = data.data.order.order_amount;
             const paymentId = data.data.payment?.payment_id;
@@ -188,8 +169,6 @@ router.post("/webhook", async (req, res) => {
             const customerPhone = data.data.customer_details.customer_phone;
             const meta = JSON.parse(data.data.order.meta_data.custom_data);
             const { planName, customerName } = meta; 
-
-            // डेटाबेस में सेव करें
             const newOrder = await Order.create({
                 userId: MONGO_USER_ID, 
                 planName,
@@ -237,12 +216,9 @@ router.post("/webhook", async (req, res) => {
 
     } catch (err) {
         console.error("❌ Webhook Internal Error:", err.message);
-        // 200 OK वापस भेजना जारी रखें
         return res.status(200).send("Webhook processing error acknowledged"); 
     }
 });
-
-// --- बाकी Routes (कोई बदलाव नहीं) ---
 router.get('/check-status/:orderId', async (req, res) => {
     try {
         const { orderId } = req.params;
