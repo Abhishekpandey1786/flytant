@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const Order = require('../models/Order'); // सुनिश्चित करें कि यह पाथ सही हो
+const Order = require('../models/Order');
 const crypto = require("crypto");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
@@ -46,8 +46,6 @@ const generateInvoicePDF = async (orderData, pdfPath) => {
     doc.end();
     return new Promise((resolve) => doc.on("end", resolve));
 };
-
-// --- Route 1: Create Order (कोई बदलाव नहीं) ---
 router.post("/create-order", async (req, res) => {
     try {
         const {
@@ -112,137 +110,78 @@ router.post("/create-order", async (req, res) => {
         });
     }
 });
-
-// --- Route 2: Webhook (V5 Signature Verification के लिए अपडेट किया गया) ---
 router.post("/webhook", async (req, res) => {
-    
-    console.log("---- Incoming Webhook Request ----");
-    
-    try {
-        
-        // 🛑 महत्वपूर्ण V5 सुधार 1: V5 Webhook Headers का उपयोग करें
-        const signature = req.headers["x-cf-signature-v5"]; // नया V5 सिग्नेचर हेडर
-        const timestamp = req.headers["x-cf-timestamp"];     // नया V5 टाइमस्टैम्प हेडर
-        
-        // सुनिश्चित करें कि raw body Buffer के रूप में उपलब्ध है
-        let payloadString;
-        if (Buffer.isBuffer(req.body)) {
-            payloadString = req.body.toString('utf8').trim(); 
-        } else {
-            console.log("❌ Raw payload is not a Buffer. Check app.js middleware order.");
-            return res.status(200).send("OK - Raw Payload Type Error");
-        }
-        
-        // सुरक्षा जांच: यदि Raw Body String खाली है।
-        if (!payloadString) {
-            console.log("❌ Raw payload string is empty.");
-            return res.status(200).send("OK - Empty Payload");
-        }
-        
-        if (!signature || !timestamp) {
-            console.log("❌ Missing Cashfree signature or timestamp header.");
-            // 200 OK वापस भेजना जारी रखें
-            return res.status(200).send("Missing signature/timestamp acknowledged");
-        }
-    
-        // 🛑 महत्वपूर्ण V5 सुधार 2: V5 Signature Format: timestamp + "." + payload
-        const dataToHash = timestamp  + payloadString; 
+    console.log("---- Incoming Webhook Request ----");
 
-        const expectedSignature = crypto
-            .createHmac("sha256", WEBHOOK_SECRET) 
-            .update(dataToHash) 
-            .digest("base64");
+    try {
+        const signature = req.headers["x-cf-signature-v5"];
+        const timestamp = req.headers["x-cf-timestamp"];
 
-        
-        console.log("--- Webhook Signature Check (V5) ---");
-        console.log("Received Sig:", signature);
-        console.log("Calculated Sig:", expectedSignature);
-        
-        if (signature !== expectedSignature) {
-            console.log("❌ Signature mismatch. Webhook rejected.(Key/Payload Mismatch)");
-            // 200 OK वापस भेजना जारी रखें
-            return res.status(200).send("Invalid signature acknowledged");
-        }
-        console.log("✅ Signature matched. Processing payload.");
-        
-        // Raw string को पार्स करके डेटा प्राप्त करें
-        const data = JSON.parse(payloadString); 
+        if (!signature || !timestamp) {
+            console.log("❌ Missing signature/timestamp.");
+            return res.status(200).send("OK");
+        }
 
-        const orderId = data.data.order.order_id;
-        const orderStatus = data.data.order.order_status;
-        
-       const MONGO_USER_ID = data.data.order.customer_details.customer_id; 
-        if (orderStatus === "PAID") {
-            console.log(`[Webhook PAID] Order ID: ${orderId} | User ID: ${MONGO_USER_ID}`);
-            const exists = await Order.findOne({ orderId });
-            if (exists) {
-                console.log(`[Webhook PAID] Order ${orderId} already processed. Skipping.`);
-                return res.status(200).send("OK - Already processed");
-            }
-            
-            // डेटा पार्स करें
-            const cfOrderId = data.data.order.cf_order_id;
-            const amount = data.data.order.order_amount;
-            const paymentId = data.data.payment?.payment_id;
-            const customerEmail = data.data.customer_details.customer_email;
-            const customerPhone = data.data.customer_details.customer_phone;
-            const meta = JSON.parse(data.data.order.meta_data.custom_data);
-            const { planName, customerName } = meta; 
+        if (!Buffer.isBuffer(req.body)) {
+            console.log("❌ Webhook body is NOT raw buffer.");
+            return res.status(200).send("OK");
+        }
 
-            // डेटाबेस में सेव करें
-            const newOrder = await Order.create({
-                userId: MONGO_USER_ID, 
-                planName,
-                amount,
-                orderId,
-                cfOrderId,
-                paymentId,
-                status: "succeeded",
-                customerName,
-                customerEmail,
-                customerPhone,
-                paidAt: new Date()
-            });
-            console.log(`[Webhook PAID] New Order saved successfully: ${orderId}`);
-            const pdfDir = path.join(__dirname, "..", "pdfs"); 
-            if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
+        const payloadString = req.body.toString("utf8").trim();
+        const dataToHash = timestamp + "." + payloadString;
 
-            const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
-            await generateInvoicePDF(newOrder, pdfPath);
+        const expectedSignature = crypto
+            .createHmac("sha256", WEBHOOK_SECRET)
+            .update(dataToHash)
+            .digest("base64");
 
-            await transporter.sendMail({
-                from: process.env.MAIL_ID,
-                to: newOrder.customerEmail,
-                subject: `Invoice - ${newOrder.planName}`,
-                html: `
-                    <h2>Payment Successful</h2>
-                    <p>Your payment for <b>${newOrder.planName}</b> is successful.</p>
-                    <p><b>Order ID:</b> ${orderId}</p>
-                    <p><b>Amount:</b> ₹${newOrder.amount}</p>
-                `,
-                attachments: [
-                    {
-                        filename: `${orderId}.pdf`,
-                        path: pdfPath,
-                    }
-                ]
-            });
+        console.log("Received Sig:", signature);
+        console.log("Calculated Sig:", expectedSignature);
 
-            console.log(`[Webhook PAID] Invoice and Email sent for ${orderId}.`);
-        } else {
-            console.log(`[Webhook EVENT] Received order status: ${orderStatus}. No action taken.`);
-        }
+        if (signature !== expectedSignature) {
+            console.log("❌ Signature mismatch");
+            return res.status(200).send("OK");
+        }
 
-        return res.status(200).send("OK");
+        console.log("✅ Signature matched.");
 
-    } catch (err) {
-        console.error("❌ Webhook Internal Error:", err.message);
-        // 200 OK वापस भेजना जारी रखें
-        return res.status(200).send("Webhook processing error acknowledged"); 
-    }
+        const data = JSON.parse(payloadString);
+
+        const orderId = data.data.order.order_id;
+        const orderStatus = data.data.order.order_status;
+        const userId = data.data.order.customer_details.customer_id;
+
+        if (orderStatus === "PAID") {
+            const exists = await Order.findOne({ orderId });
+            if (exists) return res.status(200).send("OK");
+
+            const meta = JSON.parse(data.data.order.meta_data.custom_data);
+
+            const newOrder = await Order.create({
+                userId,
+                planName: meta.planName,
+                amount: data.data.order.order_amount,
+                orderId,
+                cfOrderId: data.data.order.cf_order_id,
+                paymentId: data.data.payment.payment_id,
+                status: "succeeded",
+                customerName: meta.customerName,
+                customerEmail: data.data.customer_details.customer_email,
+                customerPhone: data.data.customer_details.customer_phone,
+                paidAt: new Date()
+            });
+
+            console.log("Order saved:", orderId);
+        }
+
+        return res.status(200).send("OK");
+
+    } catch (e) {
+        console.log("Webhook error:", e.message);
+        return res.status(200).send("OK");
+    }
 });
 
-// --- बाकी Routes (कोई बदलाव नहीं) ---
 router.get('/check-status/:orderId', async (req, res) => {
     try {
         const { orderId } = req.params;
