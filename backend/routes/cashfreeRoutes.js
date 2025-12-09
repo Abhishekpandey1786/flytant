@@ -146,7 +146,7 @@ router.post("/webhook", async (req, res) => {
         }
     
         // 🛑 महत्वपूर्ण V5 सुधार 2: V5 Signature Format: timestamp + "." + payload
-        const dataToHash = timestamp + "." + payloadString; 
+        const dataToHash = timestamp  + payloadString; 
 
         const expectedSignature = crypto
             .createHmac("sha256", WEBHOOK_SECRET) 
