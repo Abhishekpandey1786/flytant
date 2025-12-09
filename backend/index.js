@@ -38,8 +38,7 @@ const io = new Server(server, {
 connectDB();
 app.use(cors());
 
-// ✅ Raw Body Parsing (Cashfree webhook के लिए सही जगह)
-app.use("/api/cashfree/webhook", express.raw({ type: '*/*' })); 
+app.use("/api/cashfree", express.raw({ type: '*/*' })); 
 
 // स्टैंडर्ड JSON/URL-Encoded मिडिलवेयर
 app.use(express.json({ limit: "10mb" }));
@@ -81,7 +80,6 @@ io.on('connection', (socket) => {
 
   socket.on('send_message', async (data) => {
     try {
-        // 🚨 सुधार 3: sender validation
         if (!socket.userId || socket.userId !== data.sender) {
             console.error(`❌ Security alert: Sender ID mismatch or unregistered user. Expected: ${socket.userId}, Received: ${data.sender}`);
             return; 
