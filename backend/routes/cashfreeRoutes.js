@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const Order = require('../models/Order');
+const Order = require('../models/Order'); // सुनिश्चित करें कि यह पाथ सही हो
 const crypto = require("crypto");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
@@ -111,75 +111,118 @@ router.post("/create-order", async (req, res) => {
     }
 });
 router.post("/webhook", async (req, res) => {
-    console.log("---- Incoming Webhook Request ----");
+    
+    console.log("---- Incoming Webhook Request ----");
+    
+    try {
+   
+        const signature = req.headers["x-cf-signature-v5"]; 
+        const timestamp = req.headers["x-cf-timestamp"];   
+        
+        let payloadString;
+        if (Buffer.isBuffer(req.body)) {
+            payloadString = req.body.toString('utf8').trim(); 
+        } else {
+            console.log("❌ Raw payload is not a Buffer. Check app.js middleware order.");
+            return res.status(200).send("OK - Raw Payload Type Error");
+        }
+     
+        if (!payloadString) {
+            console.log("❌ Raw payload string is empty.");
+            return res.status(200).send("OK - Empty Payload");
+        }
+        
+        if (!signature || !timestamp) {
+            console.log("❌ Missing Cashfree signature or timestamp header.");
+            return res.status(200).send("Missing signature/timestamp acknowledged");
+        }
+        const dataToHash = timestamp + "." + payloadString; 
 
-    try {
-        const signature = req.headers["x-cf-signature-v5"];
-        const timestamp = req.headers["x-cf-timestamp"];
+        const expectedSignature = crypto
+            .createHmac("sha256", WEBHOOK_SECRET) 
+            .update(dataToHash) 
+            .digest("base64");
 
-        if (!signature || !timestamp) {
-            console.log("❌ Missing signature/timestamp.");
-            return res.status(200).send("OK");
-        }
+        
+        console.log("--- Webhook Signature Check (V5) ---");
+        console.log("Received Sig:", signature);
+        console.log("Calculated Sig:", expectedSignature);
+        
+        if (signature !== expectedSignature) {
+            console.log("❌ Signature mismatch. Webhook rejected.(Key/Payload Mismatch)");
+            return res.status(200).send("Invalid signature acknowledged");
+        }
+        console.log("✅ Signature matched. Processing payload.");
+        const data = JSON.parse(payloadString); 
 
-        if (!Buffer.isBuffer(req.body)) {
-            console.log("❌ Webhook body is NOT raw buffer.");
-            return res.status(200).send("OK");
-        }
+        const orderId = data.data.order.order_id;
+        const orderStatus = data.data.order.order_status;
+        
+       const MONGO_USER_ID = data.data.order.customer_details.customer_id; 
+        if (orderStatus === "PAID") {
+            console.log(`[Webhook PAID] Order ID: ${orderId} | User ID: ${MONGO_USER_ID}`);
+            const exists = await Order.findOne({ orderId });
+            if (exists) {
+                console.log(`[Webhook PAID] Order ${orderId} already processed. Skipping.`);
+                return res.status(200).send("OK - Already processed");
+            }
+            
+            const cfOrderId = data.data.order.cf_order_id;
+            const amount = data.data.order.order_amount;
+            const paymentId = data.data.payment?.payment_id;
+            const customerEmail = data.data.customer_details.customer_email;
+            const customerPhone = data.data.customer_details.customer_phone;
+            const meta = JSON.parse(data.data.order.meta_data.custom_data);
+            const { planName, customerName } = meta; 
+            const newOrder = await Order.create({
+                userId: MONGO_USER_ID, 
+                planName,
+                amount,
+                orderId,
+                cfOrderId,
+                paymentId,
+                status: "succeeded",
+                customerName,
+                customerEmail,
+                customerPhone,
+                paidAt: new Date()
+            });
+            console.log(`[Webhook PAID] New Order saved successfully: ${orderId}`);
+            const pdfDir = path.join(__dirname, "..", "pdfs"); 
+            if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
 
-        const payloadString = req.body.toString("utf8").trim();
-        const dataToHash = timestamp + "." + payloadString;
+            const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
+            await generateInvoicePDF(newOrder, pdfPath);
 
-        const expectedSignature = crypto
-            .createHmac("sha256", WEBHOOK_SECRET)
-            .update(dataToHash)
-            .digest("base64");
+            await transporter.sendMail({
+                from: process.env.MAIL_ID,
+                to: newOrder.customerEmail,
+                subject: `Invoice - ${newOrder.planName}`,
+                html: `
+                    <h2>Payment Successful</h2>
+                    <p>Your payment for <b>${newOrder.planName}</b> is successful.</p>
+                    <p><b>Order ID:</b> ${orderId}</p>
+                    <p><b>Amount:</b> ₹${newOrder.amount}</p>
+                `,
+                attachments: [
+                    {
+                        filename: `${orderId}.pdf`,
+                        path: pdfPath,
+                    }
+                ]
+            });
 
-        console.log("Received Sig:", signature);
-        console.log("Calculated Sig:", expectedSignature);
+            console.log(`[Webhook PAID] Invoice and Email sent for ${orderId}.`);
+        } else {
+            console.log(`[Webhook EVENT] Received order status: ${orderStatus}. No action taken.`);
+        }
 
-        if (signature !== expectedSignature) {
-            console.log("❌ Signature mismatch");
-            return res.status(200).send("OK");
-        }
+        return res.status(200).send("OK");
 
-        console.log("✅ Signature matched.");
-
-        const data = JSON.parse(payloadString);
-
-        const orderId = data.data.order.order_id;
-        const orderStatus = data.data.order.order_status;
-        const userId = data.data.order.customer_details.customer_id;
-
-        if (orderStatus === "PAID") {
-            const exists = await Order.findOne({ orderId });
-            if (exists) return res.status(200).send("OK");
-
-            const meta = JSON.parse(data.data.order.meta_data.custom_data);
-
-            const newOrder = await Order.create({
-                userId,
-                planName: meta.planName,
-                amount: data.data.order.order_amount,
-                orderId,
-                cfOrderId: data.data.order.cf_order_id,
-                paymentId: data.data.payment.payment_id,
-                status: "succeeded",
-                customerName: meta.customerName,
-                customerEmail: data.data.customer_details.customer_email,
-                customerPhone: data.data.customer_details.customer_phone,
-                paidAt: new Date()
-            });
-
-            console.log("Order saved:", orderId);
-        }
-
-        return res.status(200).send("OK");
-
-    } catch (e) {
-        console.log("Webhook error:", e.message);
-        return res.status(200).send("OK");
-    }
+    } catch (err) {
+        console.error("❌ Webhook Internal Error:", err.message);
+        return res.status(200).send("Webhook processing error acknowledged"); 
+    }
 });
 
 router.get('/check-status/:orderId', async (req, res) => {
@@ -203,7 +246,6 @@ router.get('/check-status/:orderId', async (req, res) => {
         console.log(`[Check Status] Order ID: ${orderId}, Status: ${statusFromCF}`);
         let localOrder = await Order.findOne({ orderId });
         if (statusFromCF === "PAID" && !localOrder) {
-           // यदि भुगतान हो चुका है लेकिन DB में नहीं है, तो फॉलबैक लॉजिक यहाँ डालें
         }
         return res.status(200).json({
             message: "Order status fetched from Cashfree successfully.",
@@ -294,16 +336,14 @@ router.patch('/terminate-order/:orderId', async (req, res) => {
         });
     }
 });
-// --- New Route: Get Order Extended (कोई बदलाव नहीं) ---
+
 router.get('/get-extended-details/:orderId', async (req, res) => {
     try {
         const { orderId } = req.params;
         
         console.log(`[Get Extended] Fetching extended details for Order ID: ${orderId}`);
-
-        // Cashfree Get Order Extended API Call
         const cfRes = await axios.get(
-            `${BASE_URL}/orders/${orderId}/extended`, // सही ENDPOINT: /orders/{order_id}/extended
+            `${BASE_URL}/orders/${orderId}/extended`, 
             {
                 headers: {
                     "x-client-id": APP_ID,
@@ -323,8 +363,6 @@ router.get('/get-extended-details/:orderId', async (req, res) => {
 
     } catch (err) {
         console.error("[Get Extended Error]:", err.response?.data || err.message);
-
-        // 404 (Not Found) को हैंडल करें
         if (err.response?.status === 404) {
             return res.status(404).json({ message: "Order or extended data not found on Cashfree." });
         }
