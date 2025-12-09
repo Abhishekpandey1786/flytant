@@ -26,9 +26,11 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+
+// 🚨 सुधार 1: Socket.IO CORS को 'origin: "*"' में बदला गया
 const io = new Server(server, {
   cors: {
-    origin: "*", 
+    origin: "*", // सभी ओरिजिन्स की अनुमति (या अपनी लाइव URL का array इस्तेमाल करें)
     methods: ["GET", "POST"]
   }
 });
@@ -36,10 +38,10 @@ const io = new Server(server, {
 connectDB();
 app.use(cors());
 
-
+// ✅ Raw Body Parsing (Cashfree webhook के लिए सही जगह)
 app.use("/api/cashfree/webhook", express.raw({ type: '*/*' })); 
 
-
+// स्टैंडर्ड JSON/URL-Encoded मिडिलवेयर
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
@@ -47,6 +49,7 @@ app.get("/", (req, res) => {
   res.send("Welcome to the backend API!");
 });
 
+// --- Routes ---
 app.use("/api/applied", appliedRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users/", userRoutes);
@@ -78,7 +81,7 @@ io.on('connection', (socket) => {
 
   socket.on('send_message', async (data) => {
     try {
-       
+        // 🚨 सुधार 3: sender validation
         if (!socket.userId || socket.userId !== data.sender) {
             console.error(`❌ Security alert: Sender ID mismatch or unregistered user. Expected: ${socket.userId}, Received: ${data.sender}`);
             return; 
