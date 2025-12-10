@@ -116,8 +116,8 @@ router.post("/webhook", async (req, res) => {
     
     try {
    
-        const signature =req.headers["x-webhook-signature"];  
-        const timestamp = req.headers["x-webhook-timestamp"];
+        const signature = req.headers["x-cf-signature-v5"]; 
+        const timestamp = req.headers["x-cf-timestamp"];   
         
         let payloadString;
         if (Buffer.isBuffer(req.body)) {
