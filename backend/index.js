@@ -6,15 +6,17 @@ const dotenv = require("dotenv");
 const path = require("path");
 const connectDB = require("./config/db");
 
+// --- Models ---
+const Chat = require("./models/Chat"); 
+const User = require("./models/User"); 
+
+// --- Routes ---
 const chatRoutes = require("./routes/chatRoutes");
-const Chat = require("./models/Chat"); // Model
-const User = require("./models/User"); // Model
 const newsRoutes = require("./routes/news");
 const authRoutes = require("./routes/authRoutes");
-const userRoutes = require("./routes/userRoutes");
+const userRoutes = require("./routes/userRoutes"); // Handles /api/users logic
 const campaignRoutes = require("./routes/campaigns");
 const adminRoutes = require("./routes/admin");
-const usersRoutes = require("./routes/users");
 const advertiserRoutes = require("./routes/advertiser");
 const appliedRoutes = require("./routes/appliedcampaigns");
 const contactRoutes = require("./routes/contact");
@@ -25,46 +27,67 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+
+// Socket.IO Configuration
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    // 💡 BEST PRACTICE: Security के लिए, "*" के बजाय अपने फ्रंटएंड URL का उपयोग करें।
+    // origin: process.env.CLIENT_URL || "*", 
+    origin: "*", 
     methods: ["GET", "POST"],
   },
 });
 
+// --- Database Connection ---
 connectDB();
 app.use(cors());
 
+
+// --- Body Parsing Middleware ---
+
+// 1. CASHFREE WEBHOOK MIDDLEWARE
+// Webhook Signature verification के लिए RAW buffer body आवश्यक है।
+// यह लाइन सुनिश्चित करती है कि केवल इस endpoint पर req.body कच्चा (raw) रहे।
 app.use("/api/cashfree/webhook", express.raw({ type: "application/json" }));
 
+// 2. STANDARD JSON MIDDLEWARE
+// यह बाकी सभी routes के लिए JSON body को parse करता है।
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
+
+
+// --- Express Routes ---
 
 app.get("/", (req, res) => {
   res.send("Welcome to the backend API!");
 });
-app.use("/api/applied", appliedRoutes);
+
+// Note: I merged /api/users/ and /api/users to use only one set of handlers (userRoutes).
 app.use("/api/auth", authRoutes);
-app.use("/api/users/", userRoutes);
+app.use("/api/users", userRoutes); 
 app.use("/api/campaigns", campaignRoutes);
 app.use("/api/chats", chatRoutes);
-app.use("/api/users", usersRoutes);
 app.use("/api/advertiser", advertiserRoutes);
+app.use("/api/applied", appliedRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/api", publicRoutes);
+app.use("/api", publicRoutes); // Public/Notifications routes
 app.use("/api/contact", contactRoutes);
 app.use("/api/cashfree", cashfreeRoutes);
 
+
+// --- Socket.IO Logic ---
 const connectedUsers = new Map();
 
 io.on("connection", (socket) => {
   console.log(`⚡ Socket connected: ${socket.id}`);
 
   socket.on("register", (userId) => {
-    connectedUsers.set(userId, socket.id);
-    socket.userId = userId;
-    console.log(`✅ User ${userId} registered with socket ${socket.id}`);
+    // Convert userId to string for Map key consistency
+    const key = userId.toString(); 
+    connectedUsers.set(key, socket.id);
+    socket.userId = key;
+    console.log(`✅ User ${key} registered with socket ${socket.id}`);
   });
 
   socket.on("join_room", (roomId) => {
@@ -74,9 +97,11 @@ io.on("connection", (socket) => {
 
   socket.on("send_message", async (data) => {
     try {
-      if (!socket.userId || socket.userId !== data.sender) {
+      const senderId = data.sender.toString(); // Ensure sender is string
+      
+      if (!socket.userId || socket.userId !== senderId) {
         console.error(
-          `❌ Security alert: Sender ID mismatch or unregistered user. Expected: ${socket.userId}, Received: ${data.sender}`
+          `❌ Security alert: Sender ID mismatch or unregistered user. Expected: ${socket.userId}, Received: ${senderId}`
         );
         return;
       }
@@ -84,7 +109,7 @@ io.on("connection", (socket) => {
       const message = new Chat({
         roomId: data.roomId,
         text: data.text,
-        sender: data.sender,
+        sender: senderId,
         receiver: data.receiver,
         senderName: data.senderName,
       });
@@ -92,7 +117,7 @@ io.on("connection", (socket) => {
 
       io.to(data.roomId).emit("message_received", message);
 
-      const receiverSocketId = connectedUsers.get(data.receiver);
+      const receiverSocketId = connectedUsers.get(data.receiver.toString());
       if (receiverSocketId && receiverSocketId !== socket.id) {
         io.to(receiverSocketId).emit("inbox_ping", {
           id: Date.now(),
@@ -115,6 +140,21 @@ io.on("connection", (socket) => {
     }
   });
 });
+
+
+// --- Global Error Handler ---
+// ⚠️ यह सभी routes के बाद आना चाहिए।
+app.use((err, req, res, next) => {
+    console.error("🔥 Global Error Handler Caught:", err.stack);
+    const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+    res.status(statusCode).json({
+        message: err.message,
+        // Production mode में stack trace छिपाएँ
+        stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+    });
+});
+// --- End Global Error Handler ---
+
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
