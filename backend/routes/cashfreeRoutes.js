@@ -131,14 +131,19 @@ router.post("/webhook", async (req, res) => {
             console.log("❌ Raw payload string is empty.");
             return res.status(200).send("OK - Empty Payload");
         }
-        
-        if (!signature || !timestamp) {
+         let data;
+        try {
+            data = JSON.parse(payloadString);
+        } catch (e) {
+            console.log("❌ Payload parsing failed (Invalid JSON):", e.message);
+            return res.status(200).send("OK - Invalid JSON Payload");
+        }
+        const eventType = data.event_type;
+        if (!signature || !timestamp || !eventType) {
             console.log("❌ Missing Cashfree signature or timestamp header. (Check header names!)");
             return res.status(200).send("Missing signature/timestamp acknowledged");
         }
-        
-        // V2/V3 के लिए हैशिंग स्ट्रिंग: timestamp + rawBody
-        const dataToHash = timestamp + payloadString; 
+        const dataToHash = eventType + timestamp + payloadString;
 
         const expectedSignature = crypto
             .createHmac("sha256", WEBHOOK_SECRET) 
@@ -158,7 +163,7 @@ router.post("/webhook", async (req, res) => {
         console.log("✅ Signature matched. Processing payload.");
         
         // --- Payload Processing ---
-        const data = JSON.parse(payloadString); 
+//         const data = JSON.parse(payloadString); 
 
         const orderId = data.data.order.order_id;
         // Webhook body में order_status का उपयोग करें
