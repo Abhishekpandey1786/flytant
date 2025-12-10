@@ -148,7 +148,7 @@ router.post("/webhook", async (req, res) => {
         console.log("Received Sig:", signature);
         console.log("Calculated Sig:", expectedSignature);
         
-        if (signature !== expectedSignature) {
+        if (signature != expectedSignature) {
             console.log("❌ Signature mismatch. Webhook rejected.(Key/Payload Mismatch)");
             return res.status(200).send("Invalid signature acknowledged");
         }
