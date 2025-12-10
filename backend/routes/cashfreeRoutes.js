@@ -106,8 +106,9 @@ router.post("/create-order", async (req, res) => {
 router.post("/webhook", async (req, res) => {
   console.log("---- Incoming Cashfree Webhook Request ----");
   try {
-    const signature = req.headers["x-webhook-signature"];
-    const timestamp = req.headers["x-webhook-timestamp"];
+    const headers = req.headers;
+    const signature = headers["x-webhook-signature"] || headers["X-WEBHOOK-SIGNATURE"];
+    const timestamp = headers["x-webhook-timestamp"] || headers["X-WEBHOOK-TIMESTAMP"];
     let payloadString;
     if (Buffer.isBuffer(req.body)) {
       payloadString = req.body.toString("utf8");
