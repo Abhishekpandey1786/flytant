@@ -91,7 +91,7 @@ router.post("/create-order", async (req, res) => {
                 headers: {
                     "x-client-id": APP_ID,
                     "x-client-secret": SECRET_KEY,
-                    "x-api-version": "2023-08-01",
+                    "x-webhook-version": "2025-01-01",
                     "Content-Type": "application/json",
                 }
             }
@@ -116,8 +116,8 @@ router.post("/webhook", async (req, res) => {
     
     try {
    
-        const signature = req.headers["x-cf-signature-v5"]; 
-        const timestamp = req.headers["x-cf-timestamp"];   
+        const signature = req.headers["x-webhook-signatur"]; 
+        const timestamp = req.headers["x-webhook-timestamp"];   
         
         let payloadString;
         if (Buffer.isBuffer(req.body)) {
@@ -234,7 +234,7 @@ router.get('/check-status/:orderId', async (req, res) => {
                 headers: {
                     "x-client-id": APP_ID,
                     "x-client-secret": SECRET_KEY,
-                    "x-api-version": "2025-01-01", 
+                    "x-webhook-version": "2025-01-01", 
                     "Content-Type": "application/json",
                 }
             }
