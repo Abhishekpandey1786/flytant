@@ -136,7 +136,7 @@ router.post("/webhook", async (req, res) => {
             console.log("❌ Missing Cashfree signature or timestamp header.");
             return res.status(200).send("Missing signature/timestamp acknowledged");
         }
-        const dataToHash = timestamp + "." + payloadString; 
+        const dataToHash = timestamp + payloadString; 
 
         const expectedSignature = crypto
             .createHmac("sha256", WEBHOOK_SECRET) 
