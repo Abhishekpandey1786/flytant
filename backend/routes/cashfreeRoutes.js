@@ -116,12 +116,12 @@ router.post("/webhook", async (req, res) => {
     
     try {
    
-        const signature = req.headers["x-webhook-signatur"]; 
+        const signature = req.headers["x-webhook-signature"]; 
         const timestamp = req.headers["x-webhook-timestamp"];   
         
         let payloadString;
         if (Buffer.isBuffer(req.body)) {
-            payloadString = req.body.toString('utf8').trim(); 
+            payloadString = req.body.toString('utf8'); 
         } else {
             console.log("❌ Raw payload is not a Buffer. Check app.js middleware order.");
             return res.status(200).send("OK - Raw Payload Type Error");
@@ -136,7 +136,7 @@ router.post("/webhook", async (req, res) => {
             console.log("❌ Missing Cashfree signature or timestamp header.");
             return res.status(200).send("Missing signature/timestamp acknowledged");
         }
-        const dataToHash = timestamp + payloadString; 
+        const dataToHash = timestamp + "." + payloadString; 
 
         const expectedSignature = crypto
             .createHmac("sha256", WEBHOOK_SECRET) 
@@ -148,7 +148,7 @@ router.post("/webhook", async (req, res) => {
         console.log("Received Sig:", signature);
         console.log("Calculated Sig:", expectedSignature);
         
-        if (signature != expectedSignature) {
+        if (signature !== expectedSignature) {
             console.log("❌ Signature mismatch. Webhook rejected.(Key/Payload Mismatch)");
             return res.status(200).send("Invalid signature acknowledged");
         }
