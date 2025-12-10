@@ -109,6 +109,7 @@ router.post("/webhook", async (req, res) => {
     const headers = req.headers;
     const signature = headers["x-webhook-signature"] || headers["X-WEBHOOK-SIGNATURE"];
     const timestamp = headers["x-webhook-timestamp"] || headers["X-WEBHOOK-TIMESTAMP"];
+    console.log(`[Debug Headers] Sig: ${signature}, TS: ${timestamp}`);
     let payloadString;
     if (Buffer.isBuffer(req.body)) {
       payloadString = req.body.toString("utf8");
