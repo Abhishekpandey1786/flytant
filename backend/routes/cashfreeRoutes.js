@@ -104,36 +104,25 @@ router.post("/create-order", async (req, res) => {
   }
 });
 router.post("/webhook", async (req, res) => {
-  console.log("---- Incoming Cashfree Webhook Request ----");
+  console.log("---- Incoming Cashfree Webhook ----");
 
   try {
-    // STEP 1: Read Signature + Timestamp from headers
     const signature = req.headers["x-webhook-signature"];
     const timestamp = req.headers["x-webhook-timestamp"];
 
     console.log("[Sig Debug] Signature:", signature);
     console.log("[Sig Debug] Timestamp:", timestamp);
 
-    if (!signature || !timestamp) {
-      console.log("❌ Missing signature/timestamp");
-      return res.status(200).send("Missing signature");
-    }
+    if (!signature || !timestamp) return res.status(200).send("Missing signature");
 
-    // STEP 2: Get RAW payload EXACTLY as received
-    let rawBodyString;
-    if (Buffer.isBuffer(req.body)) {
-      rawBodyString = req.body.toString("utf8");
-    } else {
-      console.log("❌ Raw body not buffer. Fix body-parser order!");
+    if (!Buffer.isBuffer(req.body)) {
+      console.log("❌ Raw body not buffer. Fix middleware order!");
       return res.status(200).send("Raw payload error");
     }
 
-    if (!rawBodyString) {
-      console.log("❌ Empty raw payload");
-      return res.status(200).send("Empty payload");
-    }
+    const rawBodyString = req.body.toString("utf8");
+    if (!rawBodyString) return res.status(200).send("Empty payload");
 
-    // STEP 3: V3 Signature = HMAC_SHA256(event_type + timestamp + raw_payload)
     let parsed;
     try {
       parsed = JSON.parse(rawBodyString);
@@ -143,31 +132,15 @@ router.post("/webhook", async (req, res) => {
     }
 
     const eventType = parsed.event_type;
-    if (!eventType) {
-      console.log("❌ No event_type found in payload.");
-      return res.status(200).send("No event_type");
-    }
+    if (!eventType) return res.status(200).send("No event_type");
 
+    // Signature verification (V3)
     const dataToHash = eventType + timestamp + rawBodyString;
+    const expectedSignature = crypto.createHmac("sha256", WEBHOOK_SECRET).update(dataToHash).digest("base64");
 
-    const expectedSignature = crypto
-      .createHmac("sha256", WEBHOOK_SECRET)
-      .update(dataToHash)
-      .digest("base64");
-
-    console.log("[Expected Signature]", expectedSignature);
-
-    // STEP 4: Compare signature
-    if (signature !== expectedSignature) {
-      console.log("❌ Signature MISMATCH (Payload/Key wrong)");
-      return res.status(200).send("Invalid Signature");
-    }
+    if (signature !== expectedSignature) return res.status(200).send("Invalid Signature");
 
     console.log("✅ Signature MATCHED — Processing Payment");
-
-    // -------------------------------
-    // 🚀 PAYMENT PROCESSING STARTS
-    // -------------------------------
 
     const orderId = parsed.data.order.order_id;
     const orderStatus = parsed.data.payment.payment_status;
@@ -177,10 +150,8 @@ router.post("/webhook", async (req, res) => {
       console.log(`[✔ SUCCESS] Payment Confirmed for ${orderId}`);
 
       let existing = await Order.findOne({ orderId });
-
-      // Fetch saved metadata (planName, customerName)
-      let planName = existing?.planName || "N/A";
-      let customerName = existing?.customerName || "Customer";
+      const planName = existing?.planName || "N/A";
+      const customerName = existing?.customerName || "Customer";
 
       const paymentId = parsed.data.payment.cf_payment_id;
       const cfOrderId = parsed.data.order.cf_order_id;
@@ -189,7 +160,6 @@ router.post("/webhook", async (req, res) => {
       const phone = parsed.data.order.customer_details.customer_phone;
 
       if (!existing) {
-        // Create new order record
         existing = await Order.create({
           userId,
           planName,
@@ -203,27 +173,18 @@ router.post("/webhook", async (req, res) => {
           status: "succeeded",
           paidAt: new Date(),
         });
-
         console.log("✔ New order saved:", orderId);
       } else {
         await Order.updateOne(
           { orderId },
-          {
-            $set: {
-              status: "succeeded",
-              cfOrderId,
-              paymentId,
-              paidAt: new Date(),
-            },
-          }
+          { $set: { status: "succeeded", cfOrderId, paymentId, paidAt: new Date() } }
         );
       }
 
-      // Generate Invoice
+      // Generate PDF Invoice
       const pdfDir = path.join(__dirname, "..", "pdfs");
-      if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir);
+      if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
       const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
-
       await generateInvoicePDF(existing, pdfPath);
 
       // Send email
@@ -246,6 +207,35 @@ router.post("/webhook", async (req, res) => {
   } catch (err) {
     console.error("❌ Webhook Error:", err);
     return res.status(200).send("Webhook Error");
+  }
+});
+
+// ========================== CHECK STATUS ==========================
+router.get("/check-status/:orderId", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const cfRes = await axios.get(`${BASE_URL}/orders/${orderId}`, {
+      headers: {
+        "x-client-id": APP_ID,
+        "x-client-secret": SECRET_KEY,
+        "x-api-version": "2025-01-01",
+        "Content-Type": "application/json",
+      },
+    });
+
+    const cfOrderData = cfRes.data;
+    const statusFromCF = cfOrderData.order_status;
+    const localOrder = await Order.findOne({ orderId });
+
+    return res.status(200).json({
+      message: "Order status fetched from Cashfree successfully.",
+      cashfree_data: cfOrderData,
+      db_status: localOrder ? localOrder.status : "NOT_IN_DB",
+    });
+  } catch (err) {
+    console.error("[Get Order Error]:", err.response?.data || err.message);
+    if (err.response?.status === 404) return res.status(404).json({ message: "Order not found on Cashfree." });
+    return res.status(500).json({ message: "Failed to fetch order status.", error: err.response?.data || err.message });
   }
 });
 
@@ -390,15 +380,8 @@ router.get("/get-extended-details/:orderId", async (req, res) => {
 
 router.get("/download-invoice/:orderId", async (req, res) => {
   try {
-    const pdfPath = path.join(
-      __dirname,
-      "..",
-      `pdfs/${req.params.orderId}.pdf`
-    );
-    if (!fs.existsSync(pdfPath)) {
-      return res.status(404).json({ message: "Invoice not found" });
-    }
-
+    const pdfPath = path.join(__dirname, "..", `pdfs/${req.params.orderId}.pdf`);
+    if (!fs.existsSync(pdfPath)) return res.status(404).json({ message: "Invoice not found" });
     res.download(pdfPath);
   } catch (err) {
     res.status(500).send(err.message);
