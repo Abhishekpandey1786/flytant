@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
-const Order = require("../models/Order"); 
+const Order = require("../models/Order");
 const crypto = require("crypto");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
@@ -143,7 +143,7 @@ router.post("/webhook", async (req, res) => {
       .digest("base64");
 
     console.log("--- Webhook Signature Check (V2/V3) ---");
-    console.log("Received Sig:", signature); 
+    console.log("Received Sig:", signature);
     if (signature !== expectedSignature) {
       console.log(
         "❌ Signature mismatch. Webhook rejected.(Key/Payload Mismatch)"
@@ -152,8 +152,8 @@ router.post("/webhook", async (req, res) => {
     }
     console.log("✅ Signature matched. Processing payload.");
     const orderId = data.data.order.order_id;
-    const orderStatus = data.data.payment.payment_status; 
-    const MONGO_USER_ID = data.data.order.customer_details.customer_id; 
+    const orderStatus = data.data.payment.payment_status;
+    const MONGO_USER_ID = data.data.order.customer_details.customer_id;
     if (orderStatus === "SUCCESS") {
       console.log(
         `[Webhook SUCCESS] Order ID: ${orderId} | User ID: ${MONGO_USER_ID}`
@@ -165,11 +165,11 @@ router.post("/webhook", async (req, res) => {
         );
         return res.status(200).send("OK - Already processed");
       }
-      const cfOrderId = data.data.order.cf_order_id; 
+      const cfOrderId = data.data.order.cf_order_id;
       const paymentId = data.data.payment.cf_payment_id;
       const amount = data.data.payment.payment_amount;
-      const customerEmail = data.data.customer_details.customer_email;
-      const customerPhone = data.data.customer_details.customer_phone;
+      const customerEmail = data.data.order.customer_details.customer_email;
+      const customerPhone = data.data.order.customer_details.customer_phone;
       const meta = data.data.order.order_tags
         ? data.data.order.order_tags.custom_data
         : "{}";
@@ -191,7 +191,7 @@ router.post("/webhook", async (req, res) => {
           planName,
           amount,
           orderId,
-          cfOrderId: paymentId, 
+          cfOrderId: paymentId,
           paymentId,
           status: "succeeded",
           customerName,
@@ -244,7 +244,6 @@ router.post("/webhook", async (req, res) => {
         );
       }
     } else if (orderStatus === "FAILED" || orderStatus === "PENDING") {
-    
       await Order.updateOne(
         { orderId: orderId },
         { $set: { status: orderStatus.toLowerCase() } }
