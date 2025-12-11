@@ -35,7 +35,7 @@ const io = new Server(server, {
 connectDB();
 app.use(cors());
 
-app.use("/api/cashfree/webhook", express.raw({ type: "application/json" }));
+// app.use("/api/cashfree/webhook", express.raw({ type: "application/json" }));
 
 app.use(express.json());
 app.use(express.urlencoded({  extended: true }));
@@ -54,7 +54,7 @@ app.use("/api/news", newsRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api", publicRoutes);
 app.use("/api/contact", contactRoutes);
-app.use("/api/cashfree", cashfreeRoutes);
+app.use("/api/phonepe", cashfreeRoutes);
 
 const connectedUsers = new Map();
 

@@ -1,480 +1,176 @@
 const express = require("express");
 const router = express.Router();
-const axios = require("axios");
+const dotenv = require("dotenv");
+dotenv.config();
+
 const Order = require("../models/Order");
-const crypto = require("crypto");
-const PDFDocument = require("pdfkit");
-const fs = require("fs");
-const path = require("path");
-const nodemailer = require("nodemailer");
+const { v4: uuidv4 } = require("uuid");
 
-require("dotenv").config();
-const APP_ID = process.env.CASHFREE_APP_ID;
-const SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
-const WEBHOOK_SECRET = process.env.CASHFREE_WEBHOOK_SECRET;
-const BASE_URL =
-  process.env.CASHFREE_ENV === "PROD"
-    ? "https://api.cashfree.com/pg"
-    : "https://sandbox.cashfree.com/pg";
+const {
+  PhonePeClient,
+  Env,
+  StandardCheckoutRequest,
+} = require("phonepe-sdk-nodejs");
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.MAIL_ID,
-    pass: process.env.MAIL_PASS,
-  },
+const MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
+const API_KEY = process.env.PHONEPE_API_KEY;
+const SALT_INDEX = process.env.PHONEPE_SALT_INDEX || 1;
+const isProduction = process.env.NODE_ENV === "production";
+
+const phonepeClient = new PhonePeClient({
+  merchantId: MERCHANT_ID,
+  apiKey: API_KEY,
+  saltIndex: SALT_INDEX,
+  env: isProduction ? Env.PRODUCTION : Env.UAT,
 });
-
-const generateInvoicePDF = async (orderData, pdfPath) => {
-  const doc = new PDFDocument();
-  doc.pipe(fs.createWriteStream(pdfPath));
-
-  doc.fontSize(22).text("Payment Invoice", { align: "center" });
-  doc.moveDown();
-
-  doc.fontSize(14).text(`Order ID: ${orderData.orderId}`);
-  doc.text(`Cashfree Order ID: ${orderData.cfOrderId}`);
-  doc.text(`Payment ID: ${orderData.paymentId}`);
-  doc.text(`Plan: ${orderData.planName}`);
-  doc.text(`Amount: ₹${orderData.amount}`);
-  doc.text(`Customer: ${orderData.customerName}`);
-  doc.text(`Status: SUCCESS`);
-  doc.text(`Paid At: ${orderData.paidAt.toLocaleString()}`);
-
-  doc.end();
-  return new Promise((resolve) => doc.on("end", resolve));
-};
-
-router.post("/create-order", async (req, res) => {
+router.post("/create-payment", async (req, res) => {
   try {
-    const {
+    const { amount, name, email, phone, plan } = req.body;
+
+    const orderId = uuidv4().replace(/-/g, "").toUpperCase();
+    const amountInPaise = amount * 100;
+
+    const stdCheckoutReq = new StandardCheckoutRequest({
+      merchantId: MERCHANT_ID,
+      merchantTransactionId: orderId,
+      amount: amountInPaise.toString(),
+      redirectUrl: `https://vistafluence.com/payment-status?order_id=${orderId}`,
+      callbackUrl: "https://vistafluence.com/api/payment/webhook",
+      mobileNumber: phone,
+      paymentInstrument: {
+        type: "PAY_PAGE",
+      },
+    });
+
+    const response = await phonepeClient.standardCheckout(stdCheckoutReq);
+
+    if (!response.success || !response.data.instrumentResponse.redirectInfo.url) {
+      return res.status(500).json({ error: "PhonePe Payment Init Failed" });
+    }
+
+    await Order.create({
+      userEmail: email,
+      userName: name,
+      userPhoneNo: phone,
+      plan,
       amount,
-      userId,
-      planName,
-      customerName,
-      customerEmail,
-      customerPhone,
-    } = req.body;
-
-    if (!amount || !userId || !planName || !customerEmail) {
-      return res.status(400).json({ message: "Required fields missing" });
-    }
-
-    const orderId = "ORDER_" + Date.now();
-    console.log(`[Order Creation] Initiating payment for User ID: ${userId}`);
-
-    const payload = {
-      order_id: orderId,
-      order_amount: amount,
-      order_currency: "INR",
-      customer_details: {
-        customer_id: userId,
-        customer_email: customerEmail,
-        customer_phone: customerPhone || "9999999999",
-      },
-      order_meta: {
-        return_url: `https://vistafluence.com/payment-status?order_id=${orderId}`,
-      },
-      meta_data: {
-        custom_data: JSON.stringify({
-          planName,
-          customerName,
-        }),
-      },
-    };
-
-    const cfRes = await axios.post(`${BASE_URL}/orders`, payload, {
-      headers: {
-        "x-client-id": APP_ID,
-        "x-client-secret": SECRET_KEY,
-        "x-api-version": "2025-01-01",
-        "Content-Type": "application/json",
-      },
+      orderId,
+      phonepeOrderId: null,
+      transactionId: null,
+      paymentStatus: "PENDING",
+      responseData: response,
     });
 
-    return res.status(200).json({
-      order_id: orderId,
-      payment_session_id: cfRes.data.payment_session_id,
+    res.json({
+      success: true,
+      redirectUrl: response.data.instrumentResponse.redirectInfo.url,
+      orderId,
     });
   } catch (err) {
-    console.error("[Order Creation Error]:", err.response?.data || err.message);
-    return res.status(500).json({
-      message: "Order creation failed",
-      error: err.response?.data || err.message,
-    });
+    res.status(500).json({ error: "Payment creation failed" });
   }
 });
-
-/**
- * IMPORTANT:
- * We attach express.raw middleware specifically to this webhook route so we receive raw Buffer payload.
- * If you have global body parsers (express.json()) make sure this route is mounted BEFORE them,
- * or keep global parsers but ensure route-level raw is used (best practice: mount webhook route BEFORE global json).
- */
-router.post(
-  "/webhook",
-  express.raw({ type: "application/json" }),
-  async (req, res) => {
-    console.log("---- Incoming Cashfree Webhook Request ----");
-    try {
-      const headers = req.headers;
-      const signature =
-        headers["x-webhook-signature"] || headers["X-WEBHOOK-SIGNATURE"];
-      let timestamp =
-        headers["x-webhook-timestamp"] || headers["X-WEBHOOK-TIMESTAMP"];
-      if (timestamp && timestamp.length === 13) {
-        timestamp = Math.floor(parseInt(timestamp) / 1000).toString();
-        console.log(
-          `[Timestamp Conversion] Converted 13-digit TS to 10-digit TS: ${timestamp}`
-        );
-      }
-      console.log(`[Debug Headers] Sig: ${signature}, TS: ${timestamp}`);
-
-      // req.body should be a Buffer because of express.raw middleware
-      if (!req.body || !Buffer.isBuffer(req.body)) {
-        console.log(
-          "❌ Webhook payload not received as raw Buffer. Ensure express.raw is applied and no earlier body-parser consumed the stream."
-        );
-        return res.status(400).send("Invalid webhook payload format");
-      }
-
-      const payloadString = req.body.toString("utf8");
-      console.log("RAW BODY RECEIVED:", payloadString);
-
-      if (!payloadString) {
-        console.log("❌ Raw payload string is empty.");
-        return res.status(200).send("OK - Empty Payload");
-      }
-
-      let data;
-      try {
-        data = JSON.parse(payloadString);
-      } catch (e) {
-        console.log("❌ Payload parsing failed (Invalid JSON):", e.message);
-        return res.status(200).send("OK - Invalid JSON Payload");
-      }
-
-      const eventType = data.event_type || data.type || data.event;
-      if (!signature || !timestamp || !eventType) {
-        console.log(
-          "❌ Missing Cashfree signature, timestamp, or event type. Headers/body missing!"
-        );
-        return res.status(200).send("Missing signature/timestamp acknowledged");
-      }
-
-      const dataToHash = eventType + timestamp + payloadString;
-      const expectedSignature = crypto
-        .createHmac("sha256", WEBHOOK_SECRET)
-        .update(dataToHash)
-        .digest("base64");
-
-      console.log("--- Webhook Signature Check (V2/V3) ---");
-      console.log("Received Sig:", signature);
-      console.log("Expected Sig:", expectedSignature);
-
-      if (signature !== expectedSignature) {
-        console.log(
-          "❌ Signature mismatch. Webhook rejected.(Key/Payload Mismatch)"
-        );
-        return res.status(200).send("Invalid signature acknowledged");
-      }
-
-      console.log("✅ Signature matched. Processing payload.");
-
-      // Defensive checks for nested fields
-      const orderId = data?.data?.order?.order_id;
-      const orderStatus = data?.data?.payment?.payment_status;
-      const MONGO_USER_ID = data?.data?.order?.customer_details?.customer_id;
-
-      if (!orderId) {
-        console.log("❌ orderId not found in webhook payload.");
-        return res.status(200).send("OK - Missing orderId");
-      }
-
-      if (orderStatus === "SUCCESS") {
-        console.log(
-          `[Webhook SUCCESS] Order ID: ${orderId} | User ID: ${MONGO_USER_ID}`
-        );
-        const exists = await Order.findOne({ orderId });
-        if (exists && exists.status === "succeeded") {
-          console.log(
-            `[Webhook SUCCESS] Order ${orderId} already processed. Skipping.`
-          );
-          return res.status(200).send("OK - Already processed");
-        }
-
-        const cfOrderId = data?.data?.order?.cf_order_id;
-        const paymentId = data?.data?.payment?.cf_payment_id;
-        const amount = data?.data?.payment?.payment_amount;
-        const customerEmail =
-          data?.data?.order?.customer_details?.customer_email;
-        const customerPhone =
-          data?.data?.order?.customer_details?.customer_phone;
-        let planName = "N/A";
-        let customerName = "Guest";
-
-        try {
-          const localOrder = await Order.findOne({ orderId });
-          if (localOrder) {
-            planName = localOrder.planName;
-            customerName = localOrder.customerName;
-          }
-        } catch (e) {
-          console.error("Local Order lookup failed:", e.message);
-        }
-
-        if (!exists) {
-          const newOrder = await Order.create({
-            userId: MONGO_USER_ID,
-            planName,
-            amount,
-            orderId,
-            cfOrderId: cfOrderId, // fixed: save CF order id properly
-            paymentId,
-            status: "succeeded",
-            customerName,
-            customerEmail,
-            customerPhone,
-            paidAt: new Date(),
-          });
-
-          console.log(
-            `[Webhook SUCCESS] New Order saved successfully: ${orderId}`
-          );
-          // respond early to Cashfree
-          res.status(200).send("OK");
-
-          // background PDF + email (non-blocking)
-          try {
-            const pdfDir = path.join(__dirname, "..", "pdfs");
-            if (!fs.existsSync(pdfDir))
-              fs.mkdirSync(pdfDir, { recursive: true });
-
-            const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
-            generateInvoicePDF(newOrder, pdfPath)
-              .then(() => {
-                console.log(`[Background Task] PDF generated for ${orderId}.`);
-                return transporter.sendMail({
-                  from: process.env.MAIL_ID,
-                  to: newOrder.customerEmail,
-                  subject: `Invoice - ${newOrder.planName}`,
-                  html: `
-                      <h2>Payment Successful</h2>
-                      <p>Your payment for <b>${newOrder.planName}</b> is successful.</p>
-                      <p><b>Order ID:</b> ${orderId}</p>
-                      <p><b>Amount:</b> ₹${newOrder.amount}</p>
-                    `,
-                  attachments: [
-                    {
-                      filename: `${orderId}.pdf`,
-                      path: pdfPath,
-                    },
-                  ],
-                });
-              })
-              .then(() => console.log(`[Background Task] Email sent for ${orderId}.`))
-              .catch((e) =>
-                console.error(
-                  `[Background Error] Email/PDF failed for ${orderId}: ${e.message}`
-                )
-              );
-          } catch (e) {
-            console.error(`[Background Setup Error]: ${e.message}`);
-          }
-
-          return;
-        } else if (exists && exists.status !== "succeeded") {
-          await Order.updateOne(
-            { orderId: orderId },
-            {
-              $set: {
-                status: "succeeded",
-                cfOrderId: cfOrderId,
-                paymentId: paymentId,
-                paidAt: new Date(),
-              },
-            }
-          );
-          console.log(
-            `[Webhook SUCCESS] Existing Order updated to succeeded: ${orderId}`
-          );
-        }
-      } else if (orderStatus === "FAILED" || orderStatus === "PENDING") {
-        await Order.updateOne(
-          { orderId: orderId },
-          { $set: { status: orderStatus.toLowerCase() } }
-        );
-        console.log(
-          `[Webhook EVENT] Order ID: ${orderId} | Status: ${orderStatus}. DB updated.`
-        );
-      } else {
-        console.log(
-          `[Webhook EVENT] Received order status: ${orderStatus}. No DB action taken.`
-        );
-      }
-
-      return res.status(200).send("OK");
-    } catch (err) {
-      console.error("❌ Webhook Internal Error:", err.message);
-      return res.status(200).send("Webhook processing error acknowledged");
-    }
-  }
-);
-
-router.get("/check-status/:orderId", async (req, res) => {
+router.post("/webhook", express.json({ type: "*/*" }), async (req, res) => {
   try {
-    const { orderId } = req.params;
-    const cfRes = await axios.get(`${BASE_URL}/orders/${orderId}`, {
-      headers: {
-        "x-client-id": APP_ID,
-        "x-client-secret": SECRET_KEY,
-        "x-api-version": "2025-01-01",
-        "Content-Type": "application/json",
+    const signature = req.headers["authorization"];
+    const callbackType = req.headers["x-callback-type"];
+    const payloadString = JSON.stringify(req.body);
+
+    if (!signature || !callbackType) {
+      console.log("❌ Missing headers");
+      return res.status(200).send();
+    }
+    const verified = phonepeClient.validateCallback(signature, payloadString);
+
+    if (!verified.success) {
+      console.log("❌ Invalid webhook signature");
+      return res.status(200).send();
+    }
+
+    const payload = verified.data;
+
+    const {
+      merchantTransactionId,
+      transactionId,
+      amount,
+      state,
+      orderId,
+    } = payload;
+
+    const findOrder = await Order.findOne({ orderId: merchantTransactionId });
+    if (!findOrder) {
+      console.log("❌ Order not found in database");
+      return res.status(200).send();
+    }
+
+    let paymentStatus = "PENDING";
+    if (state === "COMPLETED") paymentStatus = "SUCCESS";
+    else if (state === "FAILED") paymentStatus = "FAILED";
+
+    await Order.findOneAndUpdate(
+      { orderId: merchantTransactionId },
+      {
+        paymentStatus,
+        phonepeOrderId: orderId,
+        transactionId,
       },
-    });
-
-    const cfOrderData = cfRes.data;
-    const statusFromCF = cfOrderData.order_status;
-    console.log(`[Check Status] Order ID: ${orderId}, Status: ${statusFromCF}`);
-    let localOrder = await Order.findOne({ orderId });
-    if (statusFromCF === "PAID" && !localOrder) {
-    }
-    return res.status(200).json({
-      message: "Order status fetched from Cashfree successfully.",
-      cashfree_data: cfOrderData,
-      db_status: localOrder ? localOrder.status : "NOT_IN_DB",
-    });
-  } catch (err) {
-    console.error("[Get Order Error]:", err.response?.data || err.message);
-    if (err.response?.status === 404) {
-      return res.status(404).json({ message: "Order not found on Cashfree." });
-    }
-    return res.status(500).json({
-      message: "Failed to fetch order status from Cashfree.",
-      error: err.response?.data || err.message,
-    });
-  }
-});
-
-router.get("/orders/:userId", async (req, res) => {
-  const { userId } = req.params;
-  try {
-    const orders = await Order.find({ userId }).sort({ createdAt: -1 });
-
-    if (!orders || orders.length === 0) {
-      return res.status(200).json([]);
-    }
-
-    res.status(200).json(orders);
-  } catch (error) {
-    console.error("Error fetching user orders:", error);
-    res.status(500).json({ message: "Server error fetching orders." });
-  }
-});
-
-router.patch("/terminate-order/:orderId", async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    console.log(`[Terminate Order] Request received for Order ID: ${orderId}`);
-    const payload = {
-      order_status: "TERMINATED",
-    };
-
-    const cfRes = await axios.patch(`${BASE_URL}/orders/${orderId}`, payload, {
-      headers: {
-        "x-client-id": APP_ID,
-        "x-client-secret": SECRET_KEY,
-        "x-api-version": "2025-01-01",
-        "Content-Type": "application/json",
-      },
-    });
-
-    const cfOrderData = cfRes.data;
-
-    if (cfOrderData.order_status === "TERMINATED") {
-      await Order.updateOne(
-        { orderId: orderId },
-        { $set: { status: "terminated" } }
-      );
-      console.log(
-        `[Terminate Order] Successfully terminated and updated local DB for ${orderId}.`
-      );
-    } else if (cfOrderData.order_status === "TERMINATION_REQUESTED") {
-      console.log(
-        `[Terminate Order] Termination requested for ${orderId}. Current status: ${cfOrderData.order_status}`
-      );
-    }
-    return res.status(200).json({
-      message: `Order termination request status: ${cfOrderData.order_status}`,
-      cashfree_data: cfOrderData,
-    });
-  } catch (err) {
-    console.error(
-      "[Terminate Order Error]:",
-      err.response?.data || err.message
+      { new: true }
     );
-    if (err.response?.status) {
-      return res.status(err.response.status).json({
-        message: "Failed to terminate order.",
-        error: err.response?.data || err.message,
+
+    console.log(`Webhook Updated: ${merchantTransactionId} → ${paymentStatus}`);
+
+    return res.status(200).send(); // mandatory
+  } catch (err) {
+    console.log("❌ Webhook Error:", err);
+    return res.status(200).send();
+  }
+});
+
+router.get("/status", async (req, res) => {
+  try {
+    const orderId = req.query.order_id;
+
+    if (!orderId) return res.status(400).json({ error: "Missing orderId" });
+
+    const order = await Order.findOne({ orderId });
+    if (!order) return res.status(404).json({ error: "Order not found" });
+
+    if (order.paymentStatus !== "PENDING") {
+      return res.json({
+        orderId,
+        amount: order.amount,
+        status: order.paymentStatus,
+        updated: true,
       });
     }
-    return res.status(500).json({
-      message: "Internal server error during order termination.",
-      error: err.message,
-    });
-  }
-});
-
-router.get("/get-extended-details/:orderId", async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    console.log(
-      `[Get Extended] Fetching extended details for Order ID: ${orderId}`
-    );
-    const cfRes = await axios.get(`${BASE_URL}/orders/${orderId}/extended`, {
-      headers: {
-        "x-client-id": APP_ID,
-        "x-client-secret": SECRET_KEY,
-        "x-api-version": "2025-01-01",
-        "Content-Type": "application/json",
-      },
+    const checkStatusResponse = await phonepeClient.getStatus({
+      merchantId: MERCHANT_ID,
+      merchantTransactionId: orderId,
     });
 
-    const extendedOrderData = cfRes.data;
-
-    return res.status(200).json({
-      message: "Extended order details fetched from Cashfree successfully.",
-      extended_data: extendedOrderData,
-    });
-  } catch (err) {
-    console.error("[Get Extended Error]:", err.response?.data || err.message);
-    if (err.response?.status === 404) {
-      return res
-        .status(404)
-        .json({ message: "Order or extended data not found on Cashfree." });
-    }
-    return res.status(500).json({
-      message: "Failed to fetch extended order details from Cashfree.",
-      error: err.response?.data || err.message,
-    });
-  }
-});
-
-router.get("/download-invoice/:orderId", async (req, res) => {
-  try {
-    const pdfPath = path.join(
-      __dirname,
-      "..",
-      `pdfs/${req.params.orderId}.pdf`
-    );
-    if (!fs.existsSync(pdfPath)) {
-      return res.status(404).json({ message: "Invoice not found" });
+    if (!checkStatusResponse.success) {
+      return res.json({ orderId, status: "PENDING", updated: false });
     }
 
-    res.download(pdfPath);
+    const status = checkStatusResponse.data.state === "COMPLETED" ? "SUCCESS" : 
+                   checkStatusResponse.data.state === "FAILED" ? "FAILED" : "PENDING";
+
+    await Order.findOneAndUpdate(
+      { orderId },
+      {
+        paymentStatus: status,
+        phonepeOrderId: checkStatusResponse.data.orderId,
+        transactionId: checkStatusResponse.data.transactionId,
+      }
+    );
+
+    res.json({
+      orderId,
+      status,
+      updated: true,
+    });
   } catch (err) {
-    res.status(500).send(err.message);
+    res.status(500).json({ error: "Status check failed" });
   }
 });
 
