@@ -13,100 +13,96 @@ const APP_ID = process.env.CASHFREE_APP_ID;
 const SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
 const WEBHOOK_SECRET = process.env.CASHFREE_WEBHOOK_SECRET;
 const BASE_URL =
-  process.env.CASHFREE_ENV === "PROD"
-    ? "https://api.cashfree.com/pg"
-    : "https://sandbox.cashfree.com/pg";
+  process.env.CASHFREE_ENV === "PROD"
+    ? "https://api.cashfree.com/pg"
+    : "https://sandbox.cashfree.com/pg";
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.MAIL_ID,
-    pass: process.env.MAIL_PASS,
-  },
+  service: "gmail",
+  auth: {
+    user: process.env.MAIL_ID,
+    pass: process.env.MAIL_PASS,
+  },
 });
 
 const generateInvoicePDF = async (orderData, pdfPath) => {
-  const doc = new PDFDocument();
-  doc.pipe(fs.createWriteStream(pdfPath));
+  const doc = new PDFDocument();
+  doc.pipe(fs.createWriteStream(pdfPath));
 
-  doc.fontSize(22).text("Payment Invoice", { align: "center" });
-  doc.moveDown();
+  doc.fontSize(22).text("Payment Invoice", { align: "center" });
+  doc.moveDown();
 
-  doc.fontSize(14).text(`Order ID: ${orderData.orderId}`);
-  doc.text(`Cashfree ID: ${orderData.cfOrderId}`);
-  doc.text(`Payment ID: ${orderData.paymentId}`);
-  doc.text(`Plan: ${orderData.planName}`);
-  doc.text(`Amount: ₹${orderData.amount}`);
-  doc.text(`Customer: ${orderData.customerName}`);
-  doc.text(`Status: SUCCESS`);
-  doc.text(`Paid At: ${orderData.paidAt.toLocaleString()}`);
+  doc.fontSize(14).text(`Order ID: ${orderData.orderId}`);
+  doc.text(`Cashfree ID: ${orderData.cfOrderId}`);
+  doc.text(`Payment ID: ${orderData.paymentId}`);
+  doc.text(`Plan: ${orderData.planName}`);
+  doc.text(`Amount: ₹${orderData.amount}`);
+  doc.text(`Customer: ${orderData.customerName}`);
+  doc.text(`Status: SUCCESS`);
+  doc.text(`Paid At: ${orderData.paidAt.toLocaleString()}`);
 
-  doc.end();
-  return new Promise((resolve) => doc.on("end", resolve));
+  doc.end();
+  return new Promise((resolve) => doc.on("end", resolve));
 };
-
-// --- /create-order (No Change) ---
 router.post("/create-order", async (req, res) => {
-  try {
-    const {
-      amount,
-      userId,
-      planName,
-      customerName,
-      customerEmail,
-      customerPhone,
-    } = req.body;
+  try {
+    const {
+      amount,
+      userId,
+      planName,
+      customerName,
+      customerEmail,
+      customerPhone,
+    } = req.body;
 
-    if (!amount || !userId || !planName || !customerEmail) {
-      return res.status(400).json({ message: "Required fields missing" });
-    }
+    if (!amount || !userId || !planName || !customerEmail) {
+      return res.status(400).json({ message: "Required fields missing" });
+    }
 
-    const orderId = "ORDER_" + Date.now();
-    console.log(`[Order Creation] Initiating payment for User ID: ${userId}`);
+    const orderId = "ORDER_" + Date.now();
+    console.log(`[Order Creation] Initiating payment for User ID: ${userId}`);
 
-    const payload = {
-      order_id: orderId,
-      order_amount: amount,
-      order_currency: "INR",
-      customer_details: {
-        customer_id: userId,
-        customer_email: customerEmail,
-        customer_phone: customerPhone || "9999999999",
-      },
-      order_meta: {
-        return_url: `https://vistafluence.com/payment-status?order_id=${orderId}`,
-      },
-      meta_data: {
-        custom_data: JSON.stringify({
-          planName,
-          customerName,
-        }),
-      },
-    };
+    const payload = {
+      order_id: orderId,
+      order_amount: amount,
+      order_currency: "INR",
+      customer_details: {
+        customer_id: userId,
+        customer_email: customerEmail,
+        customer_phone: customerPhone || "9999999999",
+      },
+      order_meta: {
+        return_url: `https://vistafluence.com/payment-status?order_id=${orderId}`,
+      },
+      meta_data: {
+        custom_data: JSON.stringify({
+          planName,
+          customerName,
+        }),
+      },
+    };
 
-    const cfRes = await axios.post(`${BASE_URL}/orders`, payload, {
-      headers: {
-        "x-client-id": APP_ID,
-        "x-client-secret": SECRET_KEY,
-        "x-api-version": "2025-01-01",
-        "Content-Type": "application/json",
-      },
-    });
+    const cfRes = await axios.post(`${BASE_URL}/orders`, payload, {
+      headers: {
+        "x-client-id": APP_ID,
+        "x-client-secret": SECRET_KEY,
+        "x-api-version": "2025-01-01",
+        "Content-Type": "application/json",
+      },
+    });
 
-    return res.status(200).json({
-      order_id: orderId,
-      payment_session_id: cfRes.data.payment_session_id,
-    });
-  } catch (err) {
-    console.error("[Order Creation Error]:", err.response?.data || err.message);
-    return res.status(500).json({
-      message: "Order creation failed",
-      error: err.response?.data || err.message,
-    });
-  }
+    return res.status(200).json({
+      order_id: orderId,
+      payment_session_id: cfRes.data.payment_session_id,
+    });
+  } catch (err) {
+    console.error("[Order Creation Error]:", err.response?.data || err.message);
+    return res.status(500).json({
+      message: "Order creation failed",
+      error: err.response?.data || err.message,
+    });
+  }
 });
-
-// --- /webhook (FIXED for Timeout) ---
 router.post("/webhook", express.text({ type: "application/json" }), async (req, res) => {
   console.log("---- Incoming Cashfree Webhook Request ----");
   try {
@@ -455,5 +451,4 @@ router.get("/download-invoice/:orderId", async (req, res) => {
     res.status(500).send(err.message);
   }
 });
-
 module.exports = router;
