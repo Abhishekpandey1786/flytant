@@ -10,7 +10,7 @@ const {
   PhonePeClient,
   Env,
   StandardCheckoutRequest,
-} = require("phonepe-sdk-nodejs");
+} = require("phonepe-pg-sdk-node");
 
 const MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
 const API_KEY = process.env.PHONEPE_API_KEY;

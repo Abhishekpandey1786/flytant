@@ -30,7 +30,7 @@
     "nodemailer": "^7.0.10",
     "nodemon": "^3.1.10",
     "pdfkit": "^0.17.2",
-    "pg-sdk-node": "file:phonepe-pg-sdk-node.tgz",
+    "phonepe-pg-sdk-node": "file:./phonepe-pg-sdk-node.tgz",
     "razorpay": "^2.9.6",
     "socket.io": "^4.8.1",
     "stripe": "^18.5.0",
