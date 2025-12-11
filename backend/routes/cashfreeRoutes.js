@@ -108,9 +108,13 @@ router.post("/webhook", async (req, res) => {
   try {
     const headers = req.headers;
     const signature = headers["x-webhook-signature"] || headers["X-WEBHOOK-SIGNATURE"];
-    const timestamp = headers["x-webhook-timestamp"] || headers["X-WEBHOOK-TIMESTAMP"];
+    let timestamp = headers["x-webhook-timestamp"] || headers["X-WEBHOOK-TIMESTAMP"]; 
+    if (timestamp && timestamp.length === 13) {
+      timestamp = Math.floor(parseInt(timestamp) / 1000).toString();
+      console.log(`[Timestamp Conversion] Converted 13-digit TS to 10-digit TS: ${timestamp}`);
+    }
     
-    console.log(`[Debug Headers] Sig: ${signature}, TS: ${timestamp}`);
+    console.log(`[Debug Headers] Sig: ${signature}, TS: ${timestamp}`); 
 
     const payloadString = req.body.toString('utf8');
 
@@ -135,7 +139,6 @@ router.post("/webhook", async (req, res) => {
       );
       return res.status(200).send("Missing signature/timestamp acknowledged");
     }
-    
     const dataToHash = eventType + timestamp + payloadString;
 
     const expectedSignature = crypto
@@ -164,8 +167,7 @@ router.post("/webhook", async (req, res) => {
         `[Webhook SUCCESS] Order ID: ${orderId} | User ID: ${MONGO_USER_ID}`
       );
       const exists = await Order.findOne({ orderId });
-      
-      // Idempotency Check
+  
       if (exists && exists.status === "succeeded") {
         console.log(
           `[Webhook SUCCESS] Order ${orderId} already processed. Skipping.`
@@ -210,50 +212,43 @@ router.post("/webhook", async (req, res) => {
         console.log(
           `[Webhook SUCCESS] New Order saved successfully: ${orderId}`
         );
-        
-        // --- 🎯 FIX APPLIED HERE: Respond immediately, then handle slow tasks ---
-        res.status(200).send("OK");
+        res.status(200).send("OK");
+        try {
+            const pdfDir = path.join(__dirname, "..", "pdfs");
+            if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
 
-        // Background Task Setup: Run PDF generation and Email sending WITHOUT 'await'
-        // This ensures the main Webhook thread is released immediately.
-        try {
-            const pdfDir = path.join(__dirname, "..", "pdfs");
-            if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
+            const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
+           
+            generateInvoicePDF(newOrder, pdfPath)
+                .then(() => {
+                    console.log(`[Background Task] PDF generated for ${orderId}.`);
+                    return transporter.sendMail({
+                        from: process.env.MAIL_ID,
+                        to: newOrder.customerEmail,
+                        subject: `Invoice - ${newOrder.planName}`,
+                        html: `
+                            <h2>Payment Successful</h2>
+                            <p>Your payment for <b>${newOrder.planName}</b> is successful.</p>
+                            <p><b>Order ID:</b> ${orderId}</p>
+                            <p><b>Amount:</b> ₹${newOrder.amount}</p>
+                        `,
+                        attachments: [
+                            {
+                                filename: `${orderId}.pdf`,
+                                path: pdfPath,
+                            },
+                        ],
+                    });
+                })
+                .then(() => console.log(`[Background Task] Email sent for ${orderId}.`))
+                .catch(e => console.error(`[Background Error] Email/PDF failed for ${orderId}: ${e.message}`));
 
-            const pdfPath = path.join(pdfDir, `${orderId}.pdf`);
-            
-            // Start PDF generation (async, no await)
-            generateInvoicePDF(newOrder, pdfPath)
-                .then(() => {
-                    console.log(`[Background Task] PDF generated for ${orderId}.`);
-                    // Start Email Sending (async, no await)
-                    return transporter.sendMail({
-                        from: process.env.MAIL_ID,
-                        to: newOrder.customerEmail,
-                        subject: `Invoice - ${newOrder.planName}`,
-                        html: `
-                            <h2>Payment Successful</h2>
-                            <p>Your payment for <b>${newOrder.planName}</b> is successful.</p>
-                            <p><b>Order ID:</b> ${orderId}</p>
-                            <p><b>Amount:</b> ₹${newOrder.amount}</p>
-                        `,
-                        attachments: [
-                            {
-                                filename: `${orderId}.pdf`,
-                                path: pdfPath,
-                            },
-                        ],
-                    });
-                })
-                .then(() => console.log(`[Background Task] Email sent for ${orderId}.`))
-                .catch(e => console.error(`[Background Error] Email/PDF failed for ${orderId}: ${e.message}`));
-
-        } catch(e) {
-            console.error(`[Background Setup Error]: ${e.message}`);
-        }
-        
-        return; // Exit the function after sending the response
-        
+        } catch(e) {
+            console.error(`[Background Setup Error]: ${e.message}`);
+        }
+        
+        return;
+        
       } else if (exists && exists.status !== "succeeded") {
       
         await Order.updateOne(
@@ -285,8 +280,6 @@ router.post("/webhook", async (req, res) => {
         `[Webhook EVENT] Received order status: ${orderStatus}. No DB action taken.`
       );
     }
-    
-    // Ensure response is sent for all other statuses (FAILED, PENDING, ALREADY_PROCESSED, etc.)
     return res.status(200).send("OK");
     
   } catch (err) {
@@ -294,8 +287,6 @@ router.post("/webhook", async (req, res) => {
     return res.status(200).send("Webhook processing error acknowledged");
   }
 });
-
-// --- Remaining Routes (No Change) ---
 router.get("/check-status/:orderId", async (req, res) => {
   try {
     const { orderId } = req.params;
