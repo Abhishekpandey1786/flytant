@@ -103,26 +103,23 @@ router.post("/create-order", async (req, res) => {
     });
   }
 });
-router.post("/webhook", async (req, res) => {
+router.post("/webhook", express.text({ type: "application/json" }), async (req, res) => {
   console.log("---- Incoming Cashfree Webhook Request ----");
   try {
     const headers = req.headers;
     const signature = headers["x-webhook-signature"] || headers["X-WEBHOOK-SIGNATURE"];
     const timestamp = headers["x-webhook-timestamp"] || headers["X-WEBHOOK-TIMESTAMP"];
+    
     console.log(`[Debug Headers] Sig: ${signature}, TS: ${timestamp}`);
-    let payloadString;
-    if (Buffer.isBuffer(req.body)) {
-      payloadString = req.body.toString("utf8");
-    } else {
-      console.log(
-        "❌ Raw payload is not a Buffer. Check app.js middleware order."
-      );
-      return res.status(200).send("OK - Raw Payload Type Error");
-    }
+
+    // ✅ FIX: Directly use req.body as a string, since express.text() is used.
+    const payloadString = req.body; 
+
     if (!payloadString) {
       console.log("❌ Raw payload string is empty.");
       return res.status(200).send("OK - Empty Payload");
     }
+
     let data;
     try {
       data = JSON.parse(payloadString);
@@ -130,13 +127,17 @@ router.post("/webhook", async (req, res) => {
       console.log("❌ Payload parsing failed (Invalid JSON):", e.message);
       return res.status(200).send("OK - Invalid JSON Payload");
     }
+    
     const eventType = data.event_type || data.type;
+    
     if (!signature || !timestamp || !eventType) {
       console.log(
-        "❌ Missing Cashfree signature or timestamp header. (Check header names!)"
+        "❌ Missing Cashfree signature, timestamp, or event type. Headers missing!"
       );
       return res.status(200).send("Missing signature/timestamp acknowledged");
     }
+    
+    // ✅ PG Verification Logic (This logic was already correct for PG):
     const dataToHash = eventType + timestamp + payloadString;
 
     const expectedSignature = crypto
@@ -146,35 +147,41 @@ router.post("/webhook", async (req, res) => {
 
     console.log("--- Webhook Signature Check (V2/V3) ---");
     console.log("Received Sig:", signature);
+    
     if (signature !== expectedSignature) {
       console.log(
         "❌ Signature mismatch. Webhook rejected.(Key/Payload Mismatch)"
       );
       return res.status(200).send("Invalid signature acknowledged");
     }
+    
     console.log("✅ Signature matched. Processing payload.");
+    
+    // --- Data Processing (Already correct) ---
     const orderId = data.data.order.order_id;
     const orderStatus = data.data.payment.payment_status;
     const MONGO_USER_ID = data.data.order.customer_details.customer_id;
+    
     if (orderStatus === "SUCCESS") {
       console.log(
         `[Webhook SUCCESS] Order ID: ${orderId} | User ID: ${MONGO_USER_ID}`
       );
       const exists = await Order.findOne({ orderId });
+      
+      // Idempotency Check
       if (exists && exists.status === "succeeded") {
         console.log(
           `[Webhook SUCCESS] Order ${orderId} already processed. Skipping.`
         );
         return res.status(200).send("OK - Already processed");
       }
+      
       const cfOrderId = data.data.order.cf_order_id;
       const paymentId = data.data.payment.cf_payment_id;
       const amount = data.data.payment.payment_amount;
       const customerEmail = data.data.order.customer_details.customer_email;
       const customerPhone = data.data.order.customer_details.customer_phone;
-      const meta = data.data.order.order_tags
-        ? data.data.order.order_tags.custom_data
-        : "{}";
+      
       let planName = "N/A";
       let customerName = "Guest";
 
@@ -185,9 +192,11 @@ router.post("/webhook", async (req, res) => {
           customerName = localOrder.customerName;
         }
       } catch (e) {
-        console.error("Meta data parsing failed:", e.message);
+        console.error("Local Order lookup failed:", e.message);
       }
+      
       if (!exists) {
+      
         const newOrder = await Order.create({
           userId: MONGO_USER_ID,
           planName,
@@ -230,6 +239,7 @@ router.post("/webhook", async (req, res) => {
 
         console.log(`[Webhook SUCCESS] Invoice and Email sent for ${orderId}.`);
       } else if (exists && exists.status !== "succeeded") {
+      
         await Order.updateOne(
           { orderId: orderId },
           {
@@ -246,6 +256,7 @@ router.post("/webhook", async (req, res) => {
         );
       }
     } else if (orderStatus === "FAILED" || orderStatus === "PENDING") {
+      
       await Order.updateOne(
         { orderId: orderId },
         { $set: { status: orderStatus.toLowerCase() } }
@@ -258,8 +269,8 @@ router.post("/webhook", async (req, res) => {
         `[Webhook EVENT] Received order status: ${orderStatus}. No DB action taken.`
       );
     }
-
     return res.status(200).send("OK");
+    
   } catch (err) {
     console.error("❌ Webhook Internal Error:", err.message);
     return res.status(200).send("Webhook processing error acknowledged");
