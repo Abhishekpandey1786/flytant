@@ -103,7 +103,7 @@ router.post("/create-order", async (req, res) => {
     });
   }
 });
-router.post("/webhook", express.text({ type: "application/json" }), async (req, res) => {
+router.post("/webhook", async (req, res) => {
   console.log("---- Incoming Cashfree Webhook Request ----");
   try {
     const headers = req.headers;
@@ -112,7 +112,7 @@ router.post("/webhook", express.text({ type: "application/json" }), async (req, 
     
     console.log(`[Debug Headers] Sig: ${signature}, TS: ${timestamp}`);
 
-    const payloadString = req.body; 
+    const payloadString = req.body.toString('utf8');
 
     if (!payloadString) {
       console.log("❌ Raw payload string is empty.");
