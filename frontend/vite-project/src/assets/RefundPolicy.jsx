@@ -6,7 +6,7 @@ const CancellationRefundPolicy = () => {
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       <PageHeader />
-      <div className="max-w-5xl mx-auto px-6 py-12">
+      <div className="max-w-5xl mx-auto px-6 py-20">
         <header className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl font-extrabold text-white drop-shadow-md">
             Cancellation & Refund Policy
