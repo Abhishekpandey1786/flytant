@@ -8,13 +8,17 @@ function Footer() {
   return (
     <footer className="bg-slate-900 text-gray-300 py-10 px-6">
       <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-8">
-
-        {/* Logo + Tagline + Socials */}
         <div>
-          <h2 className="text-2xl font-bold text-white">vistafluence.com</h2>
+          <h2 className="text-2xl font-bold text-white"><a
+              href="https://vistafluence.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-fuchsia-400 hover:underline"
+            >
+            </a>vistafluence.com</h2>
           <p className="mt-2 text-sm text-gray-400">Create. Connect. Conquer.</p>
           <div className="flex space-x-4 mt-4 text-gray-400">
-            <a href="mailto:info@vistafluence.com" className="hover:text-white"><FaEnvelope size={20} /></a>
+            <a href="mailto:information@vistafluence.com" className="hover:text-white"><FaEnvelope size={20} /></a>
           </div>
         </div>
 
