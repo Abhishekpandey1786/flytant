@@ -29,6 +29,7 @@ import AdminDashboard from "./assets/AdminDashboard.jsx";
 import UserNotifications from "./assets/UserNotifications.jsx";
 import MyOrders from "./assets/MyOrders.jsx";
 import PaymentSuccess from "./assets/PaymentSuccess.jsx";
+import RefundPolicy from "./assets/RefundPolicy.jsx";
 function App() {
   return (
     <BrowserRouter>
@@ -47,6 +48,7 @@ function App() {
               <Route path="/blogs" element={<Blog />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
+              <Route path="/Refund-Policy" element={<RefundPolicy />} />
             <Route element={<PrivateRoutes />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/dashboard/brand" element={<Brand />} />
