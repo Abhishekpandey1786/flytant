@@ -12,7 +12,7 @@ const CancellationRefundPolicy = () => {
             Cancellation & Refund Policy
           </h2>
           <p className="mt-3 text-gray-400 text-base md:text-lg max-w-2xl mx-auto">
-            At Flytant, we strive to build transparency, fairness, and trust.
+            At vistafluence.com, we strive to build transparency, fairness, and trust.
             Please review this policy carefully before funding your account.
           </p>
         </header>
@@ -23,7 +23,7 @@ const CancellationRefundPolicy = () => {
           <p>
             This policy outlines the rules, procedures, and conditions under
             which campaigns can be cancelled and refunds may be granted for both
-            brand/agency partners and creators. By using Flytant, you agree to
+            brand/agency partners and creators. By using vistafluence.com, you agree to
             be bound by this policy.
           </p>
         </div>
@@ -121,9 +121,9 @@ const CancellationRefundPolicy = () => {
                 <li>Duplicate transactions or multiple payments for the same
                   campaign.</li>
                 <li>Verified platform errors or billing discrepancies caused
-                  by Flytant.</li>
+                  by vistafluence.com.</li>
                 <li>Campaigns that could not be launched due to technical
-                  issues on Flytant’s side.</li>
+                  issues on vistafluence.com’s side.</li>
               </ul>
               <p className="text-gray-300 leading-relaxed mt-4 pt-4 border-t border-slate-700">
                 <span className="text-red-400 font-semibold">
@@ -131,7 +131,7 @@ const CancellationRefundPolicy = () => {
                 </span>{" "}
                 Exhaustion of wallet balance due to valid deliverables,
                 dissatisfaction with campaign performance, incorrect campaign
-                setup by the advertiser, or violation of Flytant's Terms &
+                setup by the advertiser, or violation of vistafluence.com's Terms &
                 Conditions.
               </p>
             </div>
@@ -147,21 +147,21 @@ const CancellationRefundPolicy = () => {
           <p>
             Email:{" "}
             <a
-              href="mailto:contact@flytant.com"
+              href="mailto:information@vistafluence.com"
               className="text-fuchsia-400 hover:underline"
             >
-              contact@flytant.com
+              information@vistafluence.com
             </a>
           </p>
           <p>
             Website:{" "}
             <a
-              href="https://flytant.com"
+              href="https://vistafluence.com"
               target="_blank"
               rel="noopener noreferrer"
               className="text-fuchsia-400 hover:underline"
             >
-              https://flytant.com
+              https://vistafluence.com
             </a>
           </p>
         </footer>
