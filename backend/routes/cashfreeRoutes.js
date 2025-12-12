@@ -1,82 +1,113 @@
-// routes/paymentRoutes.js
 const express = require("express");
 const router = express.Router();
 const dotenv = require("dotenv");
 dotenv.config();
-
-const axios = require("axios");
-const crypto = require("crypto");
+const {
+  StandardCheckoutClient,
+  Env,
+  StandardCheckoutPayRequest,
+  RefundRequest,
+  MetaInfo,
+} = require("pg-sdk-node");
+const { randomUUID } = require("crypto");
 const Order = require("../models/Order");
-const { v4: uuidv4 } = require("uuid");
+const User = require("../models/User");
+const CLIENT_ID = process.env.PHONEPE_CLIENT_ID; // Replace with your Client ID
+const CLIENT_SECRET = process.env.PHONEPE_CLIENT_SECRET; // Replace with your Client Secret
+const CLIENT_VERSION = "1.0"; // Use your actual client version
+const MERCHANT_USERNAME = process.env.PHONEPE_MERCHANT_USERNAME; // For webhook validation
+const MERCHANT_PASSWORD = process.env.PHONEPE_MERCHANT_PASSWORD; // For webhook validation
 
-const MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
-const API_KEY = process.env.PHONEPE_API_KEY; // Salt key
-const SALT_INDEX = process.env.PHONEPE_SALT_INDEX || 1;
 const isProduction = process.env.NODE_ENV === "production";
+const env = isProduction ? Env.PRODUCTION : Env.SANDBOX;
 
-const PHONEPE_API_URL = isProduction
-  ? "https://api.phonepe.com/apis/pg/v1/pay"
-  : "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay";
+// Initialize SDK Client
+const client = StandardCheckoutClient.getInstance(
+  CLIENT_ID,
+  CLIENT_SECRET,
+  CLIENT_VERSION,
+  env
+);
 
-// ------------------- CREATE PAYMENT -------------------
+// --- Plan Mapping (SECURITY: Server-side Amount and Feature Validation) ---
+const planDetails = {
+  Basic: { amount: 3, maxApplications: 6, dmCredits: 0 },
+  Standard: { amount: 5, maxApplications: 15, dmCredits: 15 },
+  Advance: { amount: 9, maxApplications: 40, dmCredits: 40 },
+  Premium: { amount: 19, maxApplications: 9999, dmCredits: 9999 }, // Unlimited
+};
+
+// --- Update User Subscription Function ---
+const updateSubscription = async (userId, planName) => {
+  const details = planDetails[planName];
+  if (!details) return false;
+
+  const expiryDate = new Date();
+  expiryDate.setMonth(expiryDate.getMonth() + 1);
+
+  const updateData = {
+    "subscription.plan": planName,
+    "subscription.maxApplications": details.maxApplications,
+    "subscription.dmCredits": details.dmCredits,
+    "subscription.expiryDate": expiryDate,
+    "subscription.status": "Active",
+  };
+
+  await User.findByIdAndUpdate(userId, updateData);
+  console.log(`Subscription updated for user ${userId} to ${planName}`);
+  return true;
+};
+
+// ------------------- 1. INITIATE PAYMENT -------------------
 router.post("/create-payment", async (req, res) => {
   try {
-    const { amount, name, email, phone, plan } = req.body;
-    if (!amount || !name || !email || !phone || !plan)
+    const { plan, userId, name, email, phone } = req.body;
+
+    // 1. Server-side Validation and Amount Check
+    if (!plan || !userId || !name || !email || !phone)
       return res.status(400).json({ error: "Missing required fields" });
 
-    const orderId = uuidv4().replace(/-/g, "").toUpperCase();
-    const amountInPaise = amount * 100;
+    const selectedPlan = planDetails[plan];
+    if (!selectedPlan)
+      return res.status(400).json({ error: "Invalid plan selected" });
 
-    const body = {
-      merchantId: MERCHANT_ID,
-      merchantTransactionId: orderId,
-      amount: amountInPaise.toString(),
-      redirectUrl: `https://vistafluence.com/payment-status?order_id=${orderId}`,
-      callbackUrl: "https://vistafluence.com/api/payment/webhook",
-      mobileNumber: phone,
-      paymentInstrument: { type: "PAY_PAGE" },
-    };
+    const amountInPaise = selectedPlan.amount * 100;
+    const merchantOrderId = randomUUID();
 
-    const bodyString = JSON.stringify(body);
-    const bodyBase64 = Buffer.from(bodyString).toString("base64");
-    const textToHash = `${bodyBase64}/pg/v1/pay`;
-    const checksum = crypto.createHash("sha256")
-      .update(textToHash + API_KEY)
-      .digest("hex") + `###${SALT_INDEX}`;
+    // 2. Build SDK Request
+    const request = StandardCheckoutPayRequest.builder()
+      .merchantOrderId(merchantOrderId)
+      .amount(amountInPaise)
+      // User will be redirected to this URL after payment (SUCCESS/FAIL)
+      .redirectUrl(
+        `https://vistafluence.com/payment-status?order_id=${merchantOrderId}`
+      )
+      .metaInfo(MetaInfo.builder().udf1(userId).udf2(plan).build()) // Pass user details
+      .build();
 
-    const response = await axios.post(
-      PHONEPE_API_URL,
-      bodyBase64,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "X-VERIFY": checksum,
-          "Accept": "application/json",
-        },
-      }
-    );
+    // 3. Call PhonePe SDK
+    const response = await client.pay(request);
 
-    if (!response.data.success || !response.data.data?.instrumentResponse?.redirectInfo?.url)
-      return res.status(500).json({ error: "PhonePe Payment Init Failed" });
+    if (!response.redirectUrl)
+      return res
+        .status(500)
+        .json({ error: "PhonePe Payment Init Failed", details: response });
 
+    // 4. Save Order
     await Order.create({
+      userId,
       userEmail: email,
-      userName: name,
-      userPhoneNo: phone,
       plan,
-      amount,
-      orderId,
-      phonepeOrderId: null,
-      transactionId: null,
+      amount: selectedPlan.amount,
+      orderId: merchantOrderId,
       paymentStatus: "PENDING",
-      responseData: response.data,
+      responseData: response,
     });
 
     res.json({
       success: true,
-      redirectUrl: response.data.data.instrumentResponse.redirectInfo.url,
-      orderId,
+      redirectUrl: response.redirectUrl,
+      orderId: merchantOrderId,
     });
   } catch (err) {
     console.error("❌ Payment creation failed:", err.message);
@@ -84,36 +115,58 @@ router.post("/create-payment", async (req, res) => {
   }
 });
 
-// ------------------- WEBHOOK -------------------
-router.post("/webhook", express.json({ type: "*/*" }), async (req, res) => {
+// ------------------- 2. HANDLE WEBHOOKS (Secure S2S Callback) -------------------
+router.post("/webhook", express.text({ type: "*/*" }), async (req, res) => {
   try {
-    const signature = req.headers["x-verify"];
-    if (!signature) return res.status(200).send();
+    const authorizationHeaderData =
+      req.headers["authorization"] || req.headers["x-verify"];
+    const phonepeS2SCallbackResponseBodyString = req.body;
 
-    const payloadString = JSON.stringify(req.body);
-    const textToHash = payloadString; // webhook signature validation may differ
-    const calculatedChecksum = crypto.createHash("sha256")
-      .update(textToHash + API_KEY)
-      .digest("hex") + `###${SALT_INDEX}`;
-
-    if (signature !== calculatedChecksum) {
-      console.log("❌ Invalid webhook signature");
+    if (!authorizationHeaderData || !phonepeS2SCallbackResponseBodyString) {
+      console.log("❌ Missing webhook headers/body");
       return res.status(200).send();
     }
 
-    const payload = req.body.data || req.body;
-    const { merchantTransactionId, transactionId, state, orderId } = payload;
+    // 1. Validate Callback using SDK (Handles Checksum/Signature automatically)
+    const callbackResponse = client.validateCallback(
+      MERCHANT_USERNAME, // Replace with your merchant username
+      MERCHANT_PASSWORD, // Replace with your merchant password
+      authorizationHeaderData,
+      phonepeS2SCallbackResponseBodyString
+    );
+
+    if (!callbackResponse || !callbackResponse.payload) {
+      console.log("❌ Webhook Validation Failed by SDK");
+      return res.status(200).send();
+    }
+
+    const payload = callbackResponse.payload;
+    const merchantTransactionId = payload.merchantOrderId;
+    const state = payload.state; // E.g., ORDER_COMPLETED, ORDER_FAILED
 
     const order = await Order.findOne({ orderId: merchantTransactionId });
     if (!order) return res.status(200).send();
 
-    let paymentStatus = "PENDING";
-    if (state === "COMPLETED") paymentStatus = "SUCCESS";
-    else if (state === "FAILED") paymentStatus = "FAILED";
+    let paymentStatus = order.paymentStatus;
+    if (state === "ORDER_COMPLETED") {
+      paymentStatus = "SUCCESS";
+
+      // *** CRITICAL: Update User Subscription on Success ***
+      if (order.paymentStatus !== "SUCCESS") {
+        await updateSubscription(order.userId, order.plan);
+      }
+    } else if (state.includes("FAILED")) {
+      paymentStatus = "FAILED";
+    }
 
     await Order.findOneAndUpdate(
       { orderId: merchantTransactionId },
-      { paymentStatus, phonepeOrderId: orderId, transactionId },
+      {
+        paymentStatus,
+        transactionId: payload.transactionId,
+        phonepeOrderId: payload.orderId,
+        responseData: payload,
+      },
       { new: true }
     );
 
@@ -121,11 +174,9 @@ router.post("/webhook", express.json({ type: "*/*" }), async (req, res) => {
     res.status(200).send();
   } catch (err) {
     console.error("❌ Webhook Error:", err.message);
-    res.status(200).send();
+    res.status(500).send("Internal Server Error");
   }
 });
-
-// ------------------- STATUS CHECK -------------------
 router.get("/status", async (req, res) => {
   try {
     const orderId = req.query.order_id;
@@ -134,11 +185,43 @@ router.get("/status", async (req, res) => {
     const order = await Order.findOne({ orderId });
     if (!order) return res.status(404).json({ error: "Order not found" });
 
-    if (order.paymentStatus !== "PENDING") {
-      return res.json({ orderId, amount: order.amount, status: order.paymentStatus, updated: true });
+    // 1. Use SDK to check status with PhonePe
+    const response = await client.getOrderStatus(orderId);
+    const phonePeState = response.state;
+
+    let newStatus = order.paymentStatus;
+
+    if (phonePeState === "ORDER_COMPLETED") {
+      newStatus = "SUCCESS";
+      if (order.paymentStatus !== "SUCCESS") {
+        await updateSubscription(order.userId, order.plan);
+      }
+    } else if (
+      phonePeState.includes("FAILED") ||
+      phonePeState === "ORDER_CANCELLED"
+    ) {
+      newStatus = "FAILED";
+    } else {
+      newStatus = "PENDING";
     }
 
-    res.json({ orderId, status: "PENDING", updated: false });
+    // 2. Update local database
+    const updatedOrder = await Order.findOneAndUpdate(
+      { orderId },
+      {
+        paymentStatus: newStatus,
+        transactionId: response.transactionId,
+        phonepeOrderId: response.orderId,
+      },
+      { new: true }
+    );
+
+    res.json({
+      orderId,
+      status: updatedOrder.paymentStatus,
+      amount: updatedOrder.amount,
+      updated: true,
+    });
   } catch (err) {
     console.error("❌ Status check failed:", err.message);
     res.status(500).json({ error: "Status check failed" });
