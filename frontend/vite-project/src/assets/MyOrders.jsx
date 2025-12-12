@@ -23,10 +23,6 @@ export default function MyOrders() {
       hour12: true,
     });
   };
-
-  /**
-   * Helper function to determine the color class for the order status badge
-   */
   const getStatusClasses = (status) => {
     const lowerStatus = status ? status.toLowerCase() : "";
     switch (lowerStatus) {
@@ -43,9 +39,6 @@ export default function MyOrders() {
     }
   };
 
-  /**
-   * Function to handle invoice download (uses Merchant Order ID)
-   */
   const handleDownloadInvoice = (orderId) => {
     const downloadUrl = `${API_BASE_URL}/download-invoice/${orderId}`;
     window.open(downloadUrl, "_blank");
@@ -63,7 +56,6 @@ export default function MyOrders() {
 
     const fetchOrders = async () => {
       try {
-        // API कॉल में authenticated user ID का उपयोग करें
         const response = await axios.get(`${API_BASE_URL}/orders/${user._id}`);
 
         setOrders(response.data);
