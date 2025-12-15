@@ -28,6 +28,10 @@ import Chats from "./Chats";
 import Subscription from "./Subscription";
 import BrandList from "./BrandList";
 import UserNotifications from "./UserNotifications";
+import { FiBell } from "react-icons/fi";
+import { FiMessageCircle, FiHome, FiTrendingUp,FiTag,FiFileText } from "react-icons/fi";
+
+
 
 import p1 from "./image/p1.webp";
 import p2 from "./image/p2.webp";
@@ -121,12 +125,14 @@ const Brand = () => {
         <nav className="flex-1 w-full">
           <ul className="space-y-3">
             {[
-              { name: "Home", key: "home", icon: <FaHome /> },
-              { name: "Campaigns", key: "Campaigns", icon: <FaBullhorn /> },
-              { name: "Brands", key: "brands", icon: <FaBuilding /> },
-              { name: "Chats", key: "Chats", icon: <FaComments /> },
-              { name: "Notifications", key: "notifications", icon: <FaBell /> },
-              { name: "News", key: "News", icon: <FaFileAlt /> },
+              { name: "Home", key: "home", icon: <FiHome className="text-xl animate-pulse" /> },
+              { name: "Campaigns", key: "Campaigns", icon: <FiTrendingUp className="text-xl animate-pulse" /> },
+              { name: "Brands", key: "brands", icon: <FiTag className="text-xl animate-pulse" /> },
+              { name: "Chats", key: "Chats", icon: <FiMessageCircle className="text-2xl text-fuchsia-400 animate-pulse" />
+},
+              { name: "Notifications", key: "notifications", icon: <FiBell className="text-2xl text-fuchsia-400 animate-bounce drop-shadow-[0_0_10px_rgba(255,100,255,0.6)]" />
+ },
+              { name: "News", key: "News", icon: <FiFileText className="text-xl animate-pulse" /> },
             ].map((item) => (
               <li
                 key={item.key}

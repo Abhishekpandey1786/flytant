@@ -10,8 +10,7 @@ const plans = [
     features: [
       "Higher Visibility",
       "Apply For 6 Campaigns Monthly",
-      "❌ No Direct Message Credit",
-      "❌ Profile Recommendation to brands",
+      "Profile Recommendation to brands",
     ],
     popular: false,
   },
@@ -23,8 +22,7 @@ const plans = [
     features: [
       "Higher Visibility",
       "Apply For 15 Campaigns Monthly",
-      "Get 15 Direct Message Credit",
-      "❌ Profile Recommendation to brands",
+      " Profile Recommendation to brands",
     ],
     popular: false,
   },
@@ -36,7 +34,6 @@ const plans = [
     features: [
       "Higher Visibility",
       "Apply For 40 Campaigns Monthly",
-      "Get 40 Direct Message Credit",
       "Profile Recommendation to brands",
     ],
     popular: true,
@@ -49,7 +46,6 @@ const plans = [
     features: [
       "Higher Visibility",
       "Apply For Unlimited Campaigns Monthly",
-      "Unlimited Direct Message Credit",
       "Profile Recommendation to brands",
     ],
     popular: false,
@@ -126,8 +122,6 @@ export default function Subscription() {
           </div>
         ))}
       </div>
-      
-      {/* ---- Footer Q&A ---- */}
       <div className="mt-20 sm:mt-28 text-center px-4">
         <h4 className="text-xl sm:text-2xl font-semibold mb-4 text-white">
           Still have Questions?
@@ -136,10 +130,10 @@ export default function Subscription() {
           If you have questions about Flytant, product, pricing, implementation
           or anything else, please email us at{" "}
           <a
-            href="mailto:influencers@flytant.com"
+            href="mailto:information@vistafluence.com"
             className="text-fuchsia-400 underline font-medium"
           >
-            influencers@InfluZone.com
+            information@vistafluence.com
           </a>
         </p>
       </div>

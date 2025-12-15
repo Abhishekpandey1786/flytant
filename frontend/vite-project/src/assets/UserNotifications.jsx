@@ -9,8 +9,6 @@ const UserNotifications = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ✅ 1. 'token' वेरिएबल को हटा दिया गया है
-  // ⚠️ सुनिश्चित करें कि आपके बैकएंड में यह रूट पब्लिक हो
   const API_URL = "https://vistafluence.onrender.com/api/notifications";
 
 
@@ -24,26 +22,23 @@ const UserNotifications = () => {
     return `https://vistafluence.onrender.com${imagePath}`;
   };
 
-  // isRead स्टेटस अब केवल क्लाइंट-साइड (Browser Session) के लिए होगा,
-  // क्योंकि हम इसे डेटाबेस में प्रति-यूज़र सेव नहीं कर रहे हैं।
   const unreadNotifications = useMemo(() => {
     return notifications.filter(n => !n.isRead);
   }, [notifications]);
 
   
   const fetchNotifications = async () => {
-    // ❌ 2. टोकन चेक हटा दिया गया है
-    // if (!token) { setError("..."); setLoading(false); return; }
+  
     
     if (notifications.length === 0) setLoading(true); 
 
     try {
-      // ✅ 3. Axios कॉल से Authorization हेडर हटा दिया गया है
+   
       const res = await axios.get(API_URL);
 
       const data = res.data.map((n) => ({
         ...n,
-        // पब्लिक नोटिफिकेशन में isRead को डिफ़ॉल्ट रूप से false सेट करें
+        
         isRead: false, 
         imageSrc: getImageUrl(n.image), 
       }));
@@ -54,7 +49,6 @@ const UserNotifications = () => {
     } catch (err) {
       console.error("Notification fetch error:", err.response?.data || err.message);
       
-      // ❌ 4. Admin-specific error handling हटा दिया गया है
       setError("⚠️ Failed to load public notifications from the server.");
     } finally {
       setLoading(false);
@@ -154,8 +148,8 @@ const UserNotifications = () => {
                 key={n._id || idx}
                 className={`relative backdrop-blur-md rounded-2xl p-4 sm:p-5 shadow-md transition-all duration-300 hover:scale-[1.01] hover:shadow-lg border-l-4 ${
                   n.isRead
-                    ? "border-gray-700 opacity-70 bg-gray-800/50" // Read
-                    : "border-fuchsia-500 bg-gray-800/80" // Unread
+                    ? "border-gray-700 opacity-70 bg-gray-800/50" 
+                    : "border-fuchsia-500 bg-gray-800/80" 
                 }`}
               >
                 <div 
