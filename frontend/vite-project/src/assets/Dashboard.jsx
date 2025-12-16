@@ -159,12 +159,12 @@ const Dashboard = () => {
               <span>Feed</span>
             </li>
             {[
-              { name: "Sponsorships", icon:<FiSettings className="text-xl animate-spin" />, key: "campaigns" },
+              { name: "Sponsorships", icon:<FiSettings className="text-xl animate-spin  text-fuchsia-400" />, key: "campaigns" },
               { name: "Chats", icon: <FiMessageCircle className="text-2xl text-fuchsia-400 animate-pulse" />
 , key: "Chats" },
               { name: "Notifications", icon: <FiBell className="text-2xl text-fuchsia-400 animate-bounce drop-shadow-[0_0_10px_rgba(255,100,255,0.6)]" />
 , key: "notifications" },
-              { name: "Subscription", icon: <FiCreditCard className="text-xl animate-pulse" />, key: "subscription" },
+              { name: "Subscription", icon: <FiCreditCard className="text-xl animate-pulse  text-fuchsia-400" />, key: "subscription" },
             ].map((item) => (
               <li
                 key={item.key}

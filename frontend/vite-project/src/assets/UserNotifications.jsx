@@ -54,8 +54,6 @@ const UserNotifications = () => {
       setLoading(false);
     }
   };
-
-  // ⚠️ ध्यान दें: ये फ़ंक्शन केवल फ्रंटएंड स्टेट बदलते हैं, डेटाबेस नहीं।
   const markAsRead = async (id) => {
     setNotifications(prev =>
       prev.map(n => n._id === id ? { ...n, isRead: true } : n)
@@ -67,17 +65,11 @@ const UserNotifications = () => {
       prev.map(n => ({ ...n, isRead: true }))
     );
   };
-
-  // ✅ 5. useEffect dependency array खाली है, यह टोकन पर निर्भर नहीं करेगा
   useEffect(() => {
     fetchNotifications();
-    // Polling: हर 30 सेकंड में नई पब्लिक नोटिफिकेशन ले लेगा।
     const interval = setInterval(fetchNotifications, 30000); 
     return () => clearInterval(interval);
-  }, []); // <--- dependency array अब खाली है
-
-  // --- Render Logic ---
-  
+  }, []); 
   if (error && !loading) {
     return (
       <div className="max-w-4xl mx-auto py-20 text-center text-red-400 p-6 bg-red-900/40 rounded-xl shadow-md border border-red-700">
