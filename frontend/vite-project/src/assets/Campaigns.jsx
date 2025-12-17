@@ -156,7 +156,7 @@ function Campaigns() {
                     )}
                     <span 
                         className="ml-4 cursor-pointer text-fuchsia-300 hover:text-fuchsia-100 font-medium" 
-                        onClick={() => navigate("/SubscriptionPlans")}
+                        onClick={() => navigate("/subscription")}
                     >
                         Upgrade Plan &gt;
                     </span>
