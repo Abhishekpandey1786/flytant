@@ -8,16 +8,13 @@ import {
   FaPlusCircle,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-// 🛑 AuthContext Import करें 🛑
 import { AuthContext } from './AuthContext'; 
 
-// Asset URL Resolver (unchanged)
 const resolveAssetUrl = (assetPath) => {
     if (!assetPath) return null;
     if (assetPath.startsWith('http') || assetPath.startsWith('https')) {
       return assetPath;
     }
-    // सुनिश्चित करें कि आपका बेस URL सही हो
     return `https://vistafluence.onrender.com/${assetPath}`;
 };
 
@@ -26,16 +23,13 @@ function Campaigns() {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
-  // 🛑 AuthContext से user, token, और updater function लें 🛑
   const { user, token, updateUserSubscription } = useContext(AuthContext); 
-  const currentUserId = user?._id; // AuthContext से user id लें
+  const currentUserId = user?._id; 
 
   const fetchCampaigns = async () => {
     try {
       const res = await axios.get("https://vistafluence.onrender.com/api/campaigns/public");
       
-      // Resolve URLs for display (unchanged)
       const updatedCampaigns = res.data.map(campaign => ({
           ...campaign,
           imagePath: resolveAssetUrl(campaign.imagePath),
@@ -61,7 +55,7 @@ function Campaigns() {
   }, []);
 
   const handleApply = async (campaignId) => {
-    // 1. Authentication Check
+    
     if (!token) {
       alert("Please log in to apply for campaigns.");
       return;
@@ -71,27 +65,19 @@ function Campaigns() {
         alert("Only influencers can apply to campaigns.");
         return;
     }
-  
-    // 🛑 2. Frontend Optimistic Limit Check (Subscription Data from AuthContext) 🛑
     const userSubscription = user?.subscription;
-    
-    // Default to 'Free' if no plan is found
     const userPlan = userSubscription?.plan || "Free"; 
-    // Default maxApplications to 3 for 'Free' users
-    const maxApplications = userSubscription?.maxApplications || 3; // 🟢 UPDATED to 3 for Free Tier
     
-    // Counter check using the field set by the backend
+    const maxApplications = userSubscription?.maxApplications || 3; 
     const applicationsMade = userSubscription?.applications_made_this_month || 0; 
     
-    // 9999 is typically used for "Unlimited"
     if (applicationsMade >= maxApplications && maxApplications < 9999) { 
         alert(
             `Your ${userPlan} plan allows only ${maxApplications} applications this month. Please upgrade to apply more.`
         );
-        navigate("/SubscriptionPlans");
+        navigate("/subscription");
         return;
     }
-    // 🛑 End Limit Check 🛑
 
     try {
       const response = await axios.post(
@@ -102,8 +88,6 @@ function Campaigns() {
 
       alert("Applied successfully! 🎉");
       
-      // 🛑 3. AuthContext को अपडेट करें (नए काउंटर के साथ) 🛑
-      // बैकएंड से मिला नया काउंटर लें और उसे AuthContext में अपडेट करें
       updateUserSubscription({ 
           applications_made_this_month: response.data.newApplicationCount,
           maxApplications: response.data.newMaxApplications
@@ -114,10 +98,10 @@ function Campaigns() {
     } catch (error) {
         const errorMsg = error.response?.data?.msg || "Failed to apply. An error occurred.";
 
-        // 🛑 Back-end Redirection Hint Check (Safety) 🛑
-        if (error.response?.status === 403 && error.response?.data?.redirect === '/SubscriptionPlans') {
+        
+        if (error.response?.status === 403 && error.response?.data?.redirect === '/subscription') {
              alert(errorMsg);
-             navigate("/SubscriptionPlans");
+             navigate("/subscription");
              return;
         }
 
@@ -127,7 +111,6 @@ function Campaigns() {
   };
 
   const handleCreateCampaign = () => {
-    // 🛑 token और user data AuthContext से आ रहा है 🛑
     if (!token) {
       alert("Please log in to create a campaign.");
     } else {
@@ -149,15 +132,11 @@ function Campaigns() {
       </div>
     );
   }
-
-  // 🛑 Subscription Limit Display (Influencer के लिए) 🛑
   const userSubscription = user?.subscription;
   const isInfluencer = user?.userType === 'influencer';
-  
-  // Default planName to 'Free' and maxApps to 3
-  const planName = userSubscription?.plan || "Free"; // 🟢 UPDATED to Free
+  const planName = userSubscription?.plan || "Free"; 
   const appsMade = userSubscription?.applications_made_this_month || 0;
-  const maxApps = userSubscription?.maxApplications || 3; // 🟢 UPDATED to 3
+  const maxApps = userSubscription?.maxApplications || 3; 
   
   const isLimitReached = appsMade >= maxApps && maxApps < 9999;
   const maxAppsDisplay = maxApps >= 9999 ? 'Unlimited' : maxApps;
@@ -165,8 +144,6 @@ function Campaigns() {
   return (
     <div className="bg-slate-900 min-h-screen text-gray-100 p-4 sm:p-6 md:p-8">
       <div className="max-w-7xl mx-auto">
-        
-        {/* Subscription Limit Card */}
         {isInfluencer && (
             <div className="bg-fuchsia-800/20 p-4 rounded-xl mb-6 border border-fuchsia-700 shadow-lg">
                 <p className="text-white font-semibold">
@@ -186,8 +163,6 @@ function Campaigns() {
                 </p>
             </div>
         )}
-        
-        {/* Header Responsive (unchanged) */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 sm:mb-10">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white text-center sm:text-left">
             All Public Campaigns
@@ -208,7 +183,7 @@ function Campaigns() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {campaigns.map((campaign) => {
-              // Check if the current user has applied to this campaign
+              
               const hasApplied = campaign.applicants?.some(
                 (a) => a.user?._id === currentUserId
               );
@@ -218,7 +193,6 @@ function Campaigns() {
                   key={campaign._id}
                   className="bg-slate-800 rounded-2xl shadow-xl border border-fuchsia-800 p-4 sm:p-6 flex flex-col items-start transition-transform duration-300 hover:scale-105 neno-button hover:shadow-fuchsia-800/50"
                 >
-                  {/* Campaign Image (unchanged) */}
                   {campaign.imagePath && (
                     <img
                       src={campaign.imagePath}
@@ -250,12 +224,11 @@ function Campaigns() {
                     </p>
                   </div>
 
-                  {/* Apply Button Logic */}
                   {campaign.createdBy?._id !== currentUserId &&
                     isInfluencer && (
                       <button
                         onClick={() => handleApply(campaign._id)}
-                        disabled={hasApplied || isLimitReached} // Limit Reached पर भी Disable करें
+                        disabled={hasApplied || isLimitReached} 
                         className={`mt-4 w-full py-2 text-white rounded-lg font-semibold transition-colors active:scale-95 neno-button shadow-xl hover:shadow-fuchsia-800/50 border-fuchsia-800 ${
                           hasApplied || isLimitReached
                             ? "bg-gray-500 cursor-not-allowed"
@@ -265,16 +238,12 @@ function Campaigns() {
                         {hasApplied ? "Applied" : isLimitReached ? "Limit Reached (Upgrade)" : "Apply Now"}
                       </button>
                     )}
-
-                  {/* Applicants Section (unchanged) */}
                   {campaign.applicants && campaign.applicants.length > 0 && (
                     <div className="mt-4 border-t border-slate-700 pt-4 w-full">
                       <h4 className="text-sm sm:text-md font-semibold text-gray-300 flex items-center gap-2 mb-2">
                         <FaUsers className="text-fuchsia-400" /> Applicants (
                         {campaign.applicants.length})
                       </h4>
-
-                      {/* Advertiser View (unchanged) */}
                       {campaign.createdBy?._id === currentUserId ? (
                         <ul className="space-y-2 max-h-40 overflow-y-auto">
                           {campaign.applicants.map((applicant) =>
@@ -312,7 +281,7 @@ function Campaigns() {
                           )}
                         </ul>
                       ) : (
-                        // Influencer View (unchanged)
+   
                         <p className="text-gray-400 text-xs sm:text-sm">
                           {campaign.applicants.length} people have applied.
                         </p>
