@@ -1,13 +1,4 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
-
-export default function PaymentSuccess() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [message, setMessage] = useState("Processing Payment...");
-
-  useEffect(() => {
+useEffect(() => {
     const query = new URLSearchParams(location.search);
     const sessionId = query.get("session_id");
 
@@ -17,7 +8,7 @@ export default function PaymentSuccess() {
       return;
     }
 
-    // Optional: Backend से payment status check करना
+    // Backend से optional payment status check
     axios.get(`${process.env.REACT_APP_BACKEND_URL}/checkout-session/${sessionId}`)
       .then(res => {
         if (res.data.payment_status === "paid") {
@@ -32,11 +23,3 @@ export default function PaymentSuccess() {
         setTimeout(() => navigate("/plans"), 3000);
       });
   }, [location.search, navigate]);
-
-  return (
-    <div style={{ textAlign: "center", marginTop: "80px" }}>
-      <h1>{message}</h1>
-      <p>Please wait, don't close this page.</p>
-    </div>
-  );
-}
