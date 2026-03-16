@@ -68,8 +68,8 @@ function App() {
               <Route path="/SubscriptionPlans" element={<SubscriptionPlans />}/>
               <Route path="/UserNotifications" element={<UserNotifications />}/>
               <Route path="/my-orders" element={<MyOrders />} />
-              <Route path="/payment-status" element={<PaymentSuccess />} />
               <Route path="/chats" element={<Chats />} />
+              <Route path="/success" element={<PaymentSuccess />} />
             </Route>
           </Routes>
         </AuthProvider>
