@@ -1,25 +1,19 @@
-useEffect(() => {
-    const query = new URLSearchParams(location.search);
-    const sessionId = query.get("session_id");
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-    if (!sessionId) {
-      setMessage("Session ID missing! Redirecting...");
-      setTimeout(() => navigate("/plans"), 3000);
-      return;
-    }
+export default function PaymentStatus() {
+  const navigate = useNavigate();
 
-    // Backend से optional payment status check
-    axios.get(`${process.env.REACT_APP_BACKEND_URL}/checkout-session/${sessionId}`)
-      .then(res => {
-        if (res.data.payment_status === "paid") {
-          setMessage("Payment Successful! Redirecting to your orders...");
-        } else {
-          setMessage("Payment not completed. Redirecting...");
-        }
-        setTimeout(() => navigate("/my-orders"), 3000);
-      })
-      .catch(err => {
-        setMessage("Error checking payment. Redirecting...");
-        setTimeout(() => navigate("/plans"), 3000);
-      });
-  }, [location.search, navigate]);
+  useEffect(() => {
+    setTimeout(() => {
+      navigate("/my-orders");
+    }, 3000); 
+  }, []);
+
+  return (
+    <div style={{ textAlign: "center", marginTop: "80px" }}>
+      <h1>Processing Payment...</h1>
+      <p>Please wait, don't close this page.</p>
+    </div>
+  );
+}
