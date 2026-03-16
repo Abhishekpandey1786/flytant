@@ -18,7 +18,7 @@ const usersRoutes = require("./routes/users");
 const advertiserRoutes = require("./routes/advertiser");
 const appliedRoutes = require("./routes/appliedcampaigns");
 const contactRoutes = require("./routes/contact");
-const cashfreeRoutes = require("./routes/cashfreeRoutes");
+const stripeRoutes = require("./routes/stripeRoutes");
 const publicRoutes = require("./routes/notifications");
 
 dotenv.config();
@@ -35,7 +35,10 @@ const io = new Server(server, {
 connectDB();
 app.use(cors());
 
-// app.use("/api/cashfree/webhook", express.raw({ type: "application/json" }));
+app.use("/api/stripe/webhook", express.raw({ type: "application/json" }));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use(express.json());
 app.use(express.urlencoded({  extended: true }));
@@ -54,7 +57,7 @@ app.use("/api/news", newsRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api", publicRoutes);
 app.use("/api/contact", contactRoutes);
-app.use("/api/phonepe", cashfreeRoutes);
+app.use("/api/stripe", stripeRoutes);
 
 const connectedUsers = new Map();
 
