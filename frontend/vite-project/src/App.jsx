@@ -49,6 +49,7 @@ function App() {
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/Refund-Policy" element={<RefundPolicy />} />
+              <Route path="/success" element={<PaymentSuccess />} />
             <Route element={<PrivateRoutes />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/dashboard/brand" element={<Brand />} />
@@ -69,7 +70,7 @@ function App() {
               <Route path="/UserNotifications" element={<UserNotifications />}/>
               <Route path="/my-orders" element={<MyOrders />} />
               <Route path="/chats" element={<Chats />} />
-              <Route path="/success" element={<PaymentSuccess />} />
+              
             </Route>
           </Routes>
         </AuthProvider>
