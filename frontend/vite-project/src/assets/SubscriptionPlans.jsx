@@ -37,27 +37,31 @@ function StripeCheckoutForm({ selectedPlan }) {
       alert("Please login first");
       return;
     }
+    if (loading) return;
+
     setLoading(true);
 
     try {
+      // Backend endpoint ko Stripe wale URL par change karein
       const { data } = await axios.post(
         "https://vistafluence.onrender.com/api/stripe/create-checkout-session",
         {
           plan: selectedPlan,
           userId: user._id,
           email: user.email,
-          userName: user.userName || user.name || "Customer", // ✅ Added
-          phone: user.phone || user.phoneNumber || "N/A",      // ✅ Added
         }
       );
 
       if (data.url) {
+        // Stripe ke hosted checkout page par redirect
         window.location.href = data.url;
+      } else {
+        alert("Payment session creation failed!");
+        setLoading(false);
       }
     } catch (err) {
-      console.error("STRIPE ERROR:", err);
+      console.error("STRIPE ERROR:", err.response?.data || err.message);
       alert("Payment failed! Please try again.");
-    } finally {
       setLoading(false);
     }
   };
@@ -68,7 +72,8 @@ function StripeCheckoutForm({ selectedPlan }) {
       disabled={loading}
       className="w-full mt-4 py-3 rounded-xl font-semibold bg-fuchsia-700 text-white shadow-lg flex items-center justify-center disabled:opacity-50 hover:bg-fuchsia-800 transition-colors"
     >
-      {loading ? <Spinner /> : `Subscribe with Stripe - $${selectedPlan.price}`}
+      {loading && <Spinner />}
+      {loading ? "Processing..." : `Subscribe with Stripe - $${selectedPlan.price}`}
     </button>
   );
 }

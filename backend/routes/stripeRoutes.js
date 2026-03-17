@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
+require('dotenv').config();
 const User = require("../models/User");
 const Order = require("../models/Order");
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
-// 🛒 Create Checkout Session
 router.post("/create-checkout-session", async (req, res) => {
     try {
         const { plan, userId, email, userName, phone } = req.body;
@@ -21,10 +21,10 @@ router.post("/create-checkout-session", async (req, res) => {
             mode: 'payment',
             customer_email: email,
             metadata: { 
-                userId: userId.toString(),
+                userId: userId.toString(), // Ensure it's a string
                 planName: plan.name,
-                userName: userName || "N/A",
-                userPhoneNo: phone || "N/A",
+                userName,
+                userPhoneNo: phone,
                 amount: plan.price.toString()
             }, 
             success_url: `${process.env.FRONTEND_URL}/success`,
@@ -36,52 +36,76 @@ router.post("/create-checkout-session", async (req, res) => {
     }
 });
 
-// ⚡ Webhook Handler
-router.post('/', async (req, res) => {
+router.post('/webhook', async (req, res) => {
     const sig = req.headers['stripe-signature'];
     let event;
 
-    try {
-        // req.body yahan RAW Buffer hoga kyunki index.js me express.raw use kiya hai
-        event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-    } catch (err) {
-        console.error("❌ Webhook Signature Error:", err.message);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
+    if (!sig) {
+        console.log("⚠️ Manual Testing detected.");
+        event = req.body; 
+    } else {
+        try {
+            event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+        } catch (err) {
+            console.error("❌ Webhook Signature Error:", err.message);
+            return res.status(400).send(`Webhook Error: ${err.message}`);
+        }
     }
+
+    // DEBUG LOG 1: Check event type
+    console.log("🔍 Received Event Type:", event.type);
 
     if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
-        const { userId, planName, userName, userPhoneNo, amount } = session.metadata;
+        
+        // DEBUG LOG 2: Check metadata
+        console.log("📦 Session Metadata:", session.metadata);
 
-        console.log(`🔔 Payment Received for User: ${userId}`);
+        const { userId, planName, userName, userPhoneNo, amount } = session.metadata || {};
+
+        if (!userId) {
+            console.error("❌ CRITICAL: userId missing in metadata!");
+            return res.status(400).json({ error: "No userId found" });
+        }
 
         try {
-            // 1. Update User to Premium
-            await User.findByIdAndUpdate(userId, { 
+            console.log(`⏳ Attempting DB Update for User ID: ${userId}`);
+
+            // 1. User Update
+            const updatedUser = await User.findByIdAndUpdate(userId, { 
                 isPremium: true, 
                 currentPlan: planName,
                 subscriptionDate: new Date()
-            });
+            }, { new: true });
 
-            // 2. Create Order in DB
+            if (!updatedUser) {
+                console.error(`❌ User not found in DB for ID: ${userId}`);
+            } else {
+                console.log(`✅ User ${userId} marked as Premium.`);
+            }
+
+            // 2. Order Create
             const newOrder = new Order({
                 userId: userId,
-                userEmail: session.customer_details?.email,
-                userName: userName,
-                userPhoneNo: userPhoneNo,
-                plan: planName,
-                amount: Number(amount),
+                userEmail: session.customer_details?.email || "test@test.com",
+                userName: userName || "N/A",
+                userPhoneNo: userPhoneNo || "N/A",
+                plan: planName || "Unknown",
+                amount: amount || 0,
                 orderId: session.id,
-                transactionId: session.payment_intent,
+                transactionId: session.payment_intent || "test_pi_id",
                 paymentStatus: "SUCCESS",
                 responseData: session 
             });
 
             await newOrder.save();
-            console.log("✅ DB Updated: User Premium & Order Saved");
+            console.log(`✅ Order saved successfully for ${userId}`);
+
         } catch (dbError) {
-            console.error("❌ DB Update Failed:", dbError.message);
+            console.error("❌ DATABASE ERROR DETAILS:", dbError);
         }
+    } else {
+        console.log(`ℹ️ Skipping event type: ${event.type}`);
     }
 
     res.json({ received: true });
