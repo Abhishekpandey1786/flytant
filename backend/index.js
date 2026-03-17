@@ -35,14 +35,10 @@ const io = new Server(server, {
 connectDB();
 app.use(cors());
 
-// app.use("/api/stripe/webhook", express.raw({ type: "application/json" }));
-app.use("/api/stripe/webhook", express.raw({ type: "application/json" }), stripeRoutes);
+app.use("/api/stripe/webhook", express.raw({ type: "application/json" }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-app.use(express.json());
-app.use(express.urlencoded({  extended: true }));
 
 app.get("/", (req, res) => {
   res.send("Welcome to the backend API!");
@@ -80,7 +76,7 @@ io.on("connection", (socket) => {
     try {
       if (!socket.userId || socket.userId !== data.sender) {
         console.error(
-          `❌ Security alert: Sender ID mismatch or unregistered user. Expected: ${socket.userId}, Received: ${data.sender}`
+          `❌ Security alert: Sender ID mismatch or unregistered user. Expected: ${socket.userId}, Received: ${data.sender}`,
         );
         return;
       }
@@ -119,7 +115,6 @@ io.on("connection", (socket) => {
     }
   });
 });
-
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
