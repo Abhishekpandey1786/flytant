@@ -27,14 +27,14 @@ export default function MyOrders() {
     switch (lowerStatus) {
       case "success":
       case "succeeded":
-        return "bg-green-500/90 text-white shadow-md";
+        return "bg-green-500/80 text-white shadow-lg";
       case "failed":
-        return "bg-red-600 text-white shadow-md";
+        return "bg-red-600/80 text-white shadow-lg";
       case "pending":
       case "created":
       case "processing":
       default:
-        return "bg-yellow-400 text-slate-900 shadow-md";
+        return "bg-yellow-400/80 text-slate-900 shadow-lg";
     }
   };
 
@@ -69,7 +69,7 @@ export default function MyOrders() {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex justify-center items-center">
         <svg
-          className="animate-spin h-8 w-8 text-fuchsia-400"
+          className="animate-spin h-8 w-8 text-cyan-400"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -81,7 +81,7 @@ export default function MyOrders() {
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
           ></path>
         </svg>
-        <span className="ml-3 text-fuchsia-300 font-medium">Loading orders...</span>
+        <span className="ml-3 text-cyan-300 font-medium">Loading orders...</span>
       </div>
     );
   }
@@ -89,7 +89,7 @@ export default function MyOrders() {
   if (error) {
     return (
       <div className="min-h-screen bg-slate-950 text-red-500 flex justify-center items-center">
-        <p className="p-4 bg-slate-800 rounded-lg shadow-lg">{error}</p>
+        <p className="p-4 bg-slate-800 rounded-xl shadow-xl border border-red-500/50">{error}</p>
       </div>
     );
   }
@@ -97,20 +97,19 @@ export default function MyOrders() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-800 px-4 sm:px-6 py-10">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-pink-500 mb-8 text-center drop-shadow-lg">
+        <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 via-purple-400 to-cyan-400 mb-8 text-center drop-shadow-lg">
           🛒 My Orders
         </h2>
-        <hr className="border-gray-700 mb-6" />
 
         {orders.length === 0 ? (
-          <div className="text-center text-gray-400 mt-10 p-6 border border-dashed border-fuchsia-600 rounded-xl max-w-md mx-auto bg-slate-800/50 shadow-lg">
+          <div className="text-center text-gray-400 mt-10 p-6 border border-dashed border-fuchsia-600 rounded-xl max-w-md mx-auto bg-slate-800/50 shadow-lg backdrop-blur-md">
             <p className="mb-4 text-lg text-white">
-              🎁 Looks like you haven't placed any orders yet!
+              🎁 No orders yet!
             </p>
-            <p className="text-sm">Go explore our plans to start your journey.</p>
+            <p className="text-sm">Explore our plans to start your journey.</p>
             <a
               href="/plans"
-              className="mt-4 inline-block px-6 py-2 bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-md hover:from-fuchsia-700 hover:to-pink-700 transition duration-150 font-semibold shadow-md"
+              className="mt-4 inline-block px-6 py-2 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-cyan-600 text-white rounded-md hover:scale-105 transition-transform duration-200 font-semibold shadow-lg"
             >
               View Plans
             </a>
@@ -120,11 +119,11 @@ export default function MyOrders() {
             {orders.map((order) => (
               <div
                 key={order._id}
-                className="bg-slate-800/80 backdrop-blur-md rounded-xl p-6 shadow-lg border border-gray-700 hover:border-fuchsia-600 transition-transform hover:scale-[1.02]"
+                className="bg-slate-800/70 backdrop-blur-md rounded-xl p-6 shadow-xl border border-gray-700 hover:border-cyan-400 transition-transform hover:scale-[1.03] hover:shadow-cyan-500/30"
               >
                 {/* Header */}
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-2xl font-extrabold bg-gradient-to-r from-fuchsia-400 to-pink-500 bg-clip-text text-transparent">
+                  <h3 className="text-2xl font-extrabold bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">
                     {order.plan || "N/A"} Plan
                   </h3>
                   <span
@@ -156,7 +155,7 @@ export default function MyOrders() {
 
                 {/* Customer Details */}
                 <div className="mt-4 border-t border-gray-700 pt-3">
-                  <h4 className="font-semibold text-fuchsia-300 mb-2">Customer Details</h4>
+                  <h4 className="font-semibold text-cyan-300 mb-2">Customer Details</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-400">
                     {order.userName && <p><span className="text-white">Name:</span> {order.userName}</p>}
                     {order.userEmail && <p><span className="text-white">Email:</span> {order.userEmail}</p>}
@@ -169,7 +168,7 @@ export default function MyOrders() {
                   {order.paymentStatus?.toLowerCase() === "success" ? (
                     <button
                       onClick={() => handleDownloadInvoice(order.orderId)}
-                      className="px-4 py-2 bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white rounded-md hover:from-fuchsia-700 hover:to-pink-700 transition duration-150 text-sm font-semibold shadow-md"
+                      className="px-4 py-2 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-cyan-600 text-white rounded-md hover:scale-105 transition-transform duration-200 text-sm font-semibold shadow-lg"
                     >
                       Download Invoice
                     </button>
