@@ -110,5 +110,13 @@ router.post('/webhook', async (req, res) => {
 
     res.json({ received: true });
 });
+router.get("/my-orders/:userId", async (req, res) => {
+  try {
+    const orders = await Order.find({ userId: req.params.userId }).sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 module.exports = router;
