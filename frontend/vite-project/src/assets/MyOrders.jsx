@@ -159,24 +159,7 @@ export default function MyOrders() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-400">
                     {order.userName && <p><span className="text-white">Name:</span> {order.userName}</p>}
                     {order.userEmail && <p><span className="text-white">Email:</span> {order.userEmail}</p>}
-                    {order.userPhoneNo && <p><span className="text-white">Phone:</span> {order.userPhoneNo}</p>}
                   </div>
-                </div>
-
-                {/* Invoice Button */}
-                <div className="flex justify-end mt-4">
-                  {order.paymentStatus?.toLowerCase() === "success" ? (
-                    <button
-                      onClick={() => handleDownloadInvoice(order.orderId)}
-                      className="px-4 py-2 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-cyan-600 text-white rounded-md hover:scale-105 transition-transform duration-200 text-sm font-semibold shadow-lg"
-                    >
-                      Download Invoice
-                    </button>
-                  ) : (
-                    <span className="text-sm text-gray-500 italic">
-                      No invoice available for pending/failed orders.
-                    </span>
-                  )}
                 </div>
               </div>
             ))}
