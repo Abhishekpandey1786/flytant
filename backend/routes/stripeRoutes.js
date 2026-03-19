@@ -1,9 +1,20 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-require('dotenv').config();
+require("dotenv").config();
 const User = require("../models/User");
 const Order = require("../models/Order");
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
+// -------------------- Helper --------------------
+const getMaxApplications = (plan) => {
+  switch (plan) {
+    case "Basic": return 6;
+    case "Standard": return 15;
+    case "Advance": return 40;
+    case "Premium": return 9999; // practically unlimited
+    default: return 3; // Free plan
+  }
+};
 
 // -------------------- CREATE CHECKOUT SESSION --------------------
 router.post("/create-checkout-session", async (req, res) => {
@@ -15,26 +26,26 @@ router.post("/create-checkout-session", async (req, res) => {
     }
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: ["card"],
       line_items: [{
         price_data: {
-          currency: 'usd',
+          currency: "usd",
           product_data: { name: `${plan.name} Plan` },
           unit_amount: Math.round(plan.price * 100),
         },
         quantity: 1,
       }],
-      mode: 'payment',
+      mode: "payment",
       customer_email: email,
       metadata: {
         userId: userId.toString(),
         planName: plan.name,
         userName,
         userPhoneNo: phone,
-        amount: plan.price.toString()
+        amount: plan.price.toString(),
       },
-      success_url: `${process.env.FRONTEND_URL}/success`,
-      cancel_url: `${process.env.FRONTEND_URL}/plans`,
+      success_url: `${process.env.FRONTEND_URL}/payment-status?status=success`,
+      cancel_url: `${process.env.FRONTEND_URL}/payment-status?status=failed`,
     });
 
     res.json({ url: session.url });
@@ -46,7 +57,7 @@ router.post("/create-checkout-session", async (req, res) => {
 
 // -------------------- WEBHOOK HANDLER --------------------
 router.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
+  const sig = req.headers["stripe-signature"];
   let event;
 
   try {
@@ -58,7 +69,7 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
 
   console.log("🔍 Received Event Type:", event.type);
 
-  if (event.type === 'checkout.session.completed') {
+  if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     console.log("📦 Session Metadata:", session.metadata);
 
@@ -70,15 +81,17 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
     }
 
     try {
-      // 1. Update User
-      const updatedUser = await User.findByIdAndUpdate(userId, {
-        isPremium: true,
-        currentPlan: planName,
-        subscriptionDate: new Date()
-      }, { new: true });
-
-      if (updatedUser) {
-        console.log(`✅ User ${userId} marked as Premium.`);
+      // 1. Update User Subscription
+      const user = await User.findById(userId);
+      if (user) {
+        user.subscription.plan = planName;
+        user.subscription.status = "Active";
+        user.subscription.maxApplications = getMaxApplications(planName);
+        user.subscription.applications_made_this_month = 0;
+        user.subscription.last_reset_date = new Date();
+        user.subscription.expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days validity
+        await user.save();
+        console.log(`✅ User ${userId} subscription updated to ${planName}.`);
       } else {
         console.error(`❌ User not found in DB for ID: ${userId}`);
       }
@@ -94,7 +107,7 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
         orderId: session.id,
         transactionId: session.payment_intent || "test_pi_id",
         paymentStatus: "SUCCESS",
-        responseData: session
+        responseData: session,
       });
 
       await newOrder.save();
@@ -106,7 +119,7 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
     console.log(`ℹ️ Skipping event type: ${event.type}`);
   }
 
-  res.sendStatus(200); // Always return 200 OK
+  res.sendStatus(200);
 });
 
 // -------------------- GET USER ORDERS --------------------
