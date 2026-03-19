@@ -44,8 +44,8 @@ router.post("/create-checkout-session", async (req, res) => {
         userPhoneNo: phone,
         amount: plan.price.toString(),
       },
-      success_url: `${process.env.FRONTEND_URL}/payment-status?status=success`,
-      cancel_url: `${process.env.FRONTEND_URL}/payment-status?status=failed`,
+      success_url: `${process.env.FRONTEND_URL}/success`,
+      cancel_url: `${process.env.FRONTEND_URL}/plans`,
     });
 
     res.json({ url: session.url });

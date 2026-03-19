@@ -9,7 +9,6 @@ const User = require("../models/User");
 const auth = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
 
-// -------------------- Cloudinary Config --------------------
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -19,7 +18,6 @@ cloudinary.config({
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// -------------------- Upload Helper --------------------
 const uploadToCloudinary = (buffer, folder = "campaign_images") => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -37,36 +35,48 @@ const uploadToCloudinary = (buffer, folder = "campaign_images") => {
   });
 };
 
-// -------------------- Subscription Reset Helper --------------------
 const checkAndResetSubscription = (user) => {
   const now = new Date();
   let shouldSave = false;
-
+  if (!user.subscription || user.subscription.plan === undefined) {
+    user.subscription = {
+      plan: "Free",
+      status: "Active",
+      maxApplications: 3,
+      applications_made_this_month: 0,
+      last_reset_date: now,
+    };
+    shouldSave = true;
+    return shouldSave;
+  }
   const lastReset = user.subscription.last_reset_date
     ? new Date(user.subscription.last_reset_date)
     : new Date(0);
-
-  // Expiry check
-  if (user.subscription.expiryDate && now > user.subscription.expiryDate) {
+  const expiryDate = user.subscription.expiryDate;
+  if (expiryDate && now > expiryDate) {
     user.subscription.status = "Inactive";
     user.subscription.plan = "Free";
     user.subscription.maxApplications = 3;
+
     user.subscription.applications_made_this_month = 0;
     user.subscription.last_reset_date = now;
     shouldSave = true;
+    return shouldSave;
   }
-
-  // Monthly reset check
-  if (now.getMonth() !== lastReset.getMonth() || now.getFullYear() !== lastReset.getFullYear()) {
+  if (
+    now.getMonth() !== lastReset.getMonth() ||
+    now.getFullYear() !== lastReset.getFullYear()
+  ) {
     user.subscription.applications_made_this_month = 0;
     user.subscription.last_reset_date = now;
     shouldSave = true;
+    if (!user.subscription.maxApplications) {
+      user.subscription.maxApplications = 3;
+      shouldSave = true;
+    }
   }
-
   return shouldSave;
 };
-
-// -------------------- Create Campaign --------------------
 router.post(
   "/",
   auth,
@@ -74,9 +84,16 @@ router.post(
   upload.single("image"),
   async (req, res) => {
     try {
-      const { name, description, budget, platforms, requiredNiche, cta, endDate } = req.body;
+      const {
+        name,
+        description,
+        budget,
+        platforms,
+        requiredNiche,
+        cta,
+        endDate,
+      } = req.body;
       let imageUrl = null;
-
       if (req.file) {
         const result = await uploadToCloudinary(req.file.buffer);
         imageUrl = result.secure_url;
@@ -87,7 +104,9 @@ router.post(
         description,
         budget,
         platforms: Array.isArray(platforms) ? platforms : [platforms],
-        requiredNiche: Array.isArray(requiredNiche) ? requiredNiche : [requiredNiche],
+        requiredNiche: Array.isArray(requiredNiche)
+          ? requiredNiche
+          : [requiredNiche],
         cta,
         endDate,
         imagePath: imageUrl,
@@ -103,7 +122,6 @@ router.post(
   }
 );
 
-// -------------------- Get Public Campaigns --------------------
 router.get("/public", async (req, res) => {
   try {
     const campaigns = await Campaign.find()
@@ -118,7 +136,6 @@ router.get("/public", async (req, res) => {
   }
 });
 
-// -------------------- Apply to Campaign --------------------
 router.post("/:campaignId/apply", auth, async (req, res) => {
   try {
     const campaign = await Campaign.findById(req.params.campaignId);
@@ -126,14 +143,13 @@ router.post("/:campaignId/apply", auth, async (req, res) => {
 
     if (!campaign) return res.status(404).json({ msg: "Campaign not found" });
     if (!userDoc) return res.status(404).json({ msg: "User not found" });
-
-    // Subscription reset check
     if (userDoc.userType === "influencer") {
       const needsSave = checkAndResetSubscription(userDoc);
-      if (needsSave) await userDoc.save();
+      if (needsSave) {
+        await userDoc.save();
+      }
     }
 
-    // Subscription limit check
     if (userDoc.userType === "influencer") {
       const maxApps = userDoc.subscription.maxApplications || 3;
       const appsMade = userDoc.subscription.applications_made_this_month || 0;
@@ -144,25 +160,26 @@ router.post("/:campaignId/apply", auth, async (req, res) => {
         });
       }
     }
-
-    // Duplicate application check
-    if (campaign.applicants.some(applicant => applicant.user.toString() === req.user.id)) {
-      return res.status(400).json({ msg: "You have already applied for this campaign" });
+    if (
+      campaign.applicants.some(
+        (applicant) => applicant.user.toString() === req.user.id
+      )
+    ) {
+      return res
+        .status(400)
+        .json({ msg: "You have already applied for this campaign" });
     }
 
-    // Apply
     campaign.applicants.unshift({ user: req.user.id });
     if (userDoc.userType === "influencer") {
       userDoc.subscription.applications_made_this_month += 1;
     }
-
     await campaign.save();
     await userDoc.save();
 
     const updatedCampaign = await Campaign.findById(req.params.campaignId)
       .populate("createdBy", "name email")
       .populate("applicants.user", "name email avatar");
-
     res.json({
       msg: "Applied successfully!",
       campaign: updatedCampaign,
