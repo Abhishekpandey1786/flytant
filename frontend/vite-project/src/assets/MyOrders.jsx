@@ -69,7 +69,7 @@ export default function MyOrders() {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex justify-center items-center">
         <svg
-          className="animate-spin h-8 w-8 text-cyan-400"
+          className="animate-spin h-8 w-8 text-fuchsia-700"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -81,7 +81,7 @@ export default function MyOrders() {
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
           ></path>
         </svg>
-        <span className="ml-3 text-cyan-300 font-medium">Loading orders...</span>
+        <span className="ml-3 text-fuchsia-800 font-medium">Loading orders...</span>
       </div>
     );
   }
@@ -97,7 +97,7 @@ export default function MyOrders() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-800 px-4 sm:px-6 py-10">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 via-purple-400 to-cyan-400 mb-8 text-center drop-shadow-lg">
+        <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-white mb-8 text-center drop-shadow-lg">
           🛒 My Orders
         </h2>
 
@@ -119,11 +119,11 @@ export default function MyOrders() {
             {orders.map((order) => (
               <div
                 key={order._id}
-                className="bg-slate-800/70 backdrop-blur-md rounded-xl p-6 shadow-xl border border-gray-700 hover:border-cyan-400 transition-transform hover:scale-[1.03] hover:shadow-cyan-500/30"
+                className="bg-slate-800/70 backdrop-blur-md rounded-xl p-6 shadow-xl border border-gray-700 hover:border-fuchsia-400 transition-transform hover:scale-[1.03] hover:shadow-fuchsia-500/30"
               >
                 {/* Header */}
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-2xl font-extrabold bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">
+                  <h3 className="text-2xl font-extrabold bg-fuchsia-400 bg-clip-text text-transparent">
                     {order.plan || "N/A"} Plan
                   </h3>
                   <span
@@ -137,7 +137,7 @@ export default function MyOrders() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-gray-300">
                   <p>
                     <span className="font-semibold text-white">Amount:</span>{" "}
-                    <span className="text-lg text-green-400 font-bold">₹{order.amount}</span>
+                    <span className="text-lg text-green-400 font-bold">${order.amount}</span>
                   </p>
                   <p>
                     <span className="font-semibold text-white">Order ID:</span>{" "}
@@ -155,7 +155,7 @@ export default function MyOrders() {
 
                 {/* Customer Details */}
                 <div className="mt-4 border-t border-gray-700 pt-3">
-                  <h4 className="font-semibold text-cyan-300 mb-2">Customer Details</h4>
+                  <h4 className="font-semibold text-fuchsia-400 mb-2">Customer Details</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-400">
                     {order.userName && <p><span className="text-white">Name:</span> {order.userName}</p>}
                     {order.userEmail && <p><span className="text-white">Email:</span> {order.userEmail}</p>}
