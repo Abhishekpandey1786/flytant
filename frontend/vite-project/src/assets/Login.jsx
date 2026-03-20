@@ -7,7 +7,7 @@ function Signup() {
   const [userType, setUserType] = useState("advertiser");
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
-
+  const [loding, setloding] = useState(false);
   const [businessName, setBusinessName] = useState("");
   const [name, setName] = useState("");
   const [contactPerson, setContactPerson] = useState("");
@@ -31,6 +31,7 @@ function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setloding(true);
 
     // Validations
     if (!isValidEmail(email)) {
@@ -127,7 +128,9 @@ function Signup() {
     } catch (error) {
       console.error("Error:", error);
       toast.error("Something went wrong. Please try again.");
-    }
+    }finally {
+    setloding(false); // ✅ stop loading
+  }
   };
 
   return (
@@ -304,9 +307,10 @@ function Signup() {
 
           <button
             type="submit"
+            disabled={loding}
             className="w-full neno-button bg-fuchsia-700 hover:bg-fuchsia-600 text-white py-3 rounded-xl mt-6 font-bold uppercase transition-all duration-300 active:scale-95 transform hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-fuchsia-300 focus:ring-offset-2 focus:ring-offset-gray-800"
           >
-            Signup
+             {loding ? "Loading..." : "Signup"}
           </button>
         </form>
 
