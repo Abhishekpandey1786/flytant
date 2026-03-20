@@ -26,8 +26,6 @@ const Spinner = () => (
     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
   </svg>
 );
-
-// --- UPDATED COMPONENT FOR STRIPE ---
 function StripeCheckoutForm({ selectedPlan }) {
   const [loading, setLoading] = useState(false);
   const { user } = useContext(AuthContext);
@@ -42,7 +40,6 @@ function StripeCheckoutForm({ selectedPlan }) {
     setLoading(true);
 
     try {
-      // Backend endpoint ko Stripe wale URL par change karein
       const { data } = await axios.post(
         "https://vistafluence.onrender.com/api/stripe/create-checkout-session",
         {
@@ -53,7 +50,6 @@ function StripeCheckoutForm({ selectedPlan }) {
       );
 
       if (data.url) {
-        // Stripe ke hosted checkout page par redirect
         window.location.href = data.url;
       } else {
         alert("Payment session creation failed!");
@@ -129,8 +125,6 @@ export default function SubscriptionPlans() {
             </div>
           ))}
         </div>
-
-        {/* Influencer Section */}
         <div className="mt-24 text-center">
           <h3 className="text-2xl font-bold mb-10 text-white/80">
             Trusted by 100K+ Influencers Worldwide

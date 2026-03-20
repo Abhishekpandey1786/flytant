@@ -404,21 +404,21 @@ const Profile = () => {
                   </div>
                 </div>
                 {user.subscription && (
-                  <div className="bg-fuchsia-900/30 p-4 sm:p-6 rounded-xl shadow-lg border border-fuchsia-700/50">
-                    <h2 className="text-xl font-bold mb-4 flex items-center space-x-3 text-fuchsia-300">
+                  <div className="bg-fuchsia-700/30 p-4 sm:p-6 rounded-xl shadow-lg border border-fuchsia-700/30">
+                    <h2 className="text-xl font-bold mb-4 flex items-center space-x-3 text-white">
                       <FaCreditCard />
                       <span>Subscription Status</span>
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-gray-200">
                       <InfoBox
-                        icon={<FaCalendarAlt className="text-fuchsia-400" />}
+                        icon={<FaCalendarAlt className="text-white" />}
                         label="Plan"
                         value={user.subscription.plan}
                       />
                       
                       {user.subscription.expiryDate && (
                         <InfoBox
-                          icon={<FaCalendarAlt className="text-fuchsia-400" />}
+                          icon={<FaCalendarAlt className="text-white" />}
                           label="Expires"
                           value={formatDate(user.subscription.expiryDate)}
                         />
