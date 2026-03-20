@@ -31,9 +31,6 @@ function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setloding(true);
-
-    // Validations
     if (!isValidEmail(email)) {
       toast.error("Please enter a valid email address.");
       return;
@@ -85,7 +82,7 @@ function Signup() {
         return;
       }
     }
-
+    setloding(true);
     const formData = {
       userType,
       name: userType === "advertiser" ? undefined : name,
@@ -112,8 +109,6 @@ function Signup() {
 
       if (res.ok) {
         toast.success("Signup Successful! 🎉");
-
-        // ✅ Wait for 2 seconds before redirecting
         setTimeout(() => {
           if (data.user && data.token) {
             login(data.user, data.token);
@@ -124,13 +119,13 @@ function Signup() {
         }, 2000); // 2000ms = 2 seconds
       } else {
         toast.error(data.msg || "Signup failed.");
+        setloding(false);
       }
     } catch (error) {
       console.error("Error:", error);
       toast.error("Something went wrong. Please try again.");
-    }finally {
-    setloding(false); // ✅ stop loading
-  }
+      setloding(false);
+    }
   };
 
   return (
