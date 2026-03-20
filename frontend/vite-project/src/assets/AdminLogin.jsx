@@ -5,9 +5,12 @@ import { useNavigate } from "react-router-dom";
 const AdminLogin = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async () => {
+    setLoading(true);
+    setError("");
     try {
       const res = await axios.post("https://vistafluence.onrender.com/api/admin/login", { password });
       localStorage.setItem("adminToken", res.data.token);
@@ -15,6 +18,8 @@ const AdminLogin = () => {
       navigate("/admin/dashboard");
     } catch (err) {
       setError("Invalid password");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -32,9 +37,10 @@ const AdminLogin = () => {
         {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
         <button
           onClick={handleLogin}
+          disabled={loading}
           className="w-full py-2 bg-fuchsia-800 rounded text-white hover:active:scale-85 transition duration-300 neno-button shadow-xs hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800"
         >
-          Login
+          {loading ? "Loading..." : "Login"}
         </button>
       </div>
     </div>

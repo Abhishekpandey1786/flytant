@@ -17,10 +17,7 @@ const About = () => {
             We empower meaningful connections between brands and influencers, building bridges that matter.
           </p>
         </header>
-
-        {/* Grid Sections */}
         <div className="grid md:grid-cols-2 gap-10 md:gap-16">
-          {/* Mission Section */}
           <section className="bg-slate-800/80 backdrop-blur-sm p-6 md:p-10 rounded-2xl shadow-2xl hover:scale-[1.03] transition-transform duration-300 group neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2  border-fuchsia-800">
             <div className="flex items-center gap-3 mb-4">
               <FaBullseye className="text-white text-3xl group-hover:rotate-12 transition-transform" />
@@ -34,8 +31,6 @@ const About = () => {
               <span className="text-fuchsia-400 font-semibold">real results</span> and foster lasting communities.
             </p>
           </section>
-
-          {/* What We Do Section */}
           <section className="bg-slate-800/80 backdrop-blur-sm p-6 md:p-10 rounded-2xl shadow-2xl hover:scale-[1.03] transition-transform duration-300 group neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2  border-fuchsia-800">
             <div className="flex items-center gap-3 mb-4">
               <FaHandsHelping className="text-white text-3xl group-hover:scale-110 transition-transform" />
@@ -50,8 +45,6 @@ const About = () => {
             </p>
           </section>
         </div>
-
-        {/* Story Section */}
         <section className="mt-12 md:mt-16 bg-slate-800/80 backdrop-blur-sm p-6 md:p-10 rounded-2xl shadow-2x1 hover:scale-[1.02] transition-transform duration-300 group neno-button shadow-x1 hover:shadow-fuchsia-800/50   text-white border-2  border-fuchsia-800">
           <div className="flex items-center gap-3 mb-4">
             <FaRocket className="text-white text-3xl group-hover:-translate-y-1 transition-transform" />

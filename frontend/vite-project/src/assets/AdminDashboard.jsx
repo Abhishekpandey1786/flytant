@@ -14,20 +14,15 @@ const AdminDashboard = () => {
     imageFile: null,
   });
   const [messages, setMessages] = useState([]);
-
   const token = localStorage.getItem("adminToken");
-
-  // Utility function to handle dynamic image URLs (Cloudinary vs Local)
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
-    // Check if it's already a full URL (likely Cloudinary or external)
     if (imagePath.startsWith("http") || imagePath.startsWith("https")) {
       return imagePath;
     }
-    // Assume it's a local path and prefix the backend base URL
     return `https://vistafluence.onrender.com${imagePath}`;
   };
-  // END Utility
+  
 
   const fetchStats = async () => {
     try {
@@ -37,8 +32,8 @@ const AdminDashboard = () => {
       setStats({
         users: res.data.users,
         payments: res.data.payments,
-        newSignups: res.data.newSignups || 0, // Assuming backend might send this later
-        revenue: res.data.revenue || 0, // Assuming backend might send this later
+        newSignups: res.data.newSignups || 0, 
+        revenue: res.data.revenue || 0, 
       });
     } catch (err) {
       console.error("Error fetching stats:", err);
@@ -73,7 +68,7 @@ const AdminDashboard = () => {
         },
       });
       setNewNotification({ title: "", message: "", link: "", imageFile: null });
-      fetchNotifications(); // Notification post होने के बाद तुरंत डेटा फेच करें
+      fetchNotifications(); 
       alert("Notification sent!");
     } catch (err) {
       console.error("Error posting notification:", err);
@@ -86,7 +81,7 @@ const AdminDashboard = () => {
       await axios.delete(`https://vistafluence.onrender.com/api/admin/notifications/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      fetchNotifications(); // Notification delete होने के बाद तुरंत डेटा फेच करें
+      fetchNotifications(); 
       alert("Notification deleted!");
     } catch (err) {
       console.error("Error deleting notification:", err);
@@ -103,28 +98,20 @@ const AdminDashboard = () => {
       console.error("Error fetching messages:", err);
     }
   };
-
-  // ✅ UPDATED: useEffect with Polling
   useEffect(() => {
     if (token) {
-      // 1. Component mount होने पर पहली बार तुरंत डेटा फेच करें
       fetchStats();
       fetchNotifications();
       fetchMessages();
-
-      // 2. हर 10 सेकंड में ऑटो-रिफ्रेश (Polling) सेट करें
       const intervalId = setInterval(() => {
         fetchStats();
         fetchNotifications();
         fetchMessages();
         console.log("Dashboard data refreshed automatically.");
-      }, 10000); // 10000ms = 10 सेकंड (आप अपनी ज़रूरत के हिसाब से समय बदल सकते हैं)
-
-      // 3. Component Unmount होने पर Interval को साफ (Clear) करें
-      // यह बहुत ज़रूरी है, नहीं तो मेमोरी लीक होगी।
+      }, 10000); 
       return () => clearInterval(intervalId);
     }
-  }, [token]); // token change होने पर ही यह effect दोबारा चलेगा
+  }, [token]); 
 
   return (
     <div className="min-h-screen p-8 bg-slate-800 text-white">
@@ -155,15 +142,12 @@ const AdminDashboard = () => {
         <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-slate-800 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
         <div className="absolute top-3/4 left-3/4 w-72 h-72 bg-slate-800 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
       </div>
-
       <div className="relative z-10 max-w-7xl mx-auto">
         <h1 className="text-5xl font-extrabold mb-12 text-center drop-shadow-lg tracking-wide">
           <span className="bg-clip-text text-transparent bg-white">
             Admin Dashboard
           </span>
         </h1>
-
-        {/* Stats Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12 ">
           <div className="bg-white/10 backdrop-blur-lg p-8 rounded-3xl text-center  neno-button shadow-xl hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800">
             <div className="text-4xl mb-3 text-cyan-300"><FaUsers /></div>
@@ -188,7 +172,6 @@ const AdminDashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Notification Form */}
           <div className="lg:col-span-1 bg-white/10 backdrop-blur-lg rounded-3xl p-8 neno-button shadow-xl hover:shadow-fuchsia-800/50 border-2 border-fuchsia-800">
             <h2 className="text-2xl font-semibold mb-6">Send Notification</h2>
             <div className="space-y-5">
@@ -230,10 +213,7 @@ const AdminDashboard = () => {
               </button>
             </div>
           </div>
-
-          {/* Notifications + Messages */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Notifications List */}
             <div className="space-y-6">
               <h2 className="text-2xl font-semibold mb-3">Notifications</h2>
               {notifications.length === 0 ? (
@@ -266,8 +246,6 @@ const AdminDashboard = () => {
                 ))
               )}
             </div>
-
-            {/* Contact Messages */}
             <div className="space-y-6">
               <h2 className="text-2xl font-semibold mb-3">Contact Messages</h2>
               {messages.length === 0 ? (
