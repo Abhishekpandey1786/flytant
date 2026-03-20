@@ -2,19 +2,21 @@
 import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
-import { AuthContext } from "./AuthContext"; // ✅ AuthContext import
+import { AuthContext } from "./AuthContext";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loding, setloding] = useState(false);
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext); // ✅ Context se login function
+  const { login } = useContext(AuthContext); 
 
   const inputStyle =
     "w-full p-3 bg-slate-700 border border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-fuchsia-500 transition-all duration-200 text-white placeholder-gray-400 neno-button shadow-x1 hover:shadow-fuchsia-800/50";
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setPassword(true);
 
     const loginData = { email, password };
 
@@ -28,16 +30,13 @@ function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        // ✅ AuthContext + localStorage dono update
         if (data.user && data.token) {
-          login(data.user, data.token); // context update karega
+          login(data.user, data.token); 
           localStorage.setItem("token", data.token);
           localStorage.setItem("user", JSON.stringify(data.user));
         }
 
         toast.success(data.msg || "Login successful!");
-
-        // ✅ Redirect thoda delay ke baad
         setTimeout(() => navigate("/dashboard"), 1500);
       } else {
         toast.error(data.msg || "Login failed.");
@@ -45,6 +44,8 @@ function LoginPage() {
     } catch (error) {
       console.error("Login Error:", error);
       toast.error("Login failed. Please check credentials.");
+    } finally {
+      setloding(false);
     }
   };
 
@@ -86,7 +87,7 @@ function LoginPage() {
             type="submit"
             className="w-full neno-button bg-fuchsia-700 hover:bg-fuchsia-600 text-white py-3 rounded-xl mt-6 font-bold uppercase transition-all duration-300 active:scale-95 transform hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-fuchsia-300 focus:ring-offset-2 focus:ring-offset-gray-800"
           >
-            Login
+          {loading ? "Loading..." : "Login"}
           </button>
         </form>
 
