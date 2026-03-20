@@ -85,6 +85,7 @@ function LoginPage() {
 
           <button
             type="submit"
+            disabled={loading}
             className="w-full neno-button bg-fuchsia-700 hover:bg-fuchsia-600 text-white py-3 rounded-xl mt-6 font-bold uppercase transition-all duration-300 active:scale-95 transform hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-fuchsia-300 focus:ring-offset-2 focus:ring-offset-gray-800"
           >
           {loading ? "Loading..." : "Login"}
