@@ -49,7 +49,7 @@ function InstamojoCheckoutForm({ selectedPlan }) {
   const { user } = useContext(AuthContext);
 
   const handlePayment = async () => {
-    // 1. Login check zaroori hai userId ke liye
+    // Basic Login check (userId endpoint ke liye zaroori hai)
     if (!user || !user._id) {
       alert("Please login first");
       return;
@@ -59,11 +59,7 @@ function InstamojoCheckoutForm({ selectedPlan }) {
     setLoading(true);
 
     try {
-      // Dummy number logic: Agar user.phone nahi hai toh 8805161391 chala jayega
-      const finalPhone = user.phone && user.phone.length >= 10 
-        ? user.phone 
-        : "8805161391"; 
-
+      // Ab hum direct user data bhej rahe hain, bina kisi phone validation ke
       const { data } = await axios.post(
         "https://vistafluence.onrender.com/api/instamojo/pay",
         {
@@ -71,7 +67,7 @@ function InstamojoCheckoutForm({ selectedPlan }) {
           userId: user._id,
           email: user.email,
           userName: user.name || "User",
-          phone: finalPhone, 
+          phone: user.phone, // Agar undefined hai toh Instamojo checkout pe user se maang lega
         }
       );
 

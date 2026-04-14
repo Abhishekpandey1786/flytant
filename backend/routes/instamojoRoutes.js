@@ -21,29 +21,34 @@ const getMaxApplications = (plan) => {
 router.post("/pay", async (req, res) => {
   try {
     const { plan, userId, email, userName, phone } = req.body;
+    
     if (!plan || !userId || !email) {
       return res.status(400).json({ error: "Missing plan, userId or email" });
     }
+
+    // --- Phone logic updated ---
+    // Agar phone hai toh clean karo, warna empty string rehne do
     let cleanPhone = phone ? phone.toString().replace(/\D/g, "").slice(-10) : "";
-    if (cleanPhone.length < 10) {
-        cleanPhone = "8805161391"; 
-    }
 
     let rawPrice = parseFloat(plan.price);
-    let amountInINR = rawPrice < 10 ? (rawPrice * 85).toFixed(2) : rawPrice.toFixed(2);
+    // Dollar to INR conversion (Agar price 10 se kam hai toh assume it's USD)
+    let amountInINR = rawPrice < 100 ? (rawPrice * 85).toFixed(2) : rawPrice.toFixed(2);
 
     const data = new Instamojo.PaymentData();
     
-
     data.purpose = `Upgrade to ${plan.name}`.substring(0, 30); 
     data.amount = amountInINR;
     data.buyer_name = (userName || "Customer").substring(0, 100);
     data.email = email.trim().toLowerCase();
-    data.phone = cleanPhone;
+    
+    // Agar phone empty hoga, toh Instamojo payment page par validation khud handle karega
+    if (cleanPhone) {
+      data.phone = cleanPhone;
+    }
+
     data.send_email = true;
     data.send_sms = false;
 
-    // Safety check for URLs
     const fUrl = (process.env.FRONTEND_URL || "").replace(/\/$/, "");
     const bUrl = (process.env.BACKEND_URL || "").replace(/\/$/, "");
 
@@ -53,24 +58,18 @@ router.post("/pay", async (req, res) => {
     Instamojo.createPayment(data, (error, response) => {
       if (error) {
         console.error("❌ Instamojo API Rejection:", error);
-        // Error details ko stringify karke bhejein taaki frontend par dikh sake
         return res.status(400).json({ 
             error: "Instamojo Rejection", 
-            message: typeof error === 'object' ? JSON.stringify(error) : error 
+            message: error 
         });
       }
 
-      try {
-        const responseData = typeof response === "string" ? JSON.parse(response) : response;
-        
-        if (responseData.success && responseData.payment_request) {
-          res.json({ url: responseData.payment_request.longurl });
-        } else {
-          console.log("❌ Response Success False:", responseData);
-          res.status(400).json({ error: responseData.message || "Gateway Error" });
-        }
-      } catch (e) {
-        res.status(500).json({ error: "Parsing error from Gateway response" });
+      const responseData = typeof response === "string" ? JSON.parse(response) : response;
+      
+      if (responseData.success && responseData.payment_request) {
+        res.json({ url: responseData.payment_request.longurl });
+      } else {
+        res.status(400).json({ error: responseData.message || "Gateway Error" });
       }
     });
   } catch (error) {
@@ -78,8 +77,6 @@ router.post("/pay", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
-// ✅ 2. Webhook (Secure Background Update)
 router.post("/webhook", async (req, res) => {
   try {
     const data = req.body;
