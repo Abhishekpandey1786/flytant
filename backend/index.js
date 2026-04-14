@@ -35,6 +35,12 @@ const io = new Server(server, {
 connectDB();
 app.use(cors());
 
+app.use(cors({
+  origin: ["https://vistafluence.com", "http://localhost:3000"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true
+}));
+
 app.post(
   "/api/instamojo/webhook",
   express.raw({ type: "application/json" }),

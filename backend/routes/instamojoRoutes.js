@@ -4,22 +4,16 @@ const Instamojo = require("instamojo-nodejs");
 const User = require("../models/User");
 const Order = require("../models/Order");
 
-// Configuration
+// Live Keys (Make sure these are in your .env)
 Instamojo.setKeys(process.env.INSTAMOJO_API_KEY, process.env.INSTAMOJO_AUTH_TOKEN);
-// Live ke liye false karein
 Instamojo.isSandboxMode(false); 
 
 const getMaxApplications = (plan) => {
-  switch (plan) {
-    case "Basic": return 6;
-    case "Standard": return 15;
-    case "Advance": return 40;
-    case "Premium": return 9999;
-    default: return 3;
-  }
+  const limits = { "Basic": 6, "Standard": 15, "Advance": 40, "Premium": 9999 };
+  return limits[plan] || 3;
 };
 
-// 1. Payment Start Karna
+// 1. Create Payment Request
 router.post("/pay", async (req, res) => {
   try {
     const { plan, userId, email, userName, phone } = req.body;
@@ -27,20 +21,18 @@ router.post("/pay", async (req, res) => {
     const data = new Instamojo.PaymentData();
     data.purpose = `${plan.name} Plan Upgrade`;
     data.amount = plan.price;
-    data.buyer_name = userName;
+    data.buyer_name = userName || "Client";
     data.email = email;
-    data.phone = phone;
+    data.phone = phone || "9999999999";
     data.send_email = true;
     
-    // Redirect URL mein metadata pass karna best hai (Stripe ki tarah metadata field nahi hota)
-    const redirectUrl = `${process.env.FRONTEND_URL}/payment-status?userId=${userId}&planName=${plan.name}`;
+    // Redirect back to your frontend
+    const redirectUrl = `https://vistafluence.com/payment-status?userId=${userId}&planName=${plan.name}`;
     data.setRedirectUrl(redirectUrl);
-    
-    // Webhook for server-to-server confirmation
-    data.webhook = `${process.env.BACKEND_URL}/api/instamojo/webhook`;
+    data.webhook = `https://vistafluence.onrender.com/api/instamojo/webhook`;
 
     Instamojo.createPayment(data, (error, response) => {
-      if (error) return res.status(500).json({ error });
+      if (error) return res.status(500).json({ error: "Instamojo link failed" });
       const responseData = JSON.parse(response);
       res.json({ url: responseData.payment_request.longurl });
     });
@@ -49,20 +41,15 @@ router.post("/pay", async (req, res) => {
   }
 });
 
-// 2. Webhook (Jab payment complete ho jaye)
+// 2. Webhook for background confirmation
 router.post("/webhook", async (req, res) => {
-  // Instamojo webhook data req.body mein bhejta hai (x-www-form-urlencoded)
-  const paymentData = req.body;
-
-  if (paymentData.status === "Credit") {
-    console.log("✅ Payment Successful via Webhook:", paymentData.payment_id);
-    // Note: Yaha se user update karna tabhi possible hai agar aapne 
-    // payment request create karte waqt koi mapping rakhi ho.
+  if (req.body.status === "Credit") {
+    console.log("Payment Confirmed for:", req.body.payment_id);
   }
   res.status(200).send("OK");
 });
 
-// 3. Final Verification (Frontend jab redirect ho kar aaye)
+// 3. Status Verification (When user returns to frontend)
 router.post("/verify-status", async (req, res) => {
   const { payment_id, payment_request_id, userId, planName } = req.body;
 
@@ -71,40 +58,28 @@ router.post("/verify-status", async (req, res) => {
 
     if (response.payment_request.status === "Completed") {
       try {
-        // Update User Model
-        const user = await User.findById(userId);
-        if (user) {
-          user.subscription = {
+        await User.findByIdAndUpdate(userId, {
+          subscription: {
             plan: planName,
             status: "Active",
             maxApplications: getMaxApplications(planName),
-            applications_made_this_month: 0,
-            last_reset_date: new Date(),
             expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-          };
-          await user.save();
-        }
+          }
+        });
 
-        // Save Order in Database
-        const newOrder = new Order({
+        const order = new Order({
           userId,
-          userEmail: response.payment_request.email,
-          userName: response.payment_request.buyer_name,
           plan: planName,
           amount: response.payment_request.amount,
-          orderId: payment_request_id,
           transactionId: payment_id,
-          paymentStatus: "SUCCESS",
-          responseData: response
+          paymentStatus: "SUCCESS"
         });
-        await newOrder.save();
+        await order.save();
 
-        res.json({ success: true, message: "Subscription activated!" });
-      } catch (dbErr) {
-        res.status(500).json({ error: "Database update failed" });
-      }
+        res.json({ success: true, message: "Subscription active!" });
+      } catch (err) { res.status(500).json({ error: "DB update failed" }); }
     } else {
-      res.status(400).json({ success: false, message: "Payment not completed" });
+      res.status(400).json({ success: false, message: "Payment failed" });
     }
   });
 });
