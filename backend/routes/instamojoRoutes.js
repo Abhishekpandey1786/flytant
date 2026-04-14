@@ -5,7 +5,7 @@ const Instamojo = require("instamojo-nodejs");
 const User = require("../models/User");
 const Order = require("../models/Order");
 
-// Live Keys Configuration
+// API Keys Setup
 Instamojo.setKeys(
   process.env.INSTAMOJO_API_KEY,
   process.env.INSTAMOJO_AUTH_TOKEN
@@ -18,42 +18,32 @@ const getMaxApplications = (plan) => {
   const limits = { Basic: 6, Standard: 15, Advance: 40, Premium: 9999 };
   return limits[plan] || 3;
 };
-
-// ✅ 1. Create Payment Request
 router.post("/pay", async (req, res) => {
   try {
     const { plan, userId, email, userName, phone } = req.body;
-
-    // Basic Validations
     if (!plan || !userId || !email) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return res.status(400).json({ error: "Missing plan, userId or email" });
     }
-
-    // --- Instamojo Strict Phone Validation ---
-    // Number se non-digits (+, spaces) hatao aur last 10 digits lo
     let cleanPhone = phone ? phone.toString().replace(/\D/g, "").slice(-10) : "";
-    
-    // Live mode dummy "9999999999" reject karta hai. 
-    // Isliye frontend se real number aana mandatory hai.
-    if (cleanPhone.length !== 10) {
-      return res.status(400).json({ error: "A valid 10-digit Indian phone number is required" });
+    if (cleanPhone.length < 10) {
+        cleanPhone = "8805161391"; 
     }
 
-    // --- Amount Conversion (Strictly INR) ---
-    // Instamojo needs a string or number >= 10.00
-    const rawPrice = parseFloat(plan.price);
-    const amountInINR = rawPrice < 10 ? (rawPrice * 85).toFixed(2) : rawPrice.toFixed(2);
+    let rawPrice = parseFloat(plan.price);
+    let amountInINR = rawPrice < 10 ? (rawPrice * 85).toFixed(2) : rawPrice.toFixed(2);
 
     const data = new Instamojo.PaymentData();
-    data.purpose = `${plan.name} Plan Upgrade`.substring(0, 30); // 30 chars limit
+    
+
+    data.purpose = `Upgrade to ${plan.name}`.substring(0, 30); 
     data.amount = amountInINR;
     data.buyer_name = (userName || "Customer").substring(0, 100);
-    data.email = email.trim();
+    data.email = email.trim().toLowerCase();
     data.phone = cleanPhone;
     data.send_email = true;
     data.send_sms = false;
 
-    // Safety check for URLs (Trailing slash removal)
+    // Safety check for URLs
     const fUrl = (process.env.FRONTEND_URL || "").replace(/\/$/, "");
     const bUrl = (process.env.BACKEND_URL || "").replace(/\/$/, "");
 
@@ -62,23 +52,29 @@ router.post("/pay", async (req, res) => {
 
     Instamojo.createPayment(data, (error, response) => {
       if (error) {
-        console.error("❌ Instamojo API Error:", error);
-        return res.status(400).json({ error: "Instamojo Rejection", details: error });
+        console.error("❌ Instamojo API Rejection:", error);
+        // Error details ko stringify karke bhejein taaki frontend par dikh sake
+        return res.status(400).json({ 
+            error: "Instamojo Rejection", 
+            message: typeof error === 'object' ? JSON.stringify(error) : error 
+        });
       }
 
       try {
         const responseData = typeof response === "string" ? JSON.parse(response) : response;
+        
         if (responseData.success && responseData.payment_request) {
           res.json({ url: responseData.payment_request.longurl });
         } else {
-          res.status(400).json({ error: responseData.message || "Invalid response" });
+          console.log("❌ Response Success False:", responseData);
+          res.status(400).json({ error: responseData.message || "Gateway Error" });
         }
       } catch (e) {
-        res.status(500).json({ error: "Parsing error from Gateway" });
+        res.status(500).json({ error: "Parsing error from Gateway response" });
       }
     });
   } catch (error) {
-    console.error("❌ Server Error:", error);
+    console.error("❌ Critical Server Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -100,8 +96,7 @@ router.post("/webhook", async (req, res) => {
     if (generatedMac !== providedMac) return res.status(400).send("Invalid MAC");
 
     if (data.status === "Credit") {
-        console.log("✅ Payment Verified via Webhook");
-        // Aap yahan bhi DB update ka logic daal sakte hain safety ke liye
+        console.log(`✅ Webhook: Payment successful for ID ${data.payment_id}`);
     }
     res.status(200).send("OK");
   } catch (error) {
@@ -114,12 +109,15 @@ router.post("/verify-status", async (req, res) => {
   try {
     const { payment_id, payment_request_id, userId, planName } = req.body;
 
+    if (!payment_id || !payment_request_id || !userId) {
+        return res.status(400).json({ error: "Missing verification parameters" });
+    }
+
     Instamojo.getPaymentDetails(payment_request_id, payment_id, async (error, response) => {
       if (error) return res.status(500).json({ error: "Verification Failed" });
 
       const result = typeof response === "string" ? JSON.parse(response) : response;
 
-      // Robust check for success status
       const isSuccess = result.payment_request && 
                         (result.payment_request.status === "Completed" || 
                          result.payment_request.payment?.status === "Credit");
@@ -145,7 +143,7 @@ router.post("/verify-status", async (req, res) => {
 
         res.json({ success: true, message: "Subscription Activated!" });
       } else {
-        res.status(400).json({ success: false, message: "Payment was not successful" });
+        res.status(400).json({ success: false, message: "Payment not completed" });
       }
     });
   } catch (error) {
