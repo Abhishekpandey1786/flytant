@@ -43,14 +43,21 @@ const Spinner = () => (
   </svg>
 );
 
-// ✅ Instamojo Checkout Component
+
 function InstamojoCheckoutForm({ selectedPlan }) {
   const [loading, setLoading] = useState(false);
   const { user } = useContext(AuthContext);
 
   const handlePayment = async () => {
+    // 1. Check if user is logged in
     if (!user || !user._id) {
       alert("Please login first");
+      return;
+    }
+
+    // 2. Check if phone is valid (Dummy check)
+    if (!user.phone || user.phone.length < 10 || user.phone === "9999999999") {
+      alert("Please update a valid 10-digit phone number in your profile to continue.");
       return;
     }
 
@@ -65,19 +72,17 @@ function InstamojoCheckoutForm({ selectedPlan }) {
           userId: user._id,
           email: user.email,
           userName: user.name,
-          phone: user.phone || "9999999999",
+          phone: user.phone, // Real phone number bhejein
         }
       );
 
       if (data.url) {
         window.location.href = data.url;
-      } else {
-        alert("Payment initiation failed!");
-        setLoading(false);
       }
     } catch (err) {
-      console.error("INSTAMOJO ERROR:", err.response?.data || err.message);
-      alert("Payment failed! Please try again.");
+      // Backend se aane wala specific error message dikhayein
+      const errorMsg = err.response?.data?.error || "Payment failed! Please try again.";
+      alert(errorMsg);
       setLoading(false);
     }
   };
@@ -89,9 +94,7 @@ function InstamojoCheckoutForm({ selectedPlan }) {
       className="w-full mt-4 py-3 rounded-xl font-semibold bg-green-600 text-white shadow-lg flex items-center justify-center disabled:opacity-50 hover:bg-green-700 transition-colors"
     >
       {loading && <Spinner />}
-      {loading
-        ? "Processing..."
-        : `Pay with Instamojo - $${selectedPlan.price}`}
+      {loading ? "Redirecting..." : `Upgrade Now - $${selectedPlan.price}`}
     </button>
   );
 }
