@@ -3,7 +3,6 @@ const { Server } = require("socket.io");
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-const path = require("path");
 const connectDB = require("./config/db");
 
 // Routes
@@ -26,42 +25,53 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// 1. Better CORS Configuration
+// ✅ 1. CORS Configuration
 const corsOptions = {
-  origin: ["https://vistafluence.com", "http://localhost:5173"], // Local aur Production dono add karein
+  origin: [
+    "https://vistafluence.com",
+    "http://localhost:5173",
+  ],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+  ],
 };
 
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // Preflight requests handle
 
-// 2. Socket.io with explicit CORS
+// ✅ 2. Socket.io Configuration
 const io = new Server(server, {
-  cors: corsOptions, // Wahi options use karein jo upar hain
-  transports: ["websocket", "polling"], // Connectivity issues fix karne ke liye
+  cors: corsOptions,
+  transports: ["websocket", "polling"],
 });
 
+// ✅ 3. Connect MongoDB
 connectDB();
 
-// Important: Instamojo Webhook hamesha JSON middleware se pehle hona chahiye
-app.post(
+// ✅ 4. Instamojo Webhook (JSON middleware se pehle)
+app.use(
   "/api/instamojo/webhook",
-  express.raw({ type: "application/json" }),
-  instamojoRoutes
+  express.raw({ type: "*/*" })
 );
 
+// ✅ 5. Body Parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
+// ✅ 6. Health Check Route
 app.get("/", (req, res) => {
   res.send("Welcome to the backend API! Server is Live 🚀");
 });
 
+// ✅ 7. API Routes
 app.use("/api/applied", appliedRoutes);
 app.use("/api/auth", authRoutes);
-app.use("/api/users/", userRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/campaigns", campaignRoutes);
 app.use("/api/chats", chatRoutes);
 app.use("/api/users", usersRoutes);
@@ -72,12 +82,13 @@ app.use("/api", publicRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/instamojo", instamojoRoutes);
 
-// Socket Logic
+// ✅ 8. Socket Logic
 const connectedUsers = new Map();
 
 io.on("connection", (socket) => {
   console.log(`⚡ Socket connected: ${socket.id}`);
 
+  // Register user
   socket.on("register", (userId) => {
     if (userId) {
       connectedUsers.set(userId, socket.id);
@@ -86,15 +97,19 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Join room
   socket.on("join_room", (roomId) => {
     socket.join(roomId);
     console.log(`👥 Socket ${socket.id} joined room ${roomId}`);
   });
 
+  // Send message
   socket.on("send_message", async (data) => {
     try {
       if (!socket.userId || socket.userId !== data.sender) {
-        return console.error("❌ Security alert: Unauthorized sender");
+        return console.error(
+          "❌ Security alert: Unauthorized sender"
+        );
       }
 
       const message = new Chat({
@@ -104,10 +119,13 @@ io.on("connection", (socket) => {
         receiver: data.receiver,
         senderName: data.senderName,
       });
+
       await message.save();
 
+      // Emit message to room
       io.to(data.roomId).emit("message_received", message);
 
+      // Notify receiver
       const receiverSocketId = connectedUsers.get(data.receiver);
       if (receiverSocketId) {
         io.to(receiverSocketId).emit("inbox_ping", {
@@ -122,6 +140,7 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Disconnect
   socket.on("disconnect", () => {
     if (socket.userId) {
       connectedUsers.delete(socket.userId);
@@ -130,5 +149,16 @@ io.on("connection", (socket) => {
   });
 });
 
+// ✅ 9. Global Error Handler
+app.use((err, req, res, next) => {
+  console.error("❌ Server Error:", err.stack);
+  res.status(500).json({
+    error: "Internal Server Error",
+  });
+});
+
+// ✅ 10. Start Server
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () =>
+  console.log(`🚀 Server running on port ${PORT}`)
+);

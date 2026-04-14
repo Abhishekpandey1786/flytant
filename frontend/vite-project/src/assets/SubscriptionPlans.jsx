@@ -11,11 +11,12 @@ import p6 from "./image/p6.webp";
 import p7 from "./image/p7.webp";
 import p8 from "./image/p8.webp";
 
+// ✅ INR Based Pricing
 const plans = [
-  { name: "Basic", price: 1, oldPrice: 4, discount: "20% Off" },
-  { name: "Standard", price: 5, oldPrice: 7, discount: "30% Off" },
-  { name: "Advance", price: 9, oldPrice: 18, discount: "40% Off" },
-  { name: "Premium", price: 19, oldPrice: 39, discount: "50% Off" },
+  { name: "Basic", price: 99, oldPrice: 199, discount: "50% Off" },
+  { name: "Standard", price: 299, oldPrice: 499, discount: "40% Off" },
+  { name: "Advance", price: 599, oldPrice: 999, discount: "40% Off" },
+  { name: "Premium", price: 999, oldPrice: 1999, discount: "50% Off" },
 ];
 
 const influencers = [p1, p2, p3, p4, p5, p6, p7, p8];
@@ -34,22 +35,21 @@ const Spinner = () => (
       r="10"
       stroke="currentColor"
       strokeWidth="4"
-    ></circle>
+    />
     <path
       className="opacity-75"
       fill="currentColor"
       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-    ></path>
+    />
   </svg>
 );
 
-
+// ✅ Instamojo Checkout Component
 function InstamojoCheckoutForm({ selectedPlan }) {
   const [loading, setLoading] = useState(false);
   const { user } = useContext(AuthContext);
 
   const handlePayment = async () => {
-    // Basic Login check (userId endpoint ke liye zaroori hai)
     if (!user || !user._id) {
       alert("Please login first");
       return;
@@ -59,7 +59,6 @@ function InstamojoCheckoutForm({ selectedPlan }) {
     setLoading(true);
 
     try {
-      // Ab hum direct user data bhej rahe hain, bina kisi phone validation ke
       const { data } = await axios.post(
         "https://vistafluence.onrender.com/api/instamojo/pay",
         {
@@ -67,17 +66,21 @@ function InstamojoCheckoutForm({ selectedPlan }) {
           userId: user._id,
           email: user.email,
           userName: user.name || "User",
-          phone: user.phone, // Agar undefined hai toh Instamojo checkout pe user se maang lega
+          phone: user.phone || "9999999999",
         }
       );
 
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        throw new Error("No payment URL received");
       }
     } catch (err) {
       console.error("Payment Error:", err);
-      const errorMsg = err.response?.data?.error || "Payment failed! Please try again.";
-      alert(errorMsg);
+      alert(
+        err.response?.data?.error ||
+          "Payment failed! Please try again."
+      );
       setLoading(false);
     }
   };
@@ -89,11 +92,14 @@ function InstamojoCheckoutForm({ selectedPlan }) {
       className="w-full mt-4 py-3 rounded-xl font-semibold bg-green-600 text-white shadow-lg flex items-center justify-center disabled:opacity-50 hover:bg-green-700 transition-colors"
     >
       {loading && <Spinner />}
-      {loading ? "Redirecting..." : `Upgrade Now - $${selectedPlan.price}`}
+      {loading
+        ? "Redirecting..."
+        : `Upgrade Now - ₹${selectedPlan.price}`}
     </button>
   );
 }
 
+// ✅ Main Component
 export default function SubscriptionPlans() {
   const [selectedPlan, setSelectedPlan] = useState(plans[0]);
 
@@ -133,10 +139,10 @@ export default function SubscriptionPlans() {
 
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-black">
-                    ${plan.price}
+                    ₹{plan.price}
                   </span>
                   <span className="line-through text-gray-500 text-lg">
-                    ${plan.oldPrice}
+                    ₹{plan.oldPrice}
                   </span>
                 </div>
 
@@ -152,7 +158,9 @@ export default function SubscriptionPlans() {
 
               <div className="mt-8">
                 {selectedPlan.name === plan.name && (
-                  <InstamojoCheckoutForm selectedPlan={selectedPlan} />
+                  <InstamojoCheckoutForm
+                    selectedPlan={selectedPlan}
+                  />
                 )}
               </div>
             </div>
