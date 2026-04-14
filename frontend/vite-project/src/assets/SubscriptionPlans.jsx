@@ -41,7 +41,7 @@ function StripeCheckoutForm({ selectedPlan }) {
 
     try {
       const { data } = await axios.post(
-        "https://vistafluence.onrender.com/api/stripe/create-checkout-session",
+        "https://vistafluence.onrender.com/api/instamojo/create-checkout-session",
         {
           plan: selectedPlan,
           userId: user._id,
