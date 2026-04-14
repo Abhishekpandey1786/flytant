@@ -55,8 +55,10 @@ function InstamojoCheckoutForm({ selectedPlan }) {
       return;
     }
 
-    // 2. Check if phone is valid (Dummy check)
-    if (!user.phone || user.phone.length < 10 || user.phone === "8805161391") {
+    // 2. Updated Validation: Sirf check karein ki phone 10 digits ka hai ya nahi
+    // Aapne apna number block list mein dala hua tha, use ab hata diya hai.
+    const userPhone = user.phone || "";
+    if (userPhone.length < 10) {
       alert("Please update a valid 10-digit phone number in your profile to continue.");
       return;
     }
@@ -72,7 +74,7 @@ function InstamojoCheckoutForm({ selectedPlan }) {
           userId: user._id,
           email: user.email,
           userName: user.name,
-          phone:user.phone || "8805161391",
+          phone: user.phone, // Ab ye real number jayega
         }
       );
 
@@ -80,13 +82,11 @@ function InstamojoCheckoutForm({ selectedPlan }) {
         window.location.href = data.url;
       }
     } catch (err) {
-      // Backend se aane wala specific error message dikhayein
       const errorMsg = err.response?.data?.error || "Payment failed! Please try again.";
       alert(errorMsg);
       setLoading(false);
     }
   };
-
   return (
     <button
       onClick={handlePayment}
