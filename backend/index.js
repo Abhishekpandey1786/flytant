@@ -50,7 +50,7 @@ app.use(
   })
 );
 
-app.options("*", cors());
+// app.options("*", cors());
 
 // ✅ Body Parsers
 app.use(express.json());
