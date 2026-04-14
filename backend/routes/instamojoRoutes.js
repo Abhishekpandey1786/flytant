@@ -7,7 +7,7 @@ const Order = require("../models/Order");
 // Configuration
 Instamojo.setKeys(process.env.INSTAMOJO_API_KEY, process.env.INSTAMOJO_AUTH_TOKEN);
 // Live ke liye false karein
-Instamojo.isSandboxMode(true); 
+Instamojo.isSandboxMode(false); 
 
 const getMaxApplications = (plan) => {
   switch (plan) {
