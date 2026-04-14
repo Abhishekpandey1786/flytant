@@ -21,12 +21,30 @@ const plans = [
 const influencers = [p1, p2, p3, p4, p5, p6, p7, p8];
 
 const Spinner = () => (
-  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+  <svg
+    className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <circle
+      className="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      strokeWidth="4"
+    ></circle>
+    <path
+      className="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+    ></path>
   </svg>
 );
-function StripeCheckoutForm({ selectedPlan }) {
+
+// ✅ Instamojo Checkout Component
+function InstamojoCheckoutForm({ selectedPlan }) {
   const [loading, setLoading] = useState(false);
   const { user } = useContext(AuthContext);
 
@@ -35,28 +53,30 @@ function StripeCheckoutForm({ selectedPlan }) {
       alert("Please login first");
       return;
     }
-    if (loading) return;
 
+    if (loading) return;
     setLoading(true);
 
     try {
       const { data } = await axios.post(
-        "https://vistafluence.onrender.com/api/stripe/create-checkout-session",
+        "https://vistafluence.onrender.com/api/instamojo/pay",
         {
           plan: selectedPlan,
           userId: user._id,
           email: user.email,
+          userName: user.name,
+          phone: user.phone || "9999999999",
         }
       );
 
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert("Payment session creation failed!");
+        alert("Payment initiation failed!");
         setLoading(false);
       }
     } catch (err) {
-      console.error("STRIPE ERROR:", err.response?.data || err.message);
+      console.error("INSTAMOJO ERROR:", err.response?.data || err.message);
       alert("Payment failed! Please try again.");
       setLoading(false);
     }
@@ -66,10 +86,12 @@ function StripeCheckoutForm({ selectedPlan }) {
     <button
       onClick={handlePayment}
       disabled={loading}
-      className="w-full mt-4 py-3 rounded-xl font-semibold bg-fuchsia-700 text-white shadow-lg flex items-center justify-center disabled:opacity-50 hover:bg-fuchsia-800 transition-colors"
+      className="w-full mt-4 py-3 rounded-xl font-semibold bg-green-600 text-white shadow-lg flex items-center justify-center disabled:opacity-50 hover:bg-green-700 transition-colors"
     >
       {loading && <Spinner />}
-      {loading ? "Processing..." : `Subscribe with Stripe - $${selectedPlan.price}`}
+      {loading
+        ? "Processing..."
+        : `Pay with Instamojo - $${selectedPlan.price}`}
     </button>
   );
 }
@@ -91,40 +113,54 @@ export default function SubscriptionPlans() {
               onClick={() => setSelectedPlan(plan)}
               className={`relative rounded-2xl p-6 cursor-pointer transition-all border flex flex-col justify-between ${
                 selectedPlan.name === plan.name
-                  ? "bg-slate-900 text-white border-fuchsia-700 border-2 shadow-[0_0_20px_rgba(162,28,175,0.3)] scale-105"
+                  ? "bg-slate-900 text-white border-green-600 border-2 shadow-[0_0_20px_rgba(34,197,94,0.3)] scale-105"
                   : "bg-slate-900/50 text-white border-gray-700 hover:border-gray-500 shadow-lg"
               }`}
             >
               <div>
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-bold text-xl">{plan.name}</h3>
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedPlan.name === plan.name ? 'border-fuchsia-500' : 'border-gray-500'}`}>
-                    {selectedPlan.name === plan.name && <div className="w-2.5 h-2.5 bg-fuchsia-500 rounded-full" />}
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedPlan.name === plan.name
+                        ? "border-green-500"
+                        : "border-gray-500"
+                    }`}
+                  >
+                    {selectedPlan.name === plan.name && (
+                      <div className="w-2.5 h-2.5 bg-green-500 rounded-full" />
+                    )}
                   </div>
                 </div>
 
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-black">${plan.price}</span>
-                  <span className="line-through text-gray-500 text-lg">${plan.oldPrice}</span>
+                  <span className="text-4xl font-black">
+                    ${plan.price}
+                  </span>
+                  <span className="line-through text-gray-500 text-lg">
+                    ${plan.oldPrice}
+                  </span>
                 </div>
-                <p className="mt-2 text-sm font-semibold text-fuchsia-400 bg-fuchsia-400/10 inline-block px-2 py-1 rounded">
+
+                <p className="mt-2 text-sm font-semibold text-green-400 bg-green-400/10 inline-block px-2 py-1 rounded">
                   {plan.discount}
                 </p>
-                
+
                 <ul className="mt-6 space-y-3 text-sm text-gray-300">
-                  <li className="flex items-center gap-2">✓ Full Marketplace Access</li>
-                  <li className="flex items-center gap-2">✓ Priority Support</li>
+                  <li>✓ Full Marketplace Access</li>
+                  <li>✓ Priority Support</li>
                 </ul>
               </div>
 
               <div className="mt-8">
                 {selectedPlan.name === plan.name && (
-                  <StripeCheckoutForm selectedPlan={selectedPlan} />
+                  <InstamojoCheckoutForm selectedPlan={selectedPlan} />
                 )}
               </div>
             </div>
           ))}
         </div>
+
         <div className="mt-24 text-center">
           <h3 className="text-2xl font-bold mb-10 text-white/80">
             Trusted by 100K+ Influencers Worldwide
@@ -135,7 +171,7 @@ export default function SubscriptionPlans() {
                 key={idx}
                 src={src}
                 alt="influencer"
-                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-fuchsia-500/50 shadow-md object-cover hover:scale-110 transition-transform"
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-green-500/50 shadow-md object-cover hover:scale-110 transition-transform"
               />
             ))}
           </div>

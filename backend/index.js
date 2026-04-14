@@ -18,7 +18,7 @@ const usersRoutes = require("./routes/users");
 const advertiserRoutes = require("./routes/advertiser");
 const appliedRoutes = require("./routes/appliedcampaigns");
 const contactRoutes = require("./routes/contact");
-const stripeRoutes = require("./routes/stripeRoutes");
+const instamojoRoutes = require("./routes/instamojoRoutes");
 const publicRoutes = require("./routes/notifications");
 
 dotenv.config();
@@ -36,9 +36,9 @@ connectDB();
 app.use(cors());
 
 app.post(
-  "/api/stripe/webhook",
+  "/api/instamojo/webhook",
   express.raw({ type: "application/json" }),
-  stripeRoutes,
+  instamojoRoutes
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -57,7 +57,7 @@ app.use("/api/news", newsRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api", publicRoutes);
 app.use("/api/contact", contactRoutes);
-app.use("/api/stripe", stripeRoutes);
+app.use("/api/instamojo", instamojoRoutes);
 
 const connectedUsers = new Map();
 
