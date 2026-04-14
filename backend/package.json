@@ -19,7 +19,7 @@
     "cashfree-pg": "^5.1.0",
     "cashfree-sdk": "^0.1.1",
     "cloudinary": "^1.41.3",
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "instamojo-nodejs": "^0.0.5",
