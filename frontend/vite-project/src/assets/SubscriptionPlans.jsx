@@ -49,17 +49,9 @@ function InstamojoCheckoutForm({ selectedPlan }) {
   const { user } = useContext(AuthContext);
 
   const handlePayment = async () => {
-    // 1. Check if user is logged in
+    // 1. Login check zaroori hai userId ke liye
     if (!user || !user._id) {
       alert("Please login first");
-      return;
-    }
-
-    // 2. Updated Validation: Sirf check karein ki phone 10 digits ka hai ya nahi
-    // Aapne apna number block list mein dala hua tha, use ab hata diya hai.
-    const userPhone = user.phone || "";
-    if (userPhone.length < 10) {
-      alert("Please update a valid 10-digit phone number in your profile to continue.");
       return;
     }
 
@@ -67,14 +59,19 @@ function InstamojoCheckoutForm({ selectedPlan }) {
     setLoading(true);
 
     try {
+      // Dummy number logic: Agar user.phone nahi hai toh 8805161391 chala jayega
+      const finalPhone = user.phone && user.phone.length >= 10 
+        ? user.phone 
+        : "8805161391"; 
+
       const { data } = await axios.post(
         "https://vistafluence.onrender.com/api/instamojo/pay",
         {
           plan: selectedPlan,
           userId: user._id,
           email: user.email,
-          userName: user.name,
-          phone: user.phone, // Ab ye real number jayega
+          userName: user.name || "User",
+          phone: finalPhone, 
         }
       );
 
@@ -82,11 +79,13 @@ function InstamojoCheckoutForm({ selectedPlan }) {
         window.location.href = data.url;
       }
     } catch (err) {
+      console.error("Payment Error:", err);
       const errorMsg = err.response?.data?.error || "Payment failed! Please try again.";
       alert(errorMsg);
       setLoading(false);
     }
   };
+
   return (
     <button
       onClick={handlePayment}
