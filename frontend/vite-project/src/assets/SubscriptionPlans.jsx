@@ -72,7 +72,7 @@ function InstamojoCheckoutForm({ selectedPlan }) {
           userId: user._id,
           email: user.email,
           userName: user.name,
-          phone: user.phone, // Real phone number bhejein
+          phone:user.phone || "8805161391",
         }
       );
 
