@@ -56,7 +56,7 @@ function InstamojoCheckoutForm({ selectedPlan }) {
     }
 
     // 2. Check if phone is valid (Dummy check)
-    if (!user.phone || user.phone.length < 10 || user.phone === "9999999999") {
+    if (!user.phone || user.phone.length < 10 || user.phone === "8805161391") {
       alert("Please update a valid 10-digit phone number in your profile to continue.");
       return;
     }
