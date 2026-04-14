@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import { AuthContext } from "./AuthContext";
 
-const API_BASE_URL = "https://vistafluence.onrender.com/api/instamojo";
+const API_BASE_URL = "https://vistafluence.onrender.com/api/stripe";
 
 export default function MyOrders() {
   const { user } = useContext(AuthContext);

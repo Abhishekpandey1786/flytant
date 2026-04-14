@@ -6,10 +6,9 @@ const dotenv = require("dotenv");
 const path = require("path");
 const connectDB = require("./config/db");
 
-// Routes Import
 const chatRoutes = require("./routes/chatRoutes");
-const Chat = require("./models/Chat");
-const User = require("./models/User");
+const Chat = require("./models/Chat"); // Model
+const User = require("./models/User"); // Model
 const newsRoutes = require("./routes/news");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -19,46 +18,34 @@ const usersRoutes = require("./routes/users");
 const advertiserRoutes = require("./routes/advertiser");
 const appliedRoutes = require("./routes/appliedcampaigns");
 const contactRoutes = require("./routes/contact");
-const instamojoRoutes = require("./routes/instamojoRoutes");
+const stripeRoutes = require("./routes/stripeRoutes");
 const publicRoutes = require("./routes/notifications");
 
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-
-// 1. Socket.io Config (Specific origins for Live)
 const io = new Server(server, {
   cors: {
-    origin: ["https://vistafluence.com", "http://localhost:3000"],
+    origin: "*",
     methods: ["GET", "POST"],
-    credentials: true,
   },
 });
 
 connectDB();
+app.use(cors());
 
-// 2. CORS Config (SIRF EK BAAR LIKHNA HAI)
-const corsOptions = {
-  origin: ["https://vistafluence.com", "http://localhost:3000"],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
-app.use(cors(corsOptions));
-
-// 3. Webhook (JSON body parser se pehle aana chahiye)
-app.use("/api/instamojo/webhook", express.raw({ type: "application/json" }));
-
-// 4. Standard Parsers
+app.post(
+  "/api/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  stripeRoutes,
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 5. Routes Mapping
 app.get("/", (req, res) => {
-  res.send("Vistafluence Backend API is Running!");
+  res.send("Welcome to the backend API!");
 });
-
 app.use("/api/applied", appliedRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users/", userRoutes);
@@ -70,9 +57,8 @@ app.use("/api/news", newsRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api", publicRoutes);
 app.use("/api/contact", contactRoutes);
-app.use("/api/instamojo", instamojoRoutes);
+app.use("/api/stripe", stripeRoutes);
 
-// 6. Socket.io Logic
 const connectedUsers = new Map();
 
 io.on("connection", (socket) => {
@@ -81,17 +67,22 @@ io.on("connection", (socket) => {
   socket.on("register", (userId) => {
     connectedUsers.set(userId, socket.id);
     socket.userId = userId;
-    console.log(`✅ User ${userId} registered`);
+    console.log(`✅ User ${userId} registered with socket ${socket.id}`);
   });
 
   socket.on("join_room", (roomId) => {
     socket.join(roomId);
-    console.log(`👥 Joined room: ${roomId}`);
+    console.log(`👥 Socket ${socket.id} joined room ${roomId}`);
   });
 
   socket.on("send_message", async (data) => {
     try {
-      if (!socket.userId || socket.userId !== data.sender) return;
+      if (!socket.userId || socket.userId !== data.sender) {
+        console.error(
+          `❌ Security alert: Sender ID mismatch or unregistered user. Expected: ${socket.userId}, Received: ${data.sender}`,
+        );
+        return;
+      }
 
       const message = new Chat({
         roomId: data.roomId,
@@ -112,17 +103,21 @@ io.on("connection", (socket) => {
           from: data.senderName,
           roomId: data.roomId,
         });
+        console.log(`📨 Inbox ping sent to ${data.receiver}`);
       }
     } catch (error) {
-      console.error("❌ Socket Error:", error);
+      console.error("❌ Error sending message:", error);
     }
   });
 
   socket.on("disconnect", () => {
-    if (socket.userId) connectedUsers.delete(socket.userId);
-    console.log(`⚠️ Disconnected: ${socket.id}`);
+    console.log(`⚠️ Socket disconnected: ${socket.id}`);
+    if (socket.userId) {
+      connectedUsers.delete(socket.userId);
+      console.log(`❌ User ${socket.userId} removed from connected users`);
+    }
   });
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
