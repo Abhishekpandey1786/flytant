@@ -35,11 +35,11 @@ const io = new Server(server, {
 connectDB();
 app.use(cors());
 
-app.post(
-  "/api/instamojo/webhook",
-  express.raw({ type: "application/json" }),
-  instamojoRoutes
-);
+// app.post(
+//   "/api/instamojo/webhook",
+//   express.raw({ type: "application/json" }),
+//   instamojoRoutes
+// );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
