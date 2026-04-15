@@ -7,8 +7,8 @@ const path = require("path");
 const connectDB = require("./config/db");
 
 const chatRoutes = require("./routes/chatRoutes");
-const Chat = require("./models/Chat"); // Model
-const User = require("./models/User"); // Model
+const Chat = require("./models/Chat"); 
+const User = require("./models/User"); 
 const newsRoutes = require("./routes/news");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");

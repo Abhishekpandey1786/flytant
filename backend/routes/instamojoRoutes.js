@@ -5,13 +5,10 @@ const Instamojo = require("instamojo-nodejs");
 const User = require("../models/User");
 const Order = require("../models/Order");
 
-// API Keys Setup
 Instamojo.setKeys(
   process.env.INSTAMOJO_API_KEY,
-  process.env.INSTAMOJO_AUTH_TOKEN
+  process.env.INSTAMOJO_AUTH_TOKEN,
 );
-
-// Live Mode (Production)
 Instamojo.isSandboxMode(false);
 
 const getMaxApplications = (plan) => {
@@ -21,27 +18,28 @@ const getMaxApplications = (plan) => {
 router.post("/pay", async (req, res) => {
   try {
     const { plan, userId, email, userName, phone } = req.body;
-    
+
     if (!plan || !userId || !email) {
-      return res.status(400).json({ error: "Missing plan, userId or email" });
+      return res.status(400).json({
+        error: "Missing plan, userId or email",
+      });
     }
 
-    // --- Phone logic updated ---
-    // Agar phone hai toh clean karo, warna empty string rehne do
-    let cleanPhone = phone ? phone.toString().replace(/\D/g, "").slice(-10) : "";
+    // Clean phone number (last 10 digits)
+    let cleanPhone = phone
+      ? phone.toString().replace(/\D/g, "").slice(-10)
+      : "";
 
-    let rawPrice = parseFloat(plan.price);
-    // Dollar to INR conversion (Agar price 10 se kam hai toh assume it's USD)
-    let amountInINR = rawPrice < 100 ? (rawPrice * 85).toFixed(2) : rawPrice.toFixed(2);
+    // Amount in INR
+    const amountInINR = parseFloat(plan.price).toFixed(2);
 
     const data = new Instamojo.PaymentData();
-    
-    data.purpose = `Upgrade to ${plan.name}`.substring(0, 30); 
+    data.purpose = `Upgrade to ${plan.name}`.substring(0, 30);
     data.amount = amountInINR;
+    data.currency = "INR";
     data.buyer_name = (userName || "Customer").substring(0, 100);
     data.email = email.trim().toLowerCase();
-    
-    // Agar phone empty hoga, toh Instamojo payment page par validation khud handle karega
+
     if (cleanPhone) {
       data.phone = cleanPhone;
     }
@@ -52,24 +50,33 @@ router.post("/pay", async (req, res) => {
     const fUrl = (process.env.FRONTEND_URL || "").replace(/\/$/, "");
     const bUrl = (process.env.BACKEND_URL || "").replace(/\/$/, "");
 
-    data.setRedirectUrl(`${fUrl}/payment-status?userId=${userId}&planName=${plan.name}`);
+    data.setRedirectUrl(
+      `${fUrl}/payment-status?userId=${userId}&planName=${plan.name}`
+    );
+
     data.webhook = `${bUrl}/api/instamojo/webhook`;
 
     Instamojo.createPayment(data, (error, response) => {
       if (error) {
         console.error("❌ Instamojo API Rejection:", error);
-        return res.status(400).json({ 
-            error: "Instamojo Rejection", 
-            message: error 
+        return res.status(400).json({
+          error: "Instamojo Rejection",
+          message: error.message || error,
         });
       }
 
-      const responseData = typeof response === "string" ? JSON.parse(response) : response;
-      
+      const responseData =
+        typeof response === "string" ? JSON.parse(response) : response;
+
       if (responseData.success && responseData.payment_request) {
-        res.json({ url: responseData.payment_request.longurl });
+        return res.json({
+          success: true,
+          url: responseData.payment_request.longurl,
+        });
       } else {
-        res.status(400).json({ error: responseData.message || "Gateway Error" });
+        return res.status(400).json({
+          error: responseData.message || "Gateway Error",
+        });
       }
     });
   } catch (error) {
@@ -83,66 +90,76 @@ router.post("/webhook", async (req, res) => {
     const providedMac = data.mac;
     delete data.mac;
 
-    const keys = Object.keys(data).sort().map(key => data[key]);
+    const keys = Object.keys(data)
+      .sort()
+      .map((key) => data[key]);
     const payload = keys.join("|");
     const generatedMac = crypto
       .createHmac("sha1", process.env.INSTAMOJO_SALT || "")
       .update(payload)
       .digest("hex");
 
-    if (generatedMac !== providedMac) return res.status(400).send("Invalid MAC");
+    if (generatedMac !== providedMac)
+      return res.status(400).send("Invalid MAC");
 
     if (data.status === "Credit") {
-        console.log(`✅ Webhook: Payment successful for ID ${data.payment_id}`);
+      console.log(`✅ Webhook: Payment successful for ID ${data.payment_id}`);
     }
     res.status(200).send("OK");
   } catch (error) {
     res.status(500).send("Webhook Failed");
   }
 });
-
-// ✅ 3. Verify Status
 router.post("/verify-status", async (req, res) => {
   try {
     const { payment_id, payment_request_id, userId, planName } = req.body;
 
     if (!payment_id || !payment_request_id || !userId) {
-        return res.status(400).json({ error: "Missing verification parameters" });
+      return res.status(400).json({ error: "Missing verification parameters" });
     }
 
-    Instamojo.getPaymentDetails(payment_request_id, payment_id, async (error, response) => {
-      if (error) return res.status(500).json({ error: "Verification Failed" });
+    Instamojo.getPaymentDetails(
+      payment_request_id,
+      payment_id,
+      async (error, response) => {
+        if (error)
+          return res.status(500).json({ error: "Verification Failed" });
 
-      const result = typeof response === "string" ? JSON.parse(response) : response;
+        const result =
+          typeof response === "string" ? JSON.parse(response) : response;
 
-      const isSuccess = result.payment_request && 
-                        (result.payment_request.status === "Completed" || 
-                         result.payment_request.payment?.status === "Credit");
+        const isSuccess =
+          result.payment_request &&
+          (result.payment_request.status === "Completed" ||
+            result.payment_request.payment?.status === "Credit");
 
-      if (isSuccess) {
-        await User.findByIdAndUpdate(userId, {
-          subscription: {
+        if (isSuccess) {
+          await User.findByIdAndUpdate(userId, {
+            subscription: {
+              plan: planName,
+              status: "Active",
+              maxApplications: getMaxApplications(planName),
+              expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            },
+          });
+
+          const order = new Order({
+            userId,
             plan: planName,
-            status: "Active",
-            maxApplications: getMaxApplications(planName),
-            expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          },
-        });
+            amount: result.payment_request.amount,
+            transactionId: payment_id,
+            paymentStatus: "SUCCESS",
+          });
+          await order.save();
 
-        const order = new Order({
-          userId,
-          plan: planName,
-          amount: result.payment_request.amount,
-          transactionId: payment_id,
-          paymentStatus: "SUCCESS",
-        });
-        await order.save();
-
-        res.json({ success: true, message: "Subscription Activated!" });
-      } else {
-        res.status(400).json({ success: false, message: "Payment not completed" });
-      }
-    });
+          res.json({ success: true, message: "Subscription Activated!" });
+        } else {
+          res
+            .status(400)
+            .json({ success: false, message: "Payment not completed" });
+        }
+      },
+    );
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
   }
