@@ -120,11 +120,11 @@ router.post("/webhook", async (req, res) => {
       .sort()
       .map((key) => data[key])
       .join("|");
-const generatedMac = providedMac;
-    // const generatedMac = crypto
-    //   .createHmac("sha1", process.env.INSTAMOJO_SALT)
-    //   .update(payload)
-    //   .digest("hex");
+
+    const generatedMac = crypto
+      .createHmac("sha1", process.env.INSTAMOJO_SALT)
+      .update(payload)
+      .digest("hex");
 
     if (generatedMac !== providedMac) {
       console.error("❌ MAC Mismatch");
@@ -259,12 +259,25 @@ router.post("/verify-status", async (req, res) => {
 
 router.get("/my-orders/:userId", async (req, res) => {
   try {
-    const orders = await Order.find({
-      userId: req.params.userId,
-    }).sort({ createdAt: -1 });
+    const { userId } = req.params;
+
+    let query = { userId };
+
+    // check only if valid ObjectId
+    if (mongoose.Types.ObjectId.isValid(userId)) {
+      query = {
+        $or: [
+          { userId },
+          { userId: new mongoose.Types.ObjectId(userId) }
+        ]
+      };
+    }
+
+    const orders = await Order.find(query).sort({ createdAt: -1 });
 
     res.json(orders);
   } catch (error) {
+    console.error("Fetch Error:", error);
     res.status(500).json({ error: "Fetch failed" });
   }
 });
