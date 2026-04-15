@@ -80,7 +80,10 @@ router.post("/pay", async (req, res) => {
       `${fUrl}/payment-status?userId=${userId}&plan=${planCode}`
     );
 
+    // Webhook URL
     data.webhook = `${bUrl}/api/instamojo/webhook`;
+
+    // Create Payment
     Instamojo.createPayment(data, (error, response) => {
       if (error) {
         console.error("❌ Instamojo Error:", error);
@@ -109,6 +112,10 @@ router.post("/pay", async (req, res) => {
   }
 });
 
+
+// =====================================================
+// 2️⃣ WEBHOOK – SAVE ORDER & ACTIVATE SUBSCRIPTION
+// =====================================================
 router.post("/webhook", async (req, res) => {
   try {
     const data = { ...req.body };
@@ -259,25 +266,12 @@ router.post("/verify-status", async (req, res) => {
 
 router.get("/my-orders/:userId", async (req, res) => {
   try {
-    const { userId } = req.params;
-
-    let query = { userId };
-
-    // check only if valid ObjectId
-    if (mongoose.Types.ObjectId.isValid(userId)) {
-      query = {
-        $or: [
-          { userId },
-          { userId: new mongoose.Types.ObjectId(userId) }
-        ]
-      };
-    }
-
-    const orders = await Order.find(query).sort({ createdAt: -1 });
+    const orders = await Order.find({
+      userId: req.params.userId,
+    }).sort({ createdAt: -1 });
 
     res.json(orders);
   } catch (error) {
-    console.error("Fetch Error:", error);
     res.status(500).json({ error: "Fetch failed" });
   }
 });
