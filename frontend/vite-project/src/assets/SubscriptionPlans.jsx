@@ -11,24 +11,63 @@ import p6 from "./image/p6.webp";
 import p7 from "./image/p7.webp";
 import p8 from "./image/p8.webp";
 
-// INR Pricing
 const plans = [
-  { name: "Basic", price: 99, oldPrice: 199, discount: "50% Off" },
-  { name: "Standard", price: 299, oldPrice: 499, discount: "40% Off" },
-  { name: "Advance", price: 599, oldPrice: 999, discount: "40% Off" },
-  { name: "Premium", price: 999, oldPrice: 1999, discount: "50% Off" },
+  {
+    name: "Basic",
+    price: 99,
+    oldPrice: 199,
+    discount: "Get 50% Off",
+    features: [
+      "Higher Visibility",
+      "Apply For 6 Campaigns Monthly",
+      "Profile Recommendation to Brands",
+    ],
+  },
+  {
+    name: "Standard",
+    price: 299,
+    oldPrice: 499,
+    discount: "Get 40% Off",
+    features: [
+      "Higher Visibility",
+      "Apply For 15 Campaigns Monthly",
+      "Profile Recommendation to Brands",
+    ],
+  },
+  {
+    name: "Advance",
+    price: 599,
+    oldPrice: 999,
+    discount: "Get 40% Off",
+    popular: true,
+    features: [
+      "Higher Visibility",
+      "Apply For 40 Campaigns Monthly",
+      "Profile Recommendation to Brands",
+    ],
+  },
+  {
+    name: "Premium",
+    price: 999,
+    oldPrice: 1999,
+    discount: "Get 50% Off",
+    features: [
+      "Higher Visibility",
+      "Apply For Unlimited Campaigns",
+      "Profile Recommendation to Brands",
+    ],
+  },
 ];
 
 const influencers = [p1, p2, p3, p4, p5, p6, p7, p8];
 
-// Price Formatter for INR
+// INR Formatter
 const formatINR = (amount) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(amount);
-
 const Spinner = () => (
   <svg
     className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
@@ -51,7 +90,6 @@ const Spinner = () => (
     ></path>
   </svg>
 );
-
 function InstamojoCheckoutForm({ selectedPlan }) {
   const [loading, setLoading] = useState(false);
   const { user } = useContext(AuthContext);
@@ -74,8 +112,7 @@ function InstamojoCheckoutForm({ selectedPlan }) {
           email: user.email,
           userName: user.name || "User",
           phone: user.phone,
-          currency: "INR",
-        }
+        },
       );
 
       if (data.url) {
@@ -84,8 +121,7 @@ function InstamojoCheckoutForm({ selectedPlan }) {
     } catch (err) {
       console.error("Payment Error:", err);
       const errorMsg =
-        err.response?.data?.error ||
-        "Payment failed! Please try again.";
+        err.response?.data?.error || "Payment failed! Please try again.";
       alert(errorMsg);
       setLoading(false);
     }
@@ -95,7 +131,7 @@ function InstamojoCheckoutForm({ selectedPlan }) {
     <button
       onClick={handlePayment}
       disabled={loading}
-      className="w-full mt-4 py-3 rounded-xl font-semibold bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg flex items-center justify-center disabled:opacity-50 hover:scale-105 transition-all duration-300"
+      className="w-full py-3 rounded-xl font-semibold text-white transition  bg-fuchsia-800 neno-button shadow-xl border-fuchsia-800 flex items-center justify-center"
     >
       {loading && <Spinner />}
       {loading
@@ -109,99 +145,101 @@ export default function SubscriptionPlans() {
   const [selectedPlan, setSelectedPlan] = useState(plans[0]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-slate-950 to-black px-4 sm:px-6 py-14">
-      <div className="max-w-6xl mx-auto">
-        {/* Heading */}
-        <h2 className="text-4xl font-extrabold text-white text-center mb-4">
-          Choose Your Perfect Plan
-        </h2>
-        <p className="text-center text-gray-400 mb-12">
-          Affordable pricing designed for creators and influencers in India 🇮🇳
-        </p>
+    <div className="bg-gradient-to-b from-slate-950 to-slate-900 min-h-screen flex flex-col items-center py-16 px-4 md:px-10">
+      <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4 text-center drop-shadow-lg">
+        Subscription Plans
+      </h2>
 
-        {/* Plans */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              onClick={() => setSelectedPlan(plan)}
-              className={`relative rounded-2xl p-6 cursor-pointer transition-all border backdrop-blur-lg ${
-                selectedPlan.name === plan.name
-                  ? "bg-gradient-to-br from-slate-900 to-slate-800 text-white border-green-500 border-2 shadow-[0_0_25px_rgba(34,197,94,0.4)] scale-105"
-                  : "bg-white/5 text-white border-gray-700 hover:border-green-400 hover:shadow-lg"
-              }`}
-            >
-              {/* Popular Badge */}
-              {plan.name === "Premium" && (
-                <span className="absolute -top-3 right-4 bg-yellow-400 text-black text-xs font-bold px-3 py-1 rounded-full shadow">
-                  Most Popular
-                </span>
-              )}
+      <p className="text-gray-400 mb-12 sm:mb-16 text-center max-w-2xl">
+        Choose the plan that best fits your needs and unlock new opportunities
+        for sponsorships & collaborations 🚀
+      </p>
 
-              {/* Plan Name */}
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-xl">{plan.name}</h3>
-                <div
-                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                    selectedPlan.name === plan.name
-                      ? "border-green-500"
-                      : "border-gray-500"
-                  }`}
-                >
-                  {selectedPlan.name === plan.name && (
-                    <div className="w-2.5 h-2.5 bg-green-500 rounded-full" />
-                  )}
-                </div>
-              </div>
+      {/* Plans */}
+      <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-w-7xl w-full">
+        {plans.map((plan, idx) => (
+          <div
+            key={idx}
+            onClick={() => setSelectedPlan(plan)}
+            className={`relative rounded-2xl border shadow-xl p-6 sm:p-8 flex flex-col items-center text-center bg-slate-800 transition transform hover:-translate-y-2 hover:shadow-fuchsia-800 cursor-pointer ${
+              plan.popular ? "bg-fuchsia-800 neno-button shadow-xl border-fuchsia-800" : ""
+            } ${
+              selectedPlan.name === plan.name ? "bg-fuchsia-800 neno-button shadow-xl border-fuchsia-800" : ""
+            }`}
+          >
+            {/* Popular Badge */}
+            {plan.popular && (
+              <span className="absolute -top-3 bg-fuchsia-600 text-white text-xs sm:text-sm px-3 py-1 rounded-full shadow-md">
+                Most Popular
+              </span>
+            )}
 
-              {/* Pricing */}
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black text-green-400">
-                  {formatINR(plan.price)}
-                </span>
-                <span className="line-through text-gray-500 text-lg">
-                  {formatINR(plan.oldPrice)}
-                </span>
-              </div>
+            {/* Plan Name */}
+            <h3 className="text-xl sm:text-2xl font-bold mb-3 text-white">
+              {plan.name}
+            </h3>
 
-              <p className="mt-2 text-sm font-semibold text-green-400 bg-green-400/10 inline-block px-2 py-1 rounded">
-                {plan.discount}
-              </p>
-
-              {/* Features */}
-              <ul className="mt-6 space-y-3 text-sm text-gray-300">
-                <li>✔ Full Marketplace Access</li>
-                <li>✔ Priority Support</li>
-                <li>✔ Verified Influencers</li>
-                <li>✔ Secure Payments</li>
-              </ul>
-
-              {/* Payment Button */}
-              <div className="mt-8">
-                {selectedPlan.name === plan.name && (
-                  <InstamojoCheckoutForm selectedPlan={selectedPlan} />
-                )}
-              </div>
+            {/* Pricing */}
+            <div className="flex items-center mb-2">
+              <span className="text-3xl sm:text-4xl font-extrabold text-white">
+                {formatINR(plan.price)}
+              </span>
+              <span className="text-gray-500 line-through ml-2 sm:ml-3 text-base sm:text-lg">
+                {formatINR(plan.oldPrice)}
+              </span>
             </div>
+
+            {/* Discount */}
+            <p className="text-fuchsia-500 font-medium mb-6 text-sm sm:text-base">
+              {plan.discount}
+            </p>
+
+            {/* Payment Button */}
+            <div className="w-full mb-6">
+              {selectedPlan.name === plan.name && (
+                <InstamojoCheckoutForm selectedPlan={selectedPlan} />
+              )}
+            </div>
+
+            {/* Features */}
+            <ul className="text-gray-300 text-sm space-y-3 text-center w-full">
+              {plan.features.map((feature, i) => (
+                <li key={i}>✔ {feature}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <div className="mt-20 sm:mt-28 text-center px-4">
+        <h4 className="text-xl sm:text-2xl font-semibold mb-6 text-white">
+          Trusted by 100K+ Influencers Across India
+        </h4>
+
+        <div className="flex flex-wrap justify-center gap-4">
+          {influencers.map((src, idx) => (
+            <img
+              key={idx}
+              src={src}
+              alt="influencer"
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-fuchsia-500 shadow-md object-cover hover:scale-110 transition-transform duration-300"
+            />
           ))}
         </div>
-
-        {/* Influencers Section */}
-        <div className="mt-24 text-center">
-          <h3 className="text-2xl font-bold mb-10 text-white/80">
-            Trusted by 100K+ Influencers Across India
-          </h3>
-          <div className="flex flex-wrap justify-center gap-4">
-            {influencers.map((src, idx) => (
-              <img
-                key={idx}
-                src={src}
-                alt="influencer"
-                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-green-500/50 shadow-md object-cover hover:scale-110 transition-transform duration-300"
-              />
-            ))}
-          </div>
-        </div>
+      </div>
+      <div className="mt-20 text-center px-4">
+        <h4 className="text-xl sm:text-2xl font-semibold mb-4 text-white">
+          Still have Questions?
+        </h4>
+        <p className="text-gray-400 max-w-xl mx-auto text-sm sm:text-base">
+          If you have questions about pricing or implementation, please email us
+          at{" "}
+          <a
+            href="mailto:information@vistafluence.com"
+            className="text-fuchsia-400 underline font-medium"
+          >
+            information@vistafluence.com
+          </a>
+        </p>
       </div>
     </div>
   );
