@@ -14,7 +14,7 @@ import p8 from "./image/p8.webp";
 const plans = [
   {
     name: "Basic",
-    price: 1,
+    price: 11,
     oldPrice: 199,
     discount: "Get 50% Off",
     features: [
@@ -25,7 +25,7 @@ const plans = [
   },
   {
     name: "Standard",
-    price: 2,
+    price: 299,
     oldPrice: 499,
     discount: "Get 40% Off",
     features: [
@@ -36,7 +36,7 @@ const plans = [
   },
   {
     name: "Advance",
-    price: 3,
+    price: 599,
     oldPrice: 999,
     discount: "Get 40% Off",
     popular: true,
@@ -48,7 +48,7 @@ const plans = [
   },
   {
     name: "Premium",
-    price: 4,
+    price: 999,
     oldPrice: 1999,
     discount: "Get 50% Off",
     features: [
