@@ -111,6 +111,10 @@ router.post("/pay", async (req, res) => {
   }
 });
 
+
+// =====================================================
+// 2️⃣ WEBHOOK – SAVE ORDER & ACTIVATE SUBSCRIPTION
+// =====================================================
 router.post("/webhook", async (req, res) => {
   try {
     const data = { ...req.body };
@@ -122,11 +126,11 @@ router.post("/webhook", async (req, res) => {
       .sort()
       .map((key) => data[key])
       .join("|");
-     const generatedMac = providedMac;
-    // const generatedMac = crypto
-    //   .createHmac("sha1", process.env.INSTAMOJO_SALT)
-    //   .update(payload)
-    //   .digest("hex");
+
+    const generatedMac = crypto
+      .createHmac("sha1", process.env.INSTAMOJO_SALT)
+      .update(payload)
+      .digest("hex");
 
     if (generatedMac !== providedMac) {
       console.error("❌ MAC Mismatch");
