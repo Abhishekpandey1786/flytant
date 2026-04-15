@@ -191,76 +191,58 @@ router.post("/verify-status", async (req, res) => {
   try {
     const { payment_id, payment_request_id, userId, planCode } = req.body;
 
-    if (!payment_id || !payment_request_id || !userId || !planCode) {
-      return res.status(400).json({
-        error: "Missing verification parameters",
-      });
-    }
+    Instamojo.getPaymentDetails(payment_request_id, payment_id, async (error, response) => {
+      if (error) {
+        console.error("Instamojo API Error:", error);
+        return res.status(500).json({ success: false, message: "Verification Failed" });
+      }
 
-    Instamojo.getPaymentDetails(
-      payment_request_id,
-      payment_id,
-      async (error, response) => {
-        if (error) {
-          return res
-            .status(500)
-            .json({ error: "Verification Failed" });
-        }
+      const result = typeof response === "string" ? JSON.parse(response) : response;
 
-        const result =
-          typeof response === "string"
-            ? JSON.parse(response)
-            : response;
+      // Instamojo API response mein payments array ya payment object hota hai
+      const actualPayment = result.payment_request.payment || result.payment_request.payments[0];
+      
+      // Instamojo success ko hamesha "Credit" bolta hai
+      const isSuccess = actualPayment && actualPayment.status === "Credit";
 
-        const isSuccess =
-          result.payment_request &&
-          (result.payment_request.status === "Completed" ||
-            result.payment_request.payment?.status === "Credit");
-
-        if (!isSuccess) {
-          return res.status(400).json({
-            success: false,
-            message: "Payment not completed",
-          });
-        }
-
-        const planName = planNames[planCode];
-
-        // Prevent Duplicate Orders
-        const existingOrder = await Order.findOne({
-          transactionId: payment_id,
-        });
-
-        if (!existingOrder) {
-          await Order.create({
-            userId,
-            plan: planName,
-            amount: result.payment_request.amount,
-            transactionId: payment_id,
-            paymentStatus: "SUCCESS",
-          });
-
-          await User.findByIdAndUpdate(userId, {
-            subscription: {
-              plan: planName,
-              status: "Active",
-              maxApplications: getMaxApplications(planName),
-              expiryDate: new Date(
-                Date.now() + 30 * 24 * 60 * 60 * 1000
-              ),
-            },
-          });
-        }
-
-        res.json({
-          success: true,
-          message: "Subscription Activated!",
+      if (!isSuccess) {
+        return res.status(400).json({
+          success: false,
+          message: `Payment status is ${actualPayment?.status || 'Unknown'}`,
         });
       }
-    );
+
+      const planName = planNames[planCode.toUpperCase()]; // Capitalize safe check
+
+      // Check if order already exists (To avoid double subscription)
+      let existingOrder = await Order.findOne({ transactionId: payment_id });
+
+      if (!existingOrder) {
+        await Order.create({
+          userId,
+          plan: planName,
+          amount: result.payment_request.amount,
+          transactionId: payment_id,
+          paymentStatus: "SUCCESS",
+        });
+
+        await User.findByIdAndUpdate(userId, {
+          subscription: {
+            plan: planName,
+            status: "Active",
+            maxApplications: getMaxApplications(planName),
+            expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          },
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Subscription Activated!",
+      });
+    });
   } catch (error) {
-    console.error("❌ Verification Error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
