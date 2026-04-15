@@ -1,17 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const crypto = require("crypto");
-const axios = require("axios");
+const Instamojo = require("instamojo-nodejs");
 const User = require("../models/User");
 const Order = require("../models/Order");
 
-// =====================================================
-// ⚙️ CONFIGURATION
-// =====================================================
-const IS_SANDBOX = true; // Test mode ke liye true, Live ke liye false karein
-const INSTAMOJO_BASE_URL = IS_SANDBOX 
-  ? "https://test.instamojo.com/api/1.1" 
-  : "https://www.instamojo.com/api/1.1";
+// 🔐 Instamojo Configuration
+Instamojo.setKeys(
+  process.env.INSTAMOJO_API_KEY,
+  process.env.INSTAMOJO_AUTH_TOKEN
+);
+Instamojo.isSandboxMode(false); // Live Mode
+
 
 const planCodes = {
   Basic: "BASIC",
@@ -26,7 +26,6 @@ const planNames = {
   ADVANCE: "Advance",
   PREMIUM: "Premium",
 };
-
 const getMaxApplications = (plan) => {
   const limits = {
     Basic: 6,
@@ -36,79 +35,124 @@ const getMaxApplications = (plan) => {
   };
   return limits[plan] || 3;
 };
-
-// =====================================================
-// 1️⃣ PAY API (Create Payment Link)
-// =====================================================
 router.post("/pay", async (req, res) => {
   try {
     const { plan, userId, email, userName, phone } = req.body;
 
     if (!plan || !userId || !email) {
-      return res.status(400).json({ error: "Missing plan, userId or email" });
+      return res.status(400).json({
+        error: "Missing plan, userId or email",
+      });
     }
 
     const planCode = planCodes[plan.name];
-    if (!planCode) return res.status(400).json({ error: "Invalid Plan" });
+    if (!planCode) {
+      return res.status(400).json({ error: "Invalid Plan" });
+    }
 
     const amountInINR = parseFloat(plan.price).toFixed(2);
 
-    // Payload taiyar karein
-    const params = new URLSearchParams();
-    params.append("purpose", `${planCode}|${userId}`);
-    params.append("amount", amountInINR);
-    params.append("buyer_name", (userName || "Customer").substring(0, 100));
-    params.append("email", email.trim().toLowerCase());
-    params.append("redirect_url", `${process.env.FRONTEND_URL}/payment-status?userId=${userId}&plan=${planCode}`);
-    params.append("webhook", `${process.env.BACKEND_URL}/api/instamojo/webhook`);
-    params.append("allow_repeated_payments", "false");
-    params.append("send_email", "true");
+    const data = new Instamojo.PaymentData();
 
+    // Instamojo purpose (Max 30 characters)
+    data.purpose = `${planCode}|${userId}`;
+    data.amount = amountInINR;
+    data.currency = "INR";
+    data.buyer_name = (userName || "Customer").substring(0, 100);
+    data.email = email.trim().toLowerCase();
+
+    // Clean Phone Number
     if (phone) {
       const cleanPhone = phone.toString().replace(/\D/g, "").slice(-10);
-      if (cleanPhone.length === 10) params.append("phone", cleanPhone);
+      if (cleanPhone.length === 10) {
+        data.phone = cleanPhone;
+      }
     }
 
-    const response = await axios.post(`${INSTAMOJO_BASE_URL}/payment-requests/`, params, {
-      headers: {
-        "X-Api-Key": process.env.INSTAMOJO_API_KEY,
-        "X-Auth-Token": process.env.INSTAMOJO_AUTH_TOKEN,
-      },
-    });
+    data.send_email = true;
+    data.send_sms = false;
 
-    res.json({
-      success: true,
-      url: response.data.payment_request.longurl,
+    const fUrl = process.env.FRONTEND_URL.replace(/\/$/, "");
+    const bUrl = process.env.BACKEND_URL.replace(/\/$/, "");
+
+    // Redirect URL
+    data.setRedirectUrl(
+      `${fUrl}/payment-status?userId=${userId}&plan=${planCode}`
+    );
+
+    // Webhook URL
+    data.webhook = `${bUrl}/api/instamojo/webhook`;
+
+    // Create Payment
+    Instamojo.createPayment(data, (error, response) => {
+      if (error) {
+        console.error("❌ Instamojo Error:", error);
+        return res.status(400).json({
+          error: error.message || "Instamojo Error",
+        });
+      }
+
+      const resp =
+        typeof response === "string" ? JSON.parse(response) : response;
+
+      if (!resp.success || !resp.payment_request) {
+        return res.status(400).json({
+          error: resp.message || "Payment creation failed",
+        });
+      }
+
+      res.json({
+        success: true,
+        url: resp.payment_request.longurl,
+      });
     });
   } catch (error) {
-    console.error("❌ Pay API Error:", error.response?.data || error.message);
-    res.status(500).json({ error: "Payment creation failed" });
+    console.error("❌ Pay API Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
+
 // =====================================================
-// 2️⃣ WEBHOOK API (Automatic Background Sync)
+// 2️⃣ WEBHOOK – SAVE ORDER & ACTIVATE SUBSCRIPTION
 // =====================================================
 router.post("/webhook", async (req, res) => {
   try {
-    const data = req.body;
+    const data = { ...req.body };
     const providedMac = data.mac;
     delete data.mac;
 
-    // MAC Verification (Security check)
-    const payload = Object.keys(data).sort().map(key => data[key]).join("|");
+    // MAC Verification
+    const payload = Object.keys(data)
+      .sort()
+      .map((key) => data[key])
+      .join("|");
+
     const generatedMac = crypto
-      .createHmac("sha1", process.env.INSTAMOJO_SALT || "your_salt")
+      .createHmac("sha1", process.env.INSTAMOJO_SALT)
       .update(payload)
       .digest("hex");
 
-    // Note: Live mein MAC verify zaroor karein
+    if (generatedMac !== providedMac) {
+      console.error("❌ MAC Mismatch");
+      return res.status(400).send("Invalid MAC");
+    }
+
     if (data.status === "Credit") {
       const [planCode, userId] = data.purpose.split("|");
       const planName = planNames[planCode];
 
-      const existingOrder = await Order.findOne({ transactionId: data.payment_id });
+      if (!planName || !userId) {
+        return res.status(400).send("Invalid Purpose Data");
+      }
+
+      // Prevent Duplicate Orders
+      const existingOrder = await Order.findOne({
+        transactionId: data.payment_id,
+      });
+
       if (!existingOrder) {
+        // Save Order
         await Order.create({
           userId,
           plan: planName,
@@ -116,91 +160,116 @@ router.post("/webhook", async (req, res) => {
           transactionId: data.payment_id,
           paymentStatus: "SUCCESS",
           userEmail: data.buyer,
+          userName: data.buyer_name,
         });
 
+        // Activate Subscription
         await User.findByIdAndUpdate(userId, {
           subscription: {
             plan: planName,
             status: "Active",
             maxApplications: getMaxApplications(planName),
-            expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            expiryDate: new Date(
+              Date.now() + 30 * 24 * 60 * 60 * 1000
+            ),
           },
         });
-        console.log("✅ Webhook: Subscription Activated");
+
+        console.log("✅ Order Saved & Subscription Activated");
+      } else {
+        console.log("⚠️ Duplicate Order Ignored");
       }
     }
+
     res.status(200).send("OK");
   } catch (error) {
     console.error("❌ Webhook Error:", error);
-    res.status(500).send("Error");
+    res.status(500).send("Webhook Error");
   }
 });
-
-// =====================================================
-// 3️⃣ VERIFY STATUS (Frontend Redirect Verification)
-// =====================================================
 router.post("/verify-status", async (req, res) => {
   try {
     const { payment_id, payment_request_id, userId, planCode } = req.body;
 
-    if (!payment_id || !payment_request_id) {
-      return res.status(400).json({ success: false, message: "Missing IDs" });
+    if (!payment_id || !payment_request_id || !userId || !planCode) {
+      return res.status(400).json({
+        error: "Missing verification parameters",
+      });
     }
 
-    const response = await axios.get(
-      `${INSTAMOJO_BASE_URL}/payment-requests/${payment_request_id}/${payment_id}/`,
-      {
-        headers: {
-          "X-Api-Key": process.env.INSTAMOJO_API_KEY,
-          "X-Auth-Token": process.env.INSTAMOJO_AUTH_TOKEN,
-        },
+    Instamojo.getPaymentDetails(
+      payment_request_id,
+      payment_id,
+      async (error, response) => {
+        if (error) {
+          return res
+            .status(500)
+            .json({ error: "Verification Failed" });
+        }
+
+        const result =
+          typeof response === "string"
+            ? JSON.parse(response)
+            : response;
+
+        const isSuccess =
+          result.payment_request &&
+          (result.payment_request.status === "Completed" ||
+            result.payment_request.payment?.status === "Credit");
+
+        if (!isSuccess) {
+          return res.status(400).json({
+            success: false,
+            message: "Payment not completed",
+          });
+        }
+
+        const planName = planNames[planCode];
+
+        // Prevent Duplicate Orders
+        const existingOrder = await Order.findOne({
+          transactionId: payment_id,
+        });
+
+        if (!existingOrder) {
+          await Order.create({
+            userId,
+            plan: planName,
+            amount: result.payment_request.amount,
+            transactionId: payment_id,
+            paymentStatus: "SUCCESS",
+          });
+
+          await User.findByIdAndUpdate(userId, {
+            subscription: {
+              plan: planName,
+              status: "Active",
+              maxApplications: getMaxApplications(planName),
+              expiryDate: new Date(
+                Date.now() + 30 * 24 * 60 * 60 * 1000
+              ),
+            },
+          });
+        }
+
+        res.json({
+          success: true,
+          message: "Subscription Activated!",
+        });
       }
     );
-
-    const result = response.data;
-
-    if (result.success && result.payment_request.payment.status === "Credit") {
-      const planName = planNames[planCode];
-
-      let existingOrder = await Order.findOne({ transactionId: payment_id });
-      if (!existingOrder) {
-        await Order.create({
-          userId,
-          plan: planName,
-          amount: result.payment_request.payment.amount,
-          transactionId: payment_id,
-          paymentStatus: "SUCCESS",
-        });
-
-        await User.findByIdAndUpdate(userId, {
-          subscription: {
-            plan: planName,
-            status: "Active",
-            maxApplications: getMaxApplications(planName),
-            expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          },
-        });
-      }
-      return res.json({ success: true, message: "Subscription Activated!" });
-    } else {
-      return res.status(400).json({ success: false, message: "Payment not completed" });
-    }
   } catch (error) {
-    console.error("❌ Verification Error:", error.response?.data || error.message);
-    res.status(500).json({ 
-      success: false, 
-      message: "Gateway verification failed",
-      debug: error.response?.data 
-    });
+    console.error("❌ Verification Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-// =====================================================
-// 4️⃣ GET ORDERS
-// =====================================================
 router.get("/my-orders/:userId", async (req, res) => {
   try {
-    const orders = await Order.find({ userId: req.params.userId }).sort({ createdAt: -1 });
+    const orders = await Order.find({
+      userId: req.params.userId,
+    }).sort({ createdAt: -1 });
+
     res.json(orders);
   } catch (error) {
     res.status(500).json({ error: "Fetch failed" });
