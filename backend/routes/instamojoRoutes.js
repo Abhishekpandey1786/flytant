@@ -191,54 +191,33 @@ router.post("/verify-status", async (req, res) => {
   try {
     const { payment_id, payment_request_id, userId, planCode } = req.body;
 
-    Instamojo.getPaymentDetails(payment_request_id, payment_id, async (error, response) => {
-      // 1. Check if there's a low-level error (Network/Auth)
-      if (error) {
-        console.error("❌ Instamojo Library Error:", error);
-        return res.status(500).json({ success: false, message: "Verification failed at Gateway" });
+    if (!payment_id || !payment_request_id) {
+      return res.status(400).json({ success: false, message: "Missing IDs" });
+    }
+
+    // Direct API call to Instamojo
+    const response = await axios.get(
+      `${INSTAMOJO_BASE_URL}/payment-requests/${payment_request_id}/${payment_id}/`,
+      {
+        headers: {
+          "X-Api-Key": process.env.INSTAMOJO_API_KEY,
+          "X-Auth-Token": process.env.INSTAMOJO_AUTH_TOKEN,
+        },
       }
+    );
 
-      // 2. Safely parse the response
-      let result;
-      try {
-        result = typeof response === "string" ? JSON.parse(response) : response;
-        console.log("🔍 Instamojo Response:", JSON.stringify(result, null, 2)); // Debugging ke liye
-      } catch (e) {
-        return res.status(500).json({ success: false, message: "Invalid JSON from Instamojo" });
-      }
+    const result = response.data;
 
-      // 3. Sabse important: Check if payment_request exists
-      // Yahan error aa raha tha, isliye hum '?' use karenge
-      if (!result || !result.payment_request) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Payment request not found. Check your IDs.",
-          detail: result // Isse aapko pata chalega Instamojo ne kya error diya
-        });
-      }
-
-      // 4. Extract payment details safely
-      const actualPayment = result.payment_request.payment || 
-                           (result.payment_request.payments && result.payment_request.payments[0]);
-      
-      const isSuccess = actualPayment && actualPayment.status === "Credit";
-
-      if (!isSuccess) {
-        return res.status(400).json({
-          success: false,
-          message: `Status: ${actualPayment ? actualPayment.status : "No payment found"}`,
-        });
-      }
-
-      // --- Baki ka logic (Order.create, etc.) niche same rahega ---
+    // Instamojo returns "Credit" for successful payments
+    if (result.success && result.payment_request.payment.status === "Credit") {
       const planName = planNames[planCode];
-      let existingOrder = await Order.findOne({ transactionId: payment_id });
 
+      let existingOrder = await Order.findOne({ transactionId: payment_id });
       if (!existingOrder) {
         await Order.create({
           userId,
           plan: planName,
-          amount: result.payment_request.amount,
+          amount: result.payment_request.payment.amount,
           transactionId: payment_id,
           paymentStatus: "SUCCESS",
         });
@@ -252,14 +231,20 @@ router.post("/verify-status", async (req, res) => {
           },
         });
       }
-
       return res.json({ success: true, message: "Subscription Activated!" });
+    } else {
+      return res.status(400).json({ success: false, message: "Payment not successful" });
+    }
+  } catch (error) {
+    console.error("❌ Verification Error:", error.response?.data || error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: "Gateway verification failed",
+      debug: error.response?.data 
     });
-  } catch (err) {
-    console.error("❌ Catch Block Error:", err);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 });
+
 router.get("/my-orders/:userId", async (req, res) => {
   try {
     const orders = await Order.find({
