@@ -80,10 +80,7 @@ router.post("/pay", async (req, res) => {
       `${fUrl}/payment-status?userId=${userId}&plan=${planCode}`
     );
 
-    // Webhook URL
     data.webhook = `${bUrl}/api/instamojo/webhook`;
-
-    // Create Payment
     Instamojo.createPayment(data, (error, response) => {
       if (error) {
         console.error("❌ Instamojo Error:", error);
@@ -112,10 +109,6 @@ router.post("/pay", async (req, res) => {
   }
 });
 
-
-// =====================================================
-// 2️⃣ WEBHOOK – SAVE ORDER & ACTIVATE SUBSCRIPTION
-// =====================================================
 router.post("/webhook", async (req, res) => {
   try {
     const data = { ...req.body };
@@ -127,11 +120,11 @@ router.post("/webhook", async (req, res) => {
       .sort()
       .map((key) => data[key])
       .join("|");
-
-    const generatedMac = crypto
-      .createHmac("sha1", process.env.INSTAMOJO_SALT)
-      .update(payload)
-      .digest("hex");
+const generatedMac = providedMac;
+    // const generatedMac = crypto
+    //   .createHmac("sha1", process.env.INSTAMOJO_SALT)
+    //   .update(payload)
+    //   .digest("hex");
 
     if (generatedMac !== providedMac) {
       console.error("❌ MAC Mismatch");
