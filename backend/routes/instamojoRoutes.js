@@ -10,7 +10,7 @@ Instamojo.setKeys(
   process.env.INSTAMOJO_API_KEY,
   process.env.INSTAMOJO_AUTH_TOKEN
 );
-Instamojo.isSandboxMode(false); // Live Mode
+Instamojo.isSandboxMode(true); // Live Mode
 
 
 const planCodes = {
