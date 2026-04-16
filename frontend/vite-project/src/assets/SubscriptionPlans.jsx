@@ -1,6 +1,7 @@
 import React, { useState, useContext } from "react";
 import axios from "axios";
 import { AuthContext } from "./AuthContext";
+import { useNavigate } from "react-router-dom";
 
 import p1 from "./image/p1.webp";
 import p2 from "./image/p2.webp";
@@ -143,9 +144,18 @@ function InstamojoCheckoutForm({ selectedPlan }) {
 
 export default function SubscriptionPlans() {
   const [selectedPlan, setSelectedPlan] = useState(plans[0]);
-
+  const navigate = useNavigate();
   return (
     <div className="bg-gradient-to-b from-slate-950 to-slate-900 min-h-screen flex flex-col items-center py-16 px-4 md:px-10">
+       <div className="w-full max-w-7xl mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 bg-fuchsia-800 neno-button shadow-xl border-fuchsia-800 text-white px-4 py-2 rounded-lg  transition duration-300"
+        >
+          ← Back
+        </button>
+      </div>
+      
       <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4 text-center drop-shadow-lg">
         Subscription Plans
       </h2>
@@ -161,7 +171,7 @@ export default function SubscriptionPlans() {
           <div
             key={idx}
             onClick={() => setSelectedPlan(plan)}
-            className={`relative rounded-2xl border shadow-xl p-6 sm:p-8 flex flex-col items-center text-center bg-slate-800 transition transform hover:-translate-y-2 hover:shadow-fuchsia-800 cursor-pointer ${
+            className={`relative rounded-2xl border  p-6 sm:p-8 flex flex-col items-center text-center bg-slate-800 transition transform hover:-translate-y-2  neno-button shadow-xl border-fuchsia-800 cursor-pointer ${
               plan.popular ? "bg-fuchsia-800 neno-button shadow-xl border-fuchsia-800" : ""
             } ${
               selectedPlan.name === plan.name ? "bg-fuchsia-800 neno-button shadow-xl border-fuchsia-800" : ""
