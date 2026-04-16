@@ -10,7 +10,7 @@ export default function MyOrders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // INR Formatter
+  // 1. INR Formatter
   const formatINR = (amount) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -19,7 +19,7 @@ export default function MyOrders() {
     }).format(amount || 0);
   };
 
-  // Format Date
+  // 2. Format Date
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("en-IN", {
@@ -32,37 +32,55 @@ export default function MyOrders() {
     });
   };
 
-  // Payment Status Styling
+  // 3. Expiry & Validity Logic
+  // Agar plan "Basic" hai toh 30 din, "Premium" hai toh 365 din (aap change kar sakte hain)
+  const getPlanDuration = (planName) => {
+    const p = planName?.toLowerCase();
+    if (p === "basic") return 30;
+    if (p === "premium") return 365;
+    return 30; // Default
+  };
+
+  const calculateExpiry = (createdAt, planName) => {
+    if (!createdAt) return { date: "N/A", daysLeft: 0 };
+    
+    const startDate = new Date(createdAt);
+    const duration = getPlanDuration(planName);
+    const expiryDate = new Date(startDate.getTime() + duration * 24 * 60 * 60 * 1000);
+    
+    const today = new Date();
+    const diffTime = expiryDate - today;
+    const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return {
+      date: expiryDate.toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }),
+      daysLeft: daysLeft > 0 ? daysLeft : 0,
+      isExpired: daysLeft <= 0
+    };
+  };
+
+  // 4. Status Styling
   const getStatusClasses = (status) => {
     const s = status?.toLowerCase();
-    if (s === "success" || s === "credit") return "bg-green-500/80 text-white";
-    if (s === "failed") return "bg-red-600/80 text-white";
-    return "bg-yellow-400/80 text-slate-900";
+    if (s === "success" || s === "credit") return "bg-green-500/20 text-green-400 border border-green-500/50";
+    if (s === "failed") return "bg-red-500/20 text-red-400 border border-red-500/50";
+    return "bg-yellow-500/20 text-yellow-400 border border-yellow-500/50";
   };
 
   useEffect(() => {
     const fetchOrders = async () => {
-      // 1. Check if user is actually available
-      if (!user?._id) {
-        // If AuthContext is still loading the user, don't stop the loading spinner yet
-        console.log("Waiting for user ID...");
-        return;
-      }
+      if (!user?._id) return;
 
       try {
         setLoading(true);
-        console.log("📡 Fetching orders for User ID:", user._id);
-
         const response = await axios.get(
           `${API_BASE_URL}/my-orders/${user._id}`,
-          { headers: { 'Cache-Control': 'no-cache' } } // Prevent browser caching
+          { headers: { 'Cache-Control': 'no-cache' } }
         );
-
-        console.log("📦 Orders found:", response.data);
         setOrders(response.data);
         setError(null);
       } catch (err) {
-        console.error("❌ Fetch Error:", err.response?.data || err.message);
+        console.error("Fetch Error:", err);
         setError("Orders load nahi ho paaye. Please refresh karein.");
       } finally {
         setLoading(false);
@@ -70,113 +88,97 @@ export default function MyOrders() {
     };
 
     fetchOrders();
-    // Use user?._id as dependency for precision
-  }, [user?._id]); 
+  }, [user?._id]);
 
-  // 🔄 Loading State
-  if (loading && !user?._id) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-center items-center">
-        <div className="animate-spin h-10 w-10 border-t-4 border-fuchsia-500 rounded-full mb-4"></div>
-        <span className="font-medium">Authenticating User...</span>
-      </div>
-    );
-  }
-
+  // Loading Screen
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-center items-center">
-        <div className="animate-spin h-10 w-10 border-t-4 border-cyan-500 rounded-full mb-4"></div>
-        <span className="font-medium">Fetching your orders...</span>
-      </div>
-    );
-  }
-
-  // ❌ Error State
-  if (error && orders.length === 0) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-red-500 flex justify-center items-center">
-        <div className="p-6 bg-slate-800 rounded-xl shadow-xl border border-red-500/50 text-center">
-          <p className="mb-4">{error}</p>
-          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-red-600 text-white rounded-lg">Retry</button>
-        </div>
+        <div className="animate-spin h-12 w-12 border-t-4 border-cyan-500 border-solid rounded-full mb-4"></div>
+        <p className="text-slate-400 animate-pulse">Syncing your subscriptions...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-800 px-4 sm:px-6 py-10">
-      <div className="max-w-6xl mx-auto">
-        <h2 className="text-4xl font-extrabold text-white mb-8 text-center">🛒 My Orders</h2>
+    <div className="min-h-screen bg-slate-950 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black px-4 py-12">
+      <div className="max-w-5xl mx-auto">
+        <header className="text-center mb-12">
+          <h2 className="text-5xl font-black text-white tracking-tight mb-2">My <span className="text-fuchsia-500">Orders</span></h2>
+          <p className="text-slate-400">Manage your active plans and billing history</p>
+        </header>
 
         {orders.length === 0 ? (
-          <div className="text-center text-gray-400 mt-10 p-10 border border-dashed border-fuchsia-600 rounded-2xl max-w-md mx-auto bg-slate-800/30 backdrop-blur-md shadow-2xl">
-            <p className="mb-4 text-xl text-white font-semibold">🎁 No orders yet!</p>
-            <p className="text-sm mb-6 text-gray-400">
-              Explore our plans to start your professional journey with us.
-            </p>
-            <a
-              href="/plans"
-              className="px-8 py-3 bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white rounded-xl hover:scale-105 transition-all duration-300 font-bold shadow-[0_0_20px_rgba(192,38,211,0.5)]"
-            >
-              View Plans
-            </a>
+          <div className="text-center p-16 border border-slate-800 rounded-3xl bg-slate-900/50 backdrop-blur-sm">
+            <div className="text-6xl mb-4">📦</div>
+            <h3 className="text-2xl font-bold text-white mb-2">No active orders found</h3>
+            <p className="text-slate-500 mb-8">You haven't subscribed to any plan yet.</p>
+            <a href="/plans" className="bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-8 py-3 rounded-full font-bold transition-all">Explore Plans</a>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 mt-6">
-            {orders.map((order) => (
-              <div
-                key={order._id}
-                className="bg-slate-800/50 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-slate-700 hover:border-fuchsia-500/50 transition-all duration-300 group"
-              >
-                {/* Header Section */}
-                <div className="flex flex-wrap justify-between items-start gap-4 mb-6">
-                  <div>
-                    <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-cyan-400 uppercase tracking-tight">
-                      {order.plan} Plan
-                    </h3>
-                    <p className="text-xs text-slate-500 font-mono mt-1">TXN: {order.transactionId}</p>
-                  </div>
-                  <span
-                    className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest ${getStatusClasses(
-                      order.paymentStatus
-                    )}`}
-                  >
-                    {order.paymentStatus}
-                  </span>
-                </div>
+          <div className="space-y-6">
+            {orders.map((order) => {
+              const info = calculateExpiry(order.createdAt, order.plan);
+              return (
+                <div key={order._id} className="group relative bg-slate-900/40 border border-slate-800 rounded-2xl overflow-hidden hover:border-slate-600 transition-all duration-300">
+                  
+                  {/* Decorative Gradient Bar */}
+                  <div className={`h-1.5 w-full ${info.isExpired ? 'bg-red-500' : 'bg-gradient-to-r from-fuchsia-500 to-cyan-500'}`}></div>
 
-                {/* Details Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4 border-y border-slate-700/50">
-                  <div className="space-y-1">
-                    <p className="text-slate-500 text-xs font-bold uppercase">Amount Paid</p>
-                    <p className="text-2xl font-black text-green-400">
-                      {formatINR(order.amount)}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-slate-500 text-xs font-bold uppercase">Purchase Date</p>
-                    <p className="text-slate-200 font-medium">
-                      {formatDate(order.createdAt)}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-slate-500 text-xs font-bold uppercase">Account Email</p>
-                    <p className="text-slate-200 truncate font-medium">
-                      {order.userEmail || "Not Provided"}
-                    </p>
-                  </div>
-                </div>
+                  <div className="p-6 md:p-8">
+                    {/* TOP SECTION */}
+                    <div className="flex flex-wrap justify-between items-start gap-4 mb-8">
+                      <div>
+                        <div className="flex items-center gap-3 mb-1">
+                          <h3 className="text-2xl font-bold text-white uppercase tracking-tight">{order.plan} Plan</h3>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase ${getStatusClasses(order.paymentStatus)}`}>
+                            {order.paymentStatus}
+                          </span>
+                        </div>
+                        <p className="text-xs font-mono text-slate-500 uppercase tracking-widest">Order ID: {order.orderId}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-3xl font-black text-white">{formatINR(order.amount)}</p>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Billed Amount</p>
+                      </div>
+                    </div>
 
-                {/* Footer Info */}
-                <div className="mt-4 flex justify-between items-center">
-                   <p className="text-xs text-slate-500 italic">Order processed via Instamojo Secure Gateway</p>
-                   {order.userName && (
-                     <p className="text-xs text-slate-400 font-medium italic">Billed to: <span className="text-fuchsia-300">{order.userName}</span></p>
-                   )}
+                    {/* MAIN DETAILS GRID */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-5 bg-slate-950/50 rounded-xl border border-slate-800/50">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Purchase Date</label>
+                        <p className="text-sm text-slate-200 font-medium">{formatDate(order.createdAt)}</p>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Transaction ID</label>
+                        <p className="text-sm text-slate-300 font-mono truncate">{order.transactionId}</p>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Expiry Date</label>
+                        <p className="text-sm text-slate-200 font-medium">{info.date}</p>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Subscription Status</label>
+                        <p className={`text-sm font-black ${info.isExpired ? 'text-red-500' : 'text-cyan-400'}`}>
+                          {info.isExpired ? "EXPIRED" : `${info.daysLeft} DAYS REMAINING`}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* FOOTER */}
+                    <div className="mt-6 flex flex-wrap justify-between items-center gap-4 text-xs">
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <p>Verified Payment via Instamojo</p>
+                      </div>
+                      <p className="text-slate-500">
+                        Account: <span className="text-slate-300 font-medium">{order.userEmail}</span>
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
