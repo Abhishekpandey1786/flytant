@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const Instamojo = require("instamojo-nodejs");
 const User = require("../models/User");
 const Order = require("../models/Order");
+const mongoose = require("mongoose");
 
 Instamojo.setKeys(
   process.env.INSTAMOJO_API_KEY,
@@ -261,12 +262,22 @@ router.post("/verify-status", async (req, res) => {
 
 router.get("/my-orders/:userId", async (req, res) => {
   try {
-    const orders = await Order.find({
-      userId: req.params.userId,
+    const { userId } = req.params;
+
+    // Validation: Check karein ki ID valid hai ya nahi
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: "Invalid User ID format" });
+    }
+
+    // Convert string to ObjectId explicitly
+    const orders = await Order.find({ 
+      userId: new mongoose.Types.ObjectId(userId) 
     }).sort({ createdAt: -1 });
 
+    console.log(`✅ Found ${orders.length} orders for user: ${userId}`);
     res.json(orders);
   } catch (error) {
+    console.error("❌ Fetch failed:", error);
     res.status(500).json({ error: "Fetch failed" });
   }
 });
