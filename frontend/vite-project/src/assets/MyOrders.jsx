@@ -10,7 +10,6 @@ export default function MyOrders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 1. INR Formatter
   const formatINR = (amount) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -18,8 +17,6 @@ export default function MyOrders() {
       maximumFractionDigits: 2,
     }).format(amount || 0);
   };
-
-  // 2. Format Date
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("en-IN", {
@@ -32,13 +29,11 @@ export default function MyOrders() {
     });
   };
 
-  // 3. Expiry & Validity Logic
-  // Agar plan "Basic" hai toh 30 din, "Premium" hai toh 365 din (aap change kar sakte hain)
-  const getPlanDuration = (planName) => {
+ const getPlanDuration = (planName) => {
     const p = planName?.toLowerCase();
     if (p === "basic") return 30;
     if (p === "premium") return 365;
-    return 30; // Default
+    return 30;
   };
 
   const calculateExpiry = (createdAt, planName) => {
@@ -58,8 +53,6 @@ export default function MyOrders() {
       isExpired: daysLeft <= 0
     };
   };
-
-  // 4. Status Styling
   const getStatusClasses = (status) => {
     const s = status?.toLowerCase();
     if (s === "success" || s === "credit") return "bg-green-500/20 text-green-400 border border-green-500/50";
@@ -90,11 +83,10 @@ export default function MyOrders() {
     fetchOrders();
   }, [user?._id]);
 
-  // Loading Screen
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-center items-center">
-        <div className="animate-spin h-12 w-12 border-t-4 border-cyan-500 border-solid rounded-full mb-4"></div>
+        <div className="animate-spin h-12 w-12 border-t-4 border-fuchsia-800 border-solid rounded-full mb-4"></div>
         <p className="text-slate-400 animate-pulse">Syncing your subscriptions...</p>
       </div>
     );
@@ -104,7 +96,7 @@ export default function MyOrders() {
     <div className="min-h-screen bg-slate-950 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black px-4 py-12">
       <div className="max-w-5xl mx-auto">
         <header className="text-center mb-12">
-          <h2 className="text-5xl font-black text-white tracking-tight mb-2">My <span className="text-fuchsia-500">Orders</span></h2>
+          <h2 className="text-5xl font-black text-white tracking-tight mb-2">My Orders</h2>
           <p className="text-slate-400">Manage your active plans and billing history</p>
         </header>
 
@@ -121,12 +113,8 @@ export default function MyOrders() {
               const info = calculateExpiry(order.createdAt, order.plan);
               return (
                 <div key={order._id} className="group relative bg-slate-900/40 border border-slate-800 rounded-2xl overflow-hidden hover:border-slate-600 transition-all duration-300">
-                  
-                  {/* Decorative Gradient Bar */}
-                  <div className={`h-1.5 w-full ${info.isExpired ? 'bg-red-500' : 'bg-gradient-to-r from-fuchsia-500 to-cyan-500'}`}></div>
-
-                  <div className="p-6 md:p-8">
-                    {/* TOP SECTION */}
+                  <div className={`h-1.5 w-full ${info.isExpired ? 'bg-red-500' : 'bg-fuchsia-800 neno-button shadow-xl border-fuchsia-800'}`}></div>
+                   <div className="p-6 md:p-8">
                     <div className="flex flex-wrap justify-between items-start gap-4 mb-8">
                       <div>
                         <div className="flex items-center gap-3 mb-1">
@@ -142,8 +130,6 @@ export default function MyOrders() {
                         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Billed Amount</p>
                       </div>
                     </div>
-
-                    {/* MAIN DETAILS GRID */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-5 bg-slate-950/50 rounded-xl border border-slate-800/50">
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Purchase Date</label>
@@ -159,13 +145,11 @@ export default function MyOrders() {
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Subscription Status</label>
-                        <p className={`text-sm font-black ${info.isExpired ? 'text-red-500' : 'text-cyan-400'}`}>
+                        <p className={`text-sm font-black ${info.isExpired ? 'text-red-500' : 'text-fuchsia-800'}`}>
                           {info.isExpired ? "EXPIRED" : `${info.daysLeft} DAYS REMAINING`}
                         </p>
                       </div>
                     </div>
-
-                    {/* FOOTER */}
                     <div className="mt-6 flex flex-wrap justify-between items-center gap-4 text-xs">
                       <div className="flex items-center gap-2 text-slate-400">
                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
