@@ -14,7 +14,7 @@ import p8 from "./image/p8.webp";
 const plans = [
   {
     name: "Basic",
-    price: 11,
+    price: 10,
     oldPrice: 199,
     discount: "Get 50% Off",
     features: [

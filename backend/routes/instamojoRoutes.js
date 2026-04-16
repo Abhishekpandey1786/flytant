@@ -120,11 +120,11 @@ router.post("/webhook", async (req, res) => {
 
     // MAC Verification logic
     const payload = Object.keys(data).sort().map((key) => data[key]).join("|");
-    const generatedMac = providedMac;
-    // const generatedMac = crypto
-    //   .createHmac("sha1", process.env.INSTAMOJO_SALT)
-    //   .update(payload)
-    //   .digest("hex");
+  
+    const generatedMac = crypto
+      .createHmac("sha1", process.env.INSTAMOJO_SALT)
+      .update(payload)
+      .digest("hex");
 
     if (generatedMac !== providedMac) {
       console.error("❌ MAC Mismatch");
@@ -132,23 +132,17 @@ router.post("/webhook", async (req, res) => {
     }
 
     if (data.status === "Credit") {
-      // --- UPDATE START ---
-      // Check karein ki purpose mein '|' hai ya nahi (Real vs Test)
       if (!data.purpose || !data.purpose.includes("|")) {
         console.log("⚠️ Test Webhook received with invalid purpose format:", data.purpose);
-        // Isse 200 bhej dein taaki Instamojo ko lage success hai, par DB update na karein
         return res.status(200).send("Test OK, but no DB update");
       }
 
       const [planCode, userId] = data.purpose.split("|");
       const planName = planNames[planCode];
-
-      // Agar UserID valid MongoDB ID nahi hai, toh return karein
       if (!planName || !userId || userId.length < 10) {
         console.error("❌ Invalid Plan or UserID extracted");
         return res.status(400).send("Invalid Purpose Data");
       }
-      // --- UPDATE END ---
 
       const existingOrder = await Order.findOne({ transactionId: data.payment_id });
 
