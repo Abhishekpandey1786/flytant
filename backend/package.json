@@ -11,13 +11,9 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@cashfreepayments/cashfree-js": "^1.0.5",
     "axios": "^1.15.0",
     "bcryptjs": "^3.0.2",
     "body-parser": "^2.2.1",
-    "cashfree-payout": "^0.0.14",
-    "cashfree-pg": "^5.1.0",
-    "cashfree-sdk": "^0.1.1",
     "cloudinary": "^1.41.3",
     "cors": "^2.8.6",
     "dotenv": "^17.2.1",
@@ -31,11 +27,7 @@
     "nodemailer": "^7.0.10",
     "nodemon": "^3.1.10",
     "pdfkit": "^0.17.2",
-    "pg-sdk-node": "file:phonepe-pg-sdk-node.tgz",
-    "phonepe-pg-sdk-node": "file:./phonepe-pg-sdk-node.tgz",
-    "razorpay": "^2.9.6",
     "socket.io": "^4.8.1",
-    "stripe": "^18.5.0",
     "uuid": "^13.0.0"
   }
 }
