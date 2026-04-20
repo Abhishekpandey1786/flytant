@@ -116,23 +116,12 @@ const InfluencersList = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:text-pink-500 transition"
-                    >
-                      <FaInstagram size={22} className="sm:w-6 sm:h-6" />
-                    </a>
-                  )}
-                  {influencer.youtube && (
-                    <a
-                      href={`https://instagram.com/${influencer.instagram}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-pink-500 transition"
                       aria-label={`Visit ${influencer.name}'s Instagram profile`}
                     >
                       <FaInstagram size={22} className="sm:w-6 sm:h-6" />
                     </a>
                   )}
-
-                  {influencer.youtube && (
+                   {influencer.youtube && (
                     <a
                       href={`https://youtube.com/${influencer.youtube}`}
                       target="_blank"
