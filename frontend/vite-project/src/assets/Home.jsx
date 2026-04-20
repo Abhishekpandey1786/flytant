@@ -147,14 +147,12 @@ function Home() {
           </div>
           <div className="flex-1 lg:order-1 relative">
             <img
-             
-  src={imgInfluencer}
-  width="480"
-  height="438"
-  fetchpriority="high"
-  alt="Vistafluence Influencer Marketing Platform Dashboard"
-  // Inline style mein aspect ratio fix karein
-  style={{ aspectRatio: '480 / 438' }}
+              src={imgInfluencer}
+              width="480"
+              height="438"
+              style={{ aspectRatio: "480 / 438", height: "auto" }}
+              loading="lazy" 
+              alt="Influencer Dashboard"
               className="rounded-2xl shadow-xl w-full object-cover transition-transform duration-300 hover:scale-105"
             />
           </div>
