@@ -11,11 +11,12 @@ function Home() {
     <div className="min-h-screen bg-slate-800 text-white font-inter overflow-x-hidden flex flex-col">
       {/* Navbar */}
       <nav className="flex justify-between items-center px-4 md:px-12 py-4 fixed top-0 left-0 right-0 z-50 bg-slate-800/95 backdrop-blur-sm border-b border-slate-700">
-        {/* LOGO: Make sure your vite.png or logo is under 20KB */}
         <div className="flex items-center gap-2">
-           <h1 className="text-2xl md:text-3xl font-extrabold tracking-wide text-fuchsia-500">
-            vistafluence.com
-          </h1>
+          <Link to="/" aria-label="Vistafluence Home">
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-wide text-fuchsia-500">
+              vistafluence.com
+            </h1>
+          </Link>
         </div>
         <div className="space-x-2 md:space-x-4">
           <Link to="/login" aria-label="Login or Signup to your account">
@@ -53,16 +54,18 @@ function Home() {
           </div>
           
           <div className="flex-1 flex justify-center lg:justify-end">
-            <img
-              src={img1}
-              width="480"
-              height="438"
-              fetchpriority="high"
-              loading="eager"
-              alt="Vistafluence Platform Interface showing Influencer Analytics"
-              style={{ aspectRatio: "480 / 438" }}
-              className="rounded-3xl shadow-2xl w-full max-w-md lg:max-w-lg object-cover transition-transform duration-500 hover:rotate-2 border border-slate-700"
-            />
+            {/* CLS FIX: Wrapper with aspect ratio prevents layout shift while image loads */}
+            <div className="w-full max-w-md lg:max-w-lg aspect-[480/438] bg-slate-700/20 rounded-3xl overflow-hidden shadow-2xl">
+              <img
+                src={img1}
+                width="480"
+                height="438"
+                fetchpriority="high"
+                loading="eager"
+                alt="Vistafluence Platform Interface showing Influencer Analytics"
+                className="w-full h-full object-cover transition-transform duration-500 hover:rotate-2 border border-slate-700"
+              />
+            </div>
           </div>
         </div>
       </main>
@@ -90,7 +93,7 @@ function Home() {
             { icon: "🤝", title: "3. Launch & Scale", desc: "Manage contracts, track real-time ROI, and grow your digital footprint." }
           ].map((step, index) => (
             <div key={index} className="flex flex-col items-center p-10 bg-slate-700/50 rounded-3xl border border-slate-600 hover:border-fuchsia-500 transition-all duration-300 group">
-              <span className="text-6xl mb-6 group-hover:scale-110 transition-transform">{step.icon}</span>
+              <span className="text-6xl mb-6 group-hover:scale-110 transition-transform" role="img" aria-label={step.title}>{step.icon}</span>
               <h3 className="text-2xl font-bold mb-4">{step.title}</h3>
               <p className="text-gray-400 text-base leading-relaxed">{step.desc}</p>
             </div>
@@ -101,37 +104,41 @@ function Home() {
       {/* Section for Influencers */}
       <section className="py-20 px-4 md:px-16 bg-slate-900 overflow-hidden">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
-          <div className="flex-1 lg:order-2">
+          <div className="flex-1 lg:order-2 text-center lg:text-left">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-fuchsia-500">For Influencers</h2>
             <p className="text-gray-300 text-xl mb-8 leading-relaxed">
               Monetize your creativity without the stress of cold emails. We bring high-value campaigns directly to your dashboard.
             </p>
-            <ul className="text-gray-200 text-lg space-y-4 mb-10 list-none">
+            <ul className="text-gray-200 text-lg space-y-4 mb-10 list-none inline-block text-left">
               <li className="flex items-center gap-3">
-                <span className="text-fuchsia-500">✔</span> Secure Payment Protection
+                <span className="text-fuchsia-500" aria-hidden="true">✔</span> Secure Payment Protection
               </li>
               <li className="flex items-center gap-3">
-                <span className="text-fuchsia-500">✔</span> Exclusive Brand Partnerships
+                <span className="text-fuchsia-500" aria-hidden="true">✔</span> Exclusive Brand Partnerships
               </li>
               <li className="flex items-center gap-3">
-                <span className="text-fuchsia-500">✔</span> Advanced Performance Analytics
+                <span className="text-fuchsia-500" aria-hidden="true">✔</span> Advanced Performance Analytics
               </li>
             </ul>
-            <Link to="/signup?role=influencer" aria-label="Register as an Influencer today">
-              <button className="neno-button shadow-xl hover:shadow-fuchsia-800/50 text-white border-2 border-fuchsia-800 rounded-full py-4 px-10 text-lg font-bold uppercase hover:bg-fuchsia-800 transition">
-                Start Earning Now
-              </button>
-            </Link>
+            <div className="block">
+              <Link to="/signup?role=influencer" aria-label="Register as an Influencer today">
+                <button className="neno-button shadow-xl hover:shadow-fuchsia-800/50 text-white border-2 border-fuchsia-800 rounded-full py-4 px-10 text-lg font-bold uppercase hover:bg-fuchsia-800 transition">
+                  Start Earning Now
+                </button>
+              </Link>
+            </div>
           </div>
           <div className="flex-1 lg:order-1">
-            <img
-              src={imgInfluencer}
-              width="480"
-              height="438"
-              loading="lazy" 
-              alt="Influencer earning insights dashboard"
-              className="rounded-3xl shadow-2xl w-full object-cover grayscale hover:grayscale-0 transition-all duration-700"
-            />
+            <div className="w-full aspect-[480/438] bg-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+              <img
+                src={imgInfluencer}
+                width="480"
+                height="438"
+                loading="lazy" 
+                alt="Influencer earning insights dashboard"
+                className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700"
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -139,37 +146,41 @@ function Home() {
       {/* Section for Brands */}
       <section className="py-20 px-4 md:px-16 bg-slate-800">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
-          <div className="flex-1">
+          <div className="flex-1 text-center lg:text-left">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-blue-400">For Brands</h2>
             <p className="text-gray-300 text-xl mb-8 leading-relaxed">
               Stop guessing and start growing. Connect with vetted influencers who deliver authentic engagement.
             </p>
-            <ul className="text-gray-200 text-lg space-y-4 mb-10 list-none">
+            <ul className="text-gray-200 text-lg space-y-4 mb-10 list-none inline-block text-left">
               <li className="flex items-center gap-3">
-                <span className="text-blue-400">✔</span> Vetted Influencer Database
+                <span className="text-blue-400" aria-hidden="true">✔</span> Vetted Influencer Database
               </li>
               <li className="flex items-center gap-3">
-                <span className="text-blue-400">✔</span> Automated Campaign Management
+                <span className="text-blue-400" aria-hidden="true">✔</span> Automated Campaign Management
               </li>
               <li className="flex items-center gap-3">
-                <span className="text-blue-400">✔</span> Real-time ROI Tracking
+                <span className="text-blue-400" aria-hidden="true">✔</span> Real-time ROI Tracking
               </li>
             </ul>
-            <Link to="/signup?role=advertiser" aria-label="Register as a Brand partner">
-              <button className="neno-button shadow-xl hover:shadow-blue-800/50 text-white border-2 border-blue-800 rounded-full py-4 px-10 text-lg font-bold uppercase hover:bg-blue-800 transition">
-                Launch Your Campaign
-              </button>
-            </Link>
+            <div className="block">
+              <Link to="/signup?role=advertiser" aria-label="Register as a Brand partner">
+                <button className="neno-button shadow-xl hover:shadow-blue-800/50 text-white border-2 border-blue-800 rounded-full py-4 px-10 text-lg font-bold uppercase hover:bg-blue-800 transition">
+                  Launch Your Campaign
+                </button>
+              </Link>
+            </div>
           </div>
           <div className="flex-1">
-            <img
-              src={imgBrand}
-              width="600"
-              height="518"
-              loading="lazy"
-              alt="Marketing Manager analyzing campaign success"
-              className="rounded-3xl shadow-2xl w-full object-cover border-4 border-slate-700"
-            />
+            <div className="w-full aspect-[600/518] bg-slate-700 rounded-3xl overflow-hidden shadow-2xl">
+              <img
+                src={imgBrand}
+                width="600"
+                height="518"
+                loading="lazy"
+                alt="Marketing Manager analyzing campaign success"
+                className="w-full h-full object-cover border-4 border-slate-700"
+              />
+            </div>
           </div>
         </div>
       </section>
