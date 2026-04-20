@@ -115,7 +115,7 @@ const InfluencersList = () => {
                       href={`https://instagram.com/${influencer.instagram}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-pink-500 transition"
+                      className="hover:text-pink-700 transition"
                       aria-label={`Visit ${influencer.instagram}'s Instagram profile`}
                     >
                       <FaInstagram size={22} className="sm:w-6 sm:h-6" />
@@ -127,7 +127,7 @@ const InfluencersList = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:text-red-500 transition"
-                      aria-label={`Visit ${influencer.name}'s YouTube channel`}
+                      aria-label={`Visit ${influencer.youtube}'s YouTube channel`}
                     >
                       <FaYoutube size={22} className="sm:w-6 sm:h-6" />
                     </a>
@@ -139,7 +139,7 @@ const InfluencersList = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:text-blue-500 transition"
-                      aria-label={`Visit ${influencer.name}'s Facebook profile`}
+                      aria-label={`Visit ${influencer.facebook}'s Facebook profile`}
                     >
                       <FaFacebook size={22} className="sm:w-6 sm:h-6" />
                     </a>
