@@ -10,10 +10,10 @@ import {
   FaEdit,
   FaSave,
   FaTimes,
-  FaCreditCard,
-  FaEnvelopeOpenText,
-  FaCalendarAlt,
-  FaDollarSign,
+  FaCreditCard, 
+  FaEnvelopeOpenText, 
+  FaCalendarAlt, 
+  FaDollarSign, 
 } from "react-icons/fa";
 import { Toaster, toast } from "react-hot-toast";
 import { AuthContext } from "./AuthContext";
@@ -22,9 +22,7 @@ import imageCompression from "browser-image-compression";
 const defaultAvatar = "https://placehold.co/150x150/5B21B6/ffffff?text=User";
 
 const resolveAvatarUrl = (avatarPath) => {
-  // Ye line updated hai: null/undefined strings ko handle karne ke liye
-  if (!avatarPath || avatarPath === "null" || avatarPath === "undefined")
-    return defaultAvatar;
+  if (!avatarPath) return defaultAvatar;
 
   if (avatarPath.startsWith("http") || avatarPath.startsWith("https")) {
     return avatarPath;
@@ -53,14 +51,14 @@ const Profile = () => {
           "https://vistafluence.onrender.com/api/users/me",
           {
             headers: { Authorization: `Bearer ${token}` },
-          },
+          }
         );
         const data = await res.json();
 
         if (res.ok) {
           const fetchedUser = {
             ...data.user,
-
+            
             avatar: resolveAvatarUrl(data.user.avatar),
             bio: data.user.bio || "",
             description: data.user.description || "",
@@ -116,6 +114,7 @@ const Profile = () => {
     setIsLoading(true);
 
     try {
+      
       const textUpdateResponse = await fetch(
         "https://vistafluence.onrender.com/api/users/me",
         {
@@ -124,9 +123,9 @@ const Profile = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-
+          
           body: JSON.stringify(formData),
-        },
+        }
       );
 
       const textUpdateData = await textUpdateResponse.json();
@@ -158,7 +157,7 @@ const Profile = () => {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` },
             body: avatarFormData,
-          },
+          }
         );
 
         const avatarUpdateData = await avatarUpdateResponse.json();
@@ -169,7 +168,7 @@ const Profile = () => {
 
         updatedUser = {
           ...updatedUser,
-          avatar: resolveAvatarUrl(avatarUpdateData.user.avatar),
+          avatar: resolveAvatarUrl(avatarUpdateData.user.avatar), 
         };
       }
 
@@ -230,9 +229,8 @@ const Profile = () => {
                           ? URL.createObjectURL(avatarFile)
                           : formData.avatar
                       }
-                      onError={(e) => (e.target.src = defaultAvatar)} // <--- Ye line
                       alt="User Avatar"
-                      className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-fuchsia-800 shadow-lg object-cover"
+                      className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 shadow-lg object-cover neno-button hover:shadow-fuchsia-800/50 border-fuchsia-800 transition"
                     />
                     <label
                       htmlFor="avatar-upload"
@@ -417,7 +415,7 @@ const Profile = () => {
                         label="Plan"
                         value={user.subscription.plan}
                       />
-
+                      
                       {user.subscription.expiryDate && (
                         <InfoBox
                           icon={<FaCalendarAlt className="text-white" />}
