@@ -8,15 +8,18 @@ import Footer from "./Footer.jsx";
 
 function Home() {
   return (
-    <div className="min-h-screen bg-slate-800 text-white font-inter overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-slate-800 text-white font-inter overflow-x-hidden flex flex-col">
       {/* Navbar */}
-      <nav className="flex justify-between items-center px-4 md:px-12 py-4 fixed top-0 left-0 right-0 z-50 bg-slate-800">
-        <h1 className="text-2xl md:text-3xl font-extrabold tracking-wide">
-          vistafluence.com
-        </h1>
+      <nav className="flex justify-between items-center px-4 md:px-12 py-4 fixed top-0 left-0 right-0 z-50 bg-slate-800/95 backdrop-blur-sm border-b border-slate-700">
+        {/* LOGO: Make sure your vite.png or logo is under 20KB */}
+        <div className="flex items-center gap-2">
+           <h1 className="text-2xl md:text-3xl font-extrabold tracking-wide text-fuchsia-500">
+            vistafluence.com
+          </h1>
+        </div>
         <div className="space-x-2 md:space-x-4">
-          <Link to="/login" aria-label="Login or Signup">
-            <button className="neno-button shadow-x1 hover:shadow-fuchsia-800/50 text-white border-2 hover:bg-fuchsia-800 border-fuchsia-800 rounded-4xl py-2 md:py-4 px-4 md:px-8 text-sm md:text-base uppercase relative overflow-hidden">
+          <Link to="/login" aria-label="Login or Signup to your account">
+            <button className="neno-button shadow-xl hover:shadow-fuchsia-800/50 text-white border-2 hover:bg-fuchsia-800 border-fuchsia-800 rounded-full py-2 md:py-3 px-4 md:px-8 text-sm md:text-base uppercase transition-all duration-300">
               Login | Signup
             </button>
           </Link>
@@ -24,212 +27,182 @@ function Home() {
       </nav>
 
       {/* Hero Section */}
-      <main className="flex-grow flex items-center justify-center pt-24 md:pt-32 pb-8 md:pb-12 px-4 md:px-16">
-        <div className="max-w-7xl w-full flex flex-col lg:flex-row items-center gap-8 md:gap-10">
+      <main className="flex-grow flex items-center justify-center pt-32 md:pt-40 pb-12 px-4 md:px-16">
+        <div className="max-w-7xl w-full flex flex-col lg:flex-row items-center gap-12">
           <div className="flex-1 text-center lg:text-left">
-            <h2 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 leading-tight">
+            <h2 className="text-4xl sm:text-5xl md:text-7xl font-black mb-6 leading-tight bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
               Connecting <br className="hidden md:block" />
               Brands & Influencers
             </h2>
-            <p className="text-gray-200 text-base sm:text-lg md:text-xl mb-6 md:mb-8">
-              Discover partners and grow together in your niche.
+            <p className="text-gray-300 text-lg sm:text-xl md:text-2xl mb-8 max-w-2xl">
+              The premier bidirectional marketplace to discover partners and grow together in your niche.
             </p>
 
-            <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-3 sm:gap-4">
-              <Link
-                to="/signup?role=advertiser"
-                aria-label="Sign up as Advertiser"
-              >
-                <button className="neno-button shadow-x1 hover:shadow-fuchsia-800/50 text-white border-2 hover:bg-fuchsia-800 border-fuchsia-800 rounded-4xl py-2 md:py-4 px-4 md:px-8 text-sm md:text-base uppercase relative overflow-hidden">
-                  Advertiser
+            <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
+              <Link to="/signup?role=advertiser" aria-label="Sign up as a Brand or Advertiser">
+                <button className="w-full sm:w-auto neno-button shadow-xl hover:shadow-fuchsia-800/50 text-white border-2 hover:bg-fuchsia-800 border-fuchsia-800 rounded-full py-3 px-8 text-base uppercase font-bold tracking-wider">
+                  I am a Brand
                 </button>
               </Link>
-              <Link
-                to="/signup?role=influencer"
-                aria-label="Sign up as Influencer"
-              >
-                <button className="neno-button shadow-x1 hover:shadow-fuchsia-800/50 text-white border-2 hover:bg-fuchsia-800 border-fuchsia-800 rounded-4xl py-2 md:py-4 px-4 md:px-8 text-sm md:text-base uppercase relative overflow-hidden">
-                  Influencer
+              <Link to="/signup?role=influencer" aria-label="Sign up as an Influencer">
+                <button className="w-full sm:w-auto neno-button shadow-xl hover:shadow-fuchsia-800/50 text-white border-2 hover:bg-fuchsia-800 border-fuchsia-800 rounded-full py-3 px-8 text-base uppercase font-bold tracking-wider">
+                  I am an Influencer
                 </button>
               </Link>
             </div>
           </div>
-          <div className="flex-1 relative">
-            {/* Optimization: High priority for LCP image and explicit dimensions */}
+          
+          <div className="flex-1 flex justify-center lg:justify-end">
             <img
               src={img1}
               width="480"
               height="438"
               fetchpriority="high"
-              alt="Vistafluence Influencer Marketing Platform Dashboard"
+              loading="eager"
+              alt="Vistafluence Platform Interface showing Influencer Analytics"
               style={{ aspectRatio: "480 / 438" }}
-              className="rounded-2xl shadow-xl w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg object-cover transition-transform duration-300 hover:scale-105 neno-button shadow-x1 hover:shadow-fuchsia-800/50"
+              className="rounded-3xl shadow-2xl w-full max-w-md lg:max-w-lg object-cover transition-transform duration-500 hover:rotate-2 border border-slate-700"
             />
           </div>
         </div>
       </main>
 
       {/* About Section */}
-      <section className="bg-slate-900 py-16 px-4 md:px-16 text-center">
-        <div className="max-w-4xl mx-auto">
-          <h3 className="text-3xl md:text-4xl font-bold mb-6">
-            What is vistafluence.com?
-          </h3>
-          <p className="text-gray-200 text-lg md:text-xl leading-relaxed">
-            vistafluence.com is a dynamic platform that connects brands with the
-            right influencers and helps influencers find brand deals that align
-            with their passion. Our goal is to help you find the perfect partner
-            to achieve your goals.
+      <section className="bg-slate-900 py-20 px-4 md:px-16 border-y border-slate-800">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl md:text-5xl font-bold mb-8 text-fuchsia-400">
+            What is Vistafluence?
+          </h2>
+          <p className="text-gray-300 text-xl md:text-2xl leading-relaxed font-light">
+            A dynamic ecosystem that bridges the gap between creative talent and industry leaders. 
+            We provide the data and tools to ensure every collaboration is a masterpiece.
           </p>
         </div>
       </section>
 
       {/* How it Works Section */}
-      <section className="py-16 px-4 md:px-16 bg-slate-800 text-center">
-        <h3 className="text-3xl md:text-4xl font-bold mb-12">How It Works</h3>
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
-          <div className="flex flex-col items-center p-6 bg-slate-700 rounded-xl shadow-lg neno-button shadow-x1 hover:shadow-fuchsia-800/50 transition">
-            <span className="text-5xl mb-4" role="img" aria-label="Rocket">
-              🚀
-            </span>
-            <h4 className="text-xl font-bold mb-2">
-              1. Sign Up & Build Your Profile
-            </h4>
-            <p className="text-gray-200 text-sm">
-              Choose your role (Influencer or Brand) and create your profile.
-              Tell us about your interests.
-            </p>
-          </div>
-          <div className="flex flex-col items-center p-6 bg-slate-700 rounded-xl shadow-lg neno-button shadow-x1 hover:shadow-fuchsia-800/50 transition">
-            <span className="text-5xl mb-4" role="img" aria-label="Search">
-              🔍
-            </span>
-            <h4 className="text-xl font-bold mb-2">2. Find Your Partner</h4>
-            <p className="text-gray-200 text-sm">
-              Influencers can discover campaigns, and brands can find the
-              perfect influencer with smart filtering.
-            </p>
-          </div>
-          <div className="flex flex-col items-center p-6 bg-slate-700 rounded-xl shadow-lg neno-button shadow-x1 hover:shadow-fuchsia-800/50 transition">
-            <span className="text-5xl mb-4" role="img" aria-label="Handshake">
-              🤝
-            </span>
-            <h4 className="text-xl font-bold mb-2">3. Collaborate & Succeed</h4>
-            <p className="text-gray-200 text-sm">
-              Finalize deals, create content, and track your performance.
-              Achieve success by working together.
-            </p>
-          </div>
+      <section className="py-20 px-4 md:px-16 bg-slate-800 text-center">
+        <h2 className="text-3xl md:text-5xl font-bold mb-16">The Simple 3-Step Process</h2>
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            { icon: "🚀", title: "1. Create Profile", desc: "Showcase your niche or brand identity with our advanced profile builder." },
+            { icon: "🔍", title: "2. Smart Discovery", desc: "Use deep-filtering to find partners that share your exact target audience." },
+            { icon: "🤝", title: "3. Launch & Scale", desc: "Manage contracts, track real-time ROI, and grow your digital footprint." }
+          ].map((step, index) => (
+            <div key={index} className="flex flex-col items-center p-10 bg-slate-700/50 rounded-3xl border border-slate-600 hover:border-fuchsia-500 transition-all duration-300 group">
+              <span className="text-6xl mb-6 group-hover:scale-110 transition-transform">{step.icon}</span>
+              <h3 className="text-2xl font-bold mb-4">{step.title}</h3>
+              <p className="text-gray-400 text-base leading-relaxed">{step.desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* Section for Influencers */}
-      <section className="py-16 px-4 md:px-16 bg-slate-900">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-10">
+      <section className="py-20 px-4 md:px-16 bg-slate-900 overflow-hidden">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
           <div className="flex-1 lg:order-2">
-            <h3 className="text-3xl md:text-4xl font-bold mb-4">
-              For Influencers
-            </h3>
-            <p className="text-gray-200 text-lg mb-6">
-              Turn your passion into profit! vistafluence.com connects you with
-              brands that are a perfect fit for your audience.
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-fuchsia-500">For Influencers</h2>
+            <p className="text-gray-300 text-xl mb-8 leading-relaxed">
+              Monetize your creativity without the stress of cold emails. We bring high-value campaigns directly to your dashboard.
             </p>
-            <ul className="text-gray-100 text-base space-y-3 mb-6 list-disc list-inside text-left">
-              <li>Collaborate with your favorite brands.</li>
-              <li>Discover new campaigns and apply easily.</li>
-              <li>Work on your own terms and increase your earnings.</li>
+            <ul className="text-gray-200 text-lg space-y-4 mb-10 list-none">
+              <li className="flex items-center gap-3">
+                <span className="text-fuchsia-500">✔</span> Secure Payment Protection
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="text-fuchsia-500">✔</span> Exclusive Brand Partnerships
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="text-fuchsia-500">✔</span> Advanced Performance Analytics
+              </li>
             </ul>
-            <Link to="/signup?role=influencer" aria-label="Join as Influencer">
-              <button className="neno-button shadow-x1 hover:shadow-fuchsia-800/50 text-white border-2 hover:bg-fuchsia-800 border-fuchsia-800 rounded-4xl py-2 md:py-4 px-4 md:px-8 text-sm md:text-base uppercase relative overflow-hidden">
-                Join as an Influencer
+            <Link to="/signup?role=influencer" aria-label="Register as an Influencer today">
+              <button className="neno-button shadow-xl hover:shadow-fuchsia-800/50 text-white border-2 border-fuchsia-800 rounded-full py-4 px-10 text-lg font-bold uppercase hover:bg-fuchsia-800 transition">
+                Start Earning Now
               </button>
             </Link>
           </div>
-          <div className="flex-1 lg:order-1 relative">
+          <div className="flex-1 lg:order-1">
             <img
               src={imgInfluencer}
               width="480"
               height="438"
-              style={{ aspectRatio: "480 / 438", height: "auto" }}
               loading="lazy" 
-              alt="Influencer Dashboard"
-              className="rounded-2xl shadow-xl w-full object-cover transition-transform duration-300 hover:scale-105"
+              alt="Influencer earning insights dashboard"
+              className="rounded-3xl shadow-2xl w-full object-cover grayscale hover:grayscale-0 transition-all duration-700"
             />
           </div>
         </div>
       </section>
 
       {/* Section for Brands */}
-      <section className="py-16 px-4 md:px-16 bg-slate-800">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-10">
+      <section className="py-20 px-4 md:px-16 bg-slate-800">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
           <div className="flex-1">
-            <h3 className="text-3xl md:text-4xl font-bold mb-4">For Brands</h3>
-            <p className="text-gray-200 text-lg mb-6">
-              Boost your brand recognition and sales by connecting with the
-              right influencers.
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-blue-400">For Brands</h2>
+            <p className="text-gray-300 text-xl mb-8 leading-relaxed">
+              Stop guessing and start growing. Connect with vetted influencers who deliver authentic engagement.
             </p>
-            <ul className="text-gray-100 text-base space-y-3 mb-6 list-disc list-inside text-left">
-              <li>
-                Discover the perfect influencers to reach your target audience.
+            <ul className="text-gray-200 text-lg space-y-4 mb-10 list-none">
+              <li className="flex items-center gap-3">
+                <span className="text-blue-400">✔</span> Vetted Influencer Database
               </li>
-              <li>Create and manage impactful campaigns.</li>
-              <li>Track your campaign performance in real-time.</li>
+              <li className="flex items-center gap-3">
+                <span className="text-blue-400">✔</span> Automated Campaign Management
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="text-blue-400">✔</span> Real-time ROI Tracking
+              </li>
             </ul>
-            <Link to="/signup?role=advertiser" aria-label="Join as Brand">
-              <button className="neno-button shadow-x1 hover:shadow-fuchsia-800/50 text-white border-2 hover:bg-fuchsia-800 border-fuchsia-800 rounded-4xl py-2 md:py-4 px-4 md:px-8 text-sm md:text-base uppercase relative overflow-hidden">
-                Join as a Brand
+            <Link to="/signup?role=advertiser" aria-label="Register as a Brand partner">
+              <button className="neno-button shadow-xl hover:shadow-blue-800/50 text-white border-2 border-blue-800 rounded-full py-4 px-10 text-lg font-bold uppercase hover:bg-blue-800 transition">
+                Launch Your Campaign
               </button>
             </Link>
           </div>
-          <div className="flex-1 relative">
+          <div className="flex-1">
             <img
               src={imgBrand}
               width="600"
               height="518"
               loading="lazy"
-              alt="Brand marketing team dashboard"
-              className="rounded-2xl shadow-xl w-full object-cover transition-transform duration-300 hover:scale-105"
+              alt="Marketing Manager analyzing campaign success"
+              className="rounded-3xl shadow-2xl w-full object-cover border-4 border-slate-700"
             />
           </div>
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="bg-slate-900 py-16 px-4 md:px-16 text-center">
-        <h3 className="text-3xl md:text-4xl font-bold mb-12">
-          What Our Users Say
-        </h3>
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-slate-800 p-8 rounded-xl shadow-lg text-left">
-            <p className="text-lg italic mb-4 text-gray-200">
-              "vistafluence.com has made working with brands incredibly easy. My
-              earnings have grown significantly."
+      {/* Testimonials */}
+      <section className="bg-slate-900 py-24 px-4 md:px-16 text-center">
+        <h2 className="text-3xl md:text-5xl font-bold mb-16">Community Feedback</h2>
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10">
+          <blockquote className="bg-slate-800 p-10 rounded-3xl border-l-8 border-fuchsia-600 text-left relative shadow-2xl">
+            <p className="text-xl italic mb-6 text-gray-200 leading-relaxed">
+              "Vistafluence has simplified my workflow. I no longer hunt for brands; they find me based on my engagement metrics."
             </p>
-            <p className="font-bold">- Priya, Fashion Influencer</p>
-          </div>
-          <div className="bg-slate-800 p-8 rounded-xl shadow-lg text-left">
-            <p className="text-lg italic mb-4 text-gray-200">
-              "With vistafluence.com, we found the right influencers for our
-              brand, which reduced our marketing costs."
+            <cite className="not-italic font-bold text-fuchsia-400">— Priya, Fashion Influencer</cite>
+          </blockquote>
+          <blockquote className="bg-slate-800 p-10 rounded-3xl border-l-8 border-blue-600 text-left relative shadow-2xl">
+            <p className="text-xl italic mb-6 text-gray-200 leading-relaxed">
+              "The ability to track conversions in real-time changed our marketing strategy. Our CAC has dropped by 40%."
             </p>
-            <p className="font-bold">- Rahul, Marketing Manager</p>
-          </div>
+            <cite className="not-italic font-bold text-blue-400">— Rahul, Marketing Manager</cite>
+          </blockquote>
         </div>
       </section>
 
-      {/* Final Call to Action */}
-      <section className="bg-slate-800 py-16 px-4 md:px-16 text-center">
-        <div className="max-w-4xl mx-auto">
-          <h3 className="text-3xl md:text-4xl font-bold mb-6 text-white">
-            Join vistafluence.com Today!
-          </h3>
-          <p className="text-gray-100 text-lg md:text-xl mb-8">
-            Whether you're a brand or an influencer, vistafluence.com provides
-            the tools you need for success.
+      {/* Final CTA */}
+      <section className="bg-gradient-to-b from-slate-800 to-slate-900 py-24 px-4 md:px-16 text-center">
+        <div className="max-w-4xl mx-auto bg-slate-700/30 p-12 rounded-[3rem] border border-slate-600 shadow-2xl backdrop-blur-md">
+          <h2 className="text-4xl md:text-6xl font-black mb-8">Ready to Scale?</h2>
+          <p className="text-gray-300 text-xl md:text-2xl mb-12">
+            Join thousands of creators and brands already growing on vistafluence.com.
           </p>
-          <Link to="/signup">
-            <button className="neno-button shadow-x1 hover:shadow-fuchsia-800/50 text-white border-2 border-fuchsia-800 rounded-4xl py-2 md:py-4 px-4 md:px-8 text-xl uppercase hover:bg-fuchsia-800 transition duration-300">
-              Sign Up Now
+          <Link to="/signup" aria-label="Final call to action: Sign up for Vistafluence">
+            <button className="neno-button shadow-2xl hover:shadow-fuchsia-800/80 text-white border-2 border-fuchsia-800 rounded-full py-5 px-12 text-2xl font-black uppercase hover:bg-fuchsia-800 transition-all duration-500 scale-110 hover:scale-125">
+              Get Started Now
             </button>
           </Link>
         </div>
