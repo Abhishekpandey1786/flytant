@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { FaInstagram, FaYoutube, FaFacebook } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import axios from "axios"; 
+import axios from "axios";
 
 const InfluencersList = () => {
   const [influencers, setInfluencers] = useState([]);
@@ -13,31 +12,37 @@ const InfluencersList = () => {
   const navigate = useNavigate();
 
   const defaultAvatar =
-    "https://via.placeholder.com/150/5B21B6/FFFFFF?text=User"; 
+    "https://via.placeholder.com/150/5B21B6/FFFFFF?text=User";
 
   useEffect(() => {
     const fetchInfluencers = async () => {
       try {
-      
-        const res = await axios.get("https://vistafluence.onrender.com/api/users/influencers");
-        const data = res.data; 
+        const res = await axios.get(
+          "https://vistafluence.onrender.com/api/users/influencers",
+        );
+        const data = res.data;
 
         const processedData = data.map((influencer) => ({
           ...influencer,
-      
-          avatar: influencer.avatar && influencer.avatar.startsWith('http')
-            ? influencer.avatar 
-            : influencer.avatar
-            ? `https://vistafluence.onrender.com${influencer.avatar}` 
-            : defaultAvatar, 
+
+          avatar:
+            influencer.avatar && influencer.avatar.startsWith("http")
+              ? influencer.avatar
+              : influencer.avatar
+                ? `https://vistafluence.onrender.com${influencer.avatar}`
+                : defaultAvatar,
           bio: influencer.bio || "No bio available.",
         }));
         setInfluencers(processedData);
-        
       } catch (err) {
-        
-        console.error("Influencers fetch error:", err.response?.data || err.message);
-        setError(err.response?.data?.msg || "Server connection failed. Please check backend.");
+        console.error(
+          "Influencers fetch error:",
+          err.response?.data || err.message,
+        );
+        setError(
+          err.response?.data?.msg ||
+            "Server connection failed. Please check backend.",
+        );
       } finally {
         setIsLoading(false);
       }
@@ -89,7 +94,6 @@ const InfluencersList = () => {
             <motion.div
               key={influencer._id}
               whileHover={{ scale: 1.05, rotateY: 5 }}
-              
               className="relative group rounded-2xl md:rounded-3xl bg-gradient-to-br from-gray-900/80 to-gray-800/40 backdrop-blur-xl border shadow-xl md:shadow-2xl overflow-hidden transition-all duration-500 neno-button hover:shadow-fuchsia-800/50 text-white border-fuchsia-800"
             >
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-fuchsia-500 via-purple-500 to-indigo-500"></div>
@@ -104,7 +108,6 @@ const InfluencersList = () => {
                 </h3>
               </div>
 
-        
               <div className="absolute inset-x-0 bottom-0 translate-y-0 sm:translate-y-full sm:group-hover:translate-y-0 transition-all duration-500 bg-black/60 p-4 sm:p-6 flex flex-col items-center space-y-3 sm:space-y-4">
                 <div className="flex space-x-4 sm:space-x-5 text-white">
                   {influencer.instagram && (
@@ -119,20 +122,35 @@ const InfluencersList = () => {
                   )}
                   {influencer.youtube && (
                     <a
+                      href={`https://instagram.com/${influencer.instagram}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-pink-500 transition"
+                      aria-label={`Visit ${influencer.name}'s Instagram profile`}
+                    >
+                      <FaInstagram size={22} className="sm:w-6 sm:h-6" />
+                    </a>
+                  )}
+
+                  {influencer.youtube && (
+                    <a
                       href={`https://youtube.com/${influencer.youtube}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:text-red-500 transition"
+                      aria-label={`Visit ${influencer.name}'s YouTube channel`}
                     >
                       <FaYoutube size={22} className="sm:w-6 sm:h-6" />
                     </a>
                   )}
+
                   {influencer.facebook && (
                     <a
                       href={`https://facebook.com/${influencer.facebook}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:text-blue-500 transition"
+                      aria-label={`Visit ${influencer.name}'s Facebook profile`}
                     >
                       <FaFacebook size={22} className="sm:w-6 sm:h-6" />
                     </a>
