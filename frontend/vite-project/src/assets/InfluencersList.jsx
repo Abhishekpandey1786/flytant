@@ -116,7 +116,7 @@ const InfluencersList = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:text-pink-500 transition"
-                      aria-label={`Visit ${influencer.name}'s Instagram profile`}
+                      aria-label={`Visit ${influencer.instagram}'s Instagram profile`}
                     >
                       <FaInstagram size={22} className="sm:w-6 sm:h-6" />
                     </a>
