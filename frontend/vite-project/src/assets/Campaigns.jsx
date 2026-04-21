@@ -212,6 +212,10 @@ function Campaigns() {
                     {campaign.description}
                   </p>
                   <div className="w-full space-y-2 mt-auto">
+                    <p className="text-xs sm:text-sm text-gray-400 flex items-center gap-2">
+                       <span className="font-semibold text-white">Budget:</span> ₹
+                     {campaign.budget?.toLocaleString() || 0}
+                    </p>
                     <p className="text-xs sm:text-sm text-gray-400 flex items-center gap-2">
                       <FaBullhorn className="text-fuchsia-400" />
                       <span className="font-semibold text-white">Platforms:</span>{" "}

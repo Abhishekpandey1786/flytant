@@ -339,7 +339,7 @@ const Profile = () => {
                         onChange={handleInputChange}
                       />
                       <InputField
-                        label="Budget "
+                        label="Budget ₹"
                         name="budget"
                         type="number"
                         value={formData.budget}
@@ -511,7 +511,7 @@ const Profile = () => {
                       {user.budget && (
                         <div className="flex items-center space-x-3">
                           <FaDollarSign className="text-fuchsia-500" />
-                          <span>Budget: {user.budget.toLocaleString()}</span>
+                          <span>Budget: ₹{user.budget.toLocaleString()}</span>
                         </div>
                       )}
                     </div>
