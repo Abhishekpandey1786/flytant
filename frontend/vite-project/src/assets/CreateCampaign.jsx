@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaPlusCircle } from "react-icons/fa";
 
-// Lighthouse optimization: Aaj ki date taaki purani date block ki ja sake
 const today = new Date().toISOString().split("T")[0];
 
 function CreateCampaign() {
@@ -21,8 +20,6 @@ function CreateCampaign() {
   const [imagePreview, setImagePreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-
-  // Token and Role check on mount
   useEffect(() => {
     const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user"));
@@ -38,8 +35,6 @@ function CreateCampaign() {
         navigate("/dashboard"); 
     }
   }, [navigate]);
-
-  // ✅ Lighthouse Fix: Memory leak rokne ke liye cleanup function
   useEffect(() => {
     return () => {
       if (imagePreview) {
@@ -48,13 +43,10 @@ function CreateCampaign() {
     };
   }, [imagePreview]);
 
-  // Input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setCampaignData({ ...campaignData, [name]: value });
   };
-
-  // Checkbox change
   const handleCheckboxChange = (e) => {
     const { name, value, checked } = e.target;
     setCampaignData((prevState) => {
@@ -64,20 +56,15 @@ function CreateCampaign() {
       return { ...prevState, [name]: newArray };
     });
   };
-
-  // Image change
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Purani preview memory se clear karein
       if (imagePreview) URL.revokeObjectURL(imagePreview);
       
       setImage(file);
       setImagePreview(URL.createObjectURL(file));
     }
   };
-
-  // Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
@@ -135,7 +122,7 @@ function CreateCampaign() {
               <div>
                 <label
                   htmlFor="name"
-                  className="block text-sm font-medium text-white mb-2" // ✅ Improved contrast
+                  className="block text-sm font-medium text-white mb-2" 
                 >
                   Campaign Name
                 </label>
@@ -153,7 +140,7 @@ function CreateCampaign() {
               <div>
                 <label
                   htmlFor="budget"
-                  className="block text-sm font-medium text-white mb-2" // ✅ Improved contrast
+                  className="block text-sm font-medium text-white mb-2" 
                 >
                   Budget (in ₹)
                 </label>
@@ -172,7 +159,7 @@ function CreateCampaign() {
             <div>
               <label
                 htmlFor="description"
-                className="block text-sm font-medium text-white mb-2" // ✅ Improved contrast
+                className="block text-sm font-medium text-white mb-2" 
               >
                 Description
               </label>
@@ -217,7 +204,7 @@ function CreateCampaign() {
                   type="date"
                   name="endDate"
                   id="endDate"
-                  min={today} // ✅ Logical Fix: Purani date disable kar di
+                  min={today} 
                   value={campaignData.endDate}
                   onChange={handleChange}
                   required
@@ -246,7 +233,7 @@ function CreateCampaign() {
                   <div className="flex-shrink-0 w-24 h-24 rounded-full border-2 border-fuchsia-600 overflow-hidden shadow-lg">
                     <img
                       src={imagePreview}
-                      alt="Campaign Preview" // ✅ Accessibility: Meaningful alt text
+                      alt="Campaign Preview" 
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -263,7 +250,7 @@ function CreateCampaign() {
                   (platform) => (
                     <label
                       key={platform}
-                      className="flex items-center space-x-2 cursor-pointer text-gray-200" // ✅ Better contrast
+                      className="flex items-center space-x-2 cursor-pointer text-gray-200" 
                     >
                       <input
                         type="checkbox"
@@ -295,7 +282,7 @@ function CreateCampaign() {
                 ].map((niche) => (
                   <label
                     key={niche}
-                    className="flex items-center space-x-2 cursor-pointer text-gray-200" // ✅ Better contrast
+                    className="flex items-center space-x-2 cursor-pointer text-gray-200" 
                   >
                     <input
                       type="checkbox"
