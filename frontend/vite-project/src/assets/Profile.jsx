@@ -403,7 +403,7 @@ const Profile = () => {
                     </button>
                   </div>
                 </div>
-                {user.subscription && (
+                {user.subscription && user.userType === "influencer" && (
                   <div className="bg-fuchsia-700/30 p-4 sm:p-6 rounded-xl shadow-lg border border-fuchsia-700/30">
                     <h2 className="text-xl font-bold mb-4 flex items-center space-x-3 text-white">
                       <FaCreditCard />
