@@ -23,11 +23,11 @@ const defaultAvatar = "https://placehold.co/150x150/5B21B6/ffffff?text=User";
 
 const resolveAvatarUrl = (avatarPath) => {
   if (!avatarPath) return defaultAvatar;
-
-  if (avatarPath.startsWith("http") || avatarPath.startsWith("https")) {
-    return avatarPath;
+  let url = avatarPath.startsWith("http") ? avatarPath : `https://vistafluence.onrender.com${avatarPath}`;
+  if (url.includes("cloudinary.com")) {
+    return url.replace("/upload/", "/upload/f_auto,q_auto,w_300,h_300,c_fill/");
   }
-  return `https://vistafluence.onrender.com${avatarPath}`;
+  return url;
 };
 
 const Profile = () => {
@@ -339,7 +339,7 @@ const Profile = () => {
                         onChange={handleInputChange}
                       />
                       <InputField
-                        label="Budget ($)"
+                        label="Budget "
                         name="budget"
                         type="number"
                         value={formData.budget}
@@ -511,7 +511,7 @@ const Profile = () => {
                       {user.budget && (
                         <div className="flex items-center space-x-3">
                           <FaDollarSign className="text-fuchsia-500" />
-                          <span>Budget: ${user.budget.toLocaleString()}</span>
+                          <span>Budget: {user.budget.toLocaleString()}</span>
                         </div>
                       )}
                     </div>
@@ -528,8 +528,12 @@ const Profile = () => {
 
 const InputField = ({ label, name, value, onChange, type = "text" }) => (
   <div>
-    <label className="block text-sm font-medium text-gray-400">{label}</label>
+    
+    <label htmlFor={name} className="block text-sm font-medium text-gray-400">
+      {label}
+    </label>
     <input
+      id={name} 
       type={type}
       name={name}
       value={value || (type === "number" ? 0 : "")}
