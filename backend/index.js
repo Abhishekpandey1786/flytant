@@ -5,7 +5,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 const connectDB = require("./config/db");
-
+const helmet = require("helmet");
 const chatRoutes = require("./routes/chatRoutes");
 const Chat = require("./models/Chat"); 
 const User = require("./models/User"); 
@@ -34,7 +34,7 @@ const io = new Server(server, {
 
 connectDB();
 app.use(cors());
-
+app.use(helmet());
 app.post(
   "/api/instamojo/webhook",
   express.raw({ type: "application/json" }),
