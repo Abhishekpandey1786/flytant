@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaPlusCircle } from "react-icons/fa";
 
+// Lighthouse optimization: Aaj ki date taaki purani date block ki ja sake
+const today = new Date().toISOString().split("T")[0];
+
 function CreateCampaign() {
   const [campaignData, setCampaignData] = useState({
     name: "",
@@ -16,10 +19,10 @@ function CreateCampaign() {
 
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [isLoading, setIsLoading] = useState(false); // ✅ नया स्टेट
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Token and Role check on mount (Role check added for better security)
+  // Token and Role check on mount
   useEffect(() => {
     const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user"));
@@ -30,13 +33,20 @@ function CreateCampaign() {
       return;
     }
     
-    // Optional but recommended: Only advertisers should access this page
     if (user?.userType !== "advertiser") {
         alert("Access denied. Only advertisers can create campaigns.");
         navigate("/dashboard"); 
     }
-    
   }, [navigate]);
+
+  // ✅ Lighthouse Fix: Memory leak rokne ke liye cleanup function
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
 
   // Input change
   const handleChange = (e) => {
@@ -59,6 +69,9 @@ function CreateCampaign() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Purani preview memory se clear karein
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+      
       setImage(file);
       setImagePreview(URL.createObjectURL(file));
     }
@@ -74,14 +87,12 @@ function CreateCampaign() {
       return;
     }
     
-    // Prevent multiple submissions
     if (isLoading) return; 
     setIsLoading(true); 
 
     const formData = new FormData();
     for (const key in campaignData) {
       if (Array.isArray(campaignData[key])) {
-        // Handle array fields (platforms, requiredNiche)
         campaignData[key].forEach((item) => formData.append(key, item));
       } else {
         formData.append(key, campaignData[key]);
@@ -121,11 +132,10 @@ function CreateCampaign() {
           </h2>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
-              {/* Campaign Name Input */}
               <div>
                 <label
                   htmlFor="name"
-                  className="block text-sm font-medium text-gray-300 mb-2"
+                  className="block text-sm font-medium text-white mb-2" // ✅ Improved contrast
                 >
                   Campaign Name
                 </label>
@@ -143,7 +153,7 @@ function CreateCampaign() {
               <div>
                 <label
                   htmlFor="budget"
-                  className="block text-sm font-medium text-gray-300 mb-2"
+                  className="block text-sm font-medium text-white mb-2" // ✅ Improved contrast
                 >
                   Budget (in ₹)
                 </label>
@@ -159,11 +169,10 @@ function CreateCampaign() {
               </div>
             </div>
 
-            {/* Description */}
             <div>
               <label
                 htmlFor="description"
-                className="block text-sm font-medium text-gray-300 mb-2"
+                className="block text-sm font-medium text-white mb-2" // ✅ Improved contrast
               >
                 Description
               </label>
@@ -179,12 +188,11 @@ function CreateCampaign() {
               ></textarea>
             </div>
 
-            {/* CTA + End Date */}
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label
                   htmlFor="cta"
-                  className="block text-sm font-medium text-gray-300 mb-2"
+                  className="block text-sm font-medium text-white mb-2"
                 >
                   Call to Action (Optional)
                 </label>
@@ -201,7 +209,7 @@ function CreateCampaign() {
               <div>
                 <label
                   htmlFor="endDate"
-                  className="block text-sm font-medium text-gray-300 mb-2"
+                  className="block text-sm font-medium text-white mb-2"
                 >
                   Campaign End Date
                 </label>
@@ -209,18 +217,19 @@ function CreateCampaign() {
                   type="date"
                   name="endDate"
                   id="endDate"
+                  min={today} // ✅ Logical Fix: Purani date disable kar di
                   value={campaignData.endDate}
                   onChange={handleChange}
+                  required
                   className="w-full p-3 bg-slate-700 text-white rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-fuchsia-500 transition-all duration-200 neno-button shadow-xl hover:shadow-fuchsia-800/50"
                 />
               </div>
             </div>
 
-            {/* Image Upload */}
             <div>
               <label
                 htmlFor="image"
-                className="block text-sm font-medium text-gray-300 mb-2"
+                className="block text-sm font-medium text-white mb-2"
               >
                 Brand Image / Logo
               </label>
@@ -231,13 +240,13 @@ function CreateCampaign() {
                   id="image"
                   accept="image/*"
                   onChange={handleImageChange}
-                  className="flex-1 text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-fuchsia-800 file:text-white hover:file:bg-fuchsia-700 cursor-pointer transition-colors duration-200 "
+                  className="flex-1 text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-fuchsia-800 file:text-white hover:file:bg-fuchsia-700 cursor-pointer transition-colors duration-200 "
                 />
                 {imagePreview && (
                   <div className="flex-shrink-0 w-24 h-24 rounded-full border-2 border-fuchsia-600 overflow-hidden shadow-lg">
                     <img
                       src={imagePreview}
-                      alt="Preview"
+                      alt="Campaign Preview" // ✅ Accessibility: Meaningful alt text
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -245,9 +254,8 @@ function CreateCampaign() {
               </div>
             </div>
 
-            {/* Platforms */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Target Platforms
               </label>
               <div className="flex flex-wrap gap-x-6 gap-y-3">
@@ -255,7 +263,7 @@ function CreateCampaign() {
                   (platform) => (
                     <label
                       key={platform}
-                      className="flex items-center space-x-2 cursor-pointer text-gray-400 "
+                      className="flex items-center space-x-2 cursor-pointer text-gray-200" // ✅ Better contrast
                     >
                       <input
                         type="checkbox"
@@ -271,9 +279,8 @@ function CreateCampaign() {
               </div>
             </div>
 
-            {/* Niche */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Required Niche(s)
               </label>
               <div className="flex flex-wrap gap-x-6 gap-y-3">
@@ -288,7 +295,7 @@ function CreateCampaign() {
                 ].map((niche) => (
                   <label
                     key={niche}
-                    className="flex items-center space-x-2 cursor-pointer text-gray-400"
+                    className="flex items-center space-x-2 cursor-pointer text-gray-200" // ✅ Better contrast
                   >
                     <input
                       type="checkbox"
@@ -303,7 +310,6 @@ function CreateCampaign() {
               </div>
             </div>
 
-            {/* Submit Button (Disabled during loading) */}
             <div className="pt-4">
               <button
                 type="submit"
