@@ -143,16 +143,16 @@ const Home = () => {
             Find Influencers and Brands of your niche
           </p>
           <div className="flex justify-center md:justify-start gap-4">
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-              className="h-10 md:h-12 cursor-pointer"
-              alt="Play Store"
-            />
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-              className="h-10 md:h-12 cursor-pointer"
-              alt="App Store"
-            />
+           <Link to="/login">
+            <button className="neno-button shadow-xl hover:shadow-fuchsia-800/50 text-white bg-fuchsia-700 hover:bg-fuchsia-700 border-fuchsia-700 transition px-4 md:px-6 py-1.5 md:py-2 rounded-lg font-bold  text-xs md:text-sm whitespace-nowrap">
+              BRAND
+            </button>
+          </Link>
+           <Link to="/login">
+            <button className="neno-button shadow-xl hover:shadow-fuchsia-800/50 text-white bg-fuchsia-700 hover:bg-fuchsia-700 border-fuchsia-700 transition px-4 md:px-6 py-1.5 md:py-2 rounded-lg font-bold  text-xs md:text-sm whitespace-nowrap">
+              INFLUENCER
+            </button>
+          </Link>
           </div>
         </div>
 
