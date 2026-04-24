@@ -82,10 +82,10 @@ export default function Subscription() {
 
             <div className="flex items-center mb-2">
               <span className="text-3xl sm:text-4xl font-extrabold text-white">
-                ${plan.price}
+                ₹{plan.price}
               </span>
               <span className="text-gray-500 line-through ml-2 sm:ml-3 text-base sm:text-lg">
-                ${plan.oldPrice}
+                ₹{plan.oldPrice}
               </span>
             </div>
 
