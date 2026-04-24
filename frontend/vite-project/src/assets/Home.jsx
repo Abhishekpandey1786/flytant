@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import Footer from "./Footer"
+import img1 from "./image/banner1.png"
 const Home = () => {
   const [showVideo, setShowVideo] = useState(false);
   const [influencerOffset, setInfluencerOffset] = useState(0);
@@ -160,7 +161,7 @@ const Home = () => {
           onClick={() => setShowVideo(true)}
         >
           <img
-            src="https://images.unsplash.com/photo-1607746882042-944635dfe10e"
+            src={img1}
             className="w-full max-w-[450px] aspect-video md:aspect-auto md:h-[300px] rounded-3xl object-cover border-4 border-slate-800 shadow-2xl"
             alt="hero"
           />
