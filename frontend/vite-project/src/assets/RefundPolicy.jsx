@@ -1,7 +1,7 @@
 import React from "react";
 import PageHeader from "./PageHeader"; // Assuming PageHeader is a separate component
 import { FaMoneyBillWave, FaUndo, FaBalanceScale } from "react-icons/fa";
-
+import Footer from "./Footer";
 const CancellationRefundPolicy = () => {
   return (
     <div className="min-h-screen bg-slate-900 text-white">
@@ -166,6 +166,7 @@ const CancellationRefundPolicy = () => {
           </p>
         </footer>
       </div>
+       <Footer/>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React from "react";
 import PageHeader from "./PageHeader";
 import { FaUserShield, FaLock, FaShareAlt } from "react-icons/fa";
-
+import Footer from "./Footer";
 const PrivacyPolicy = () => {
   return (
     <div className="min-h-screen bg-slate-900 text-white">
@@ -98,6 +98,7 @@ const PrivacyPolicy = () => {
           </a>
         </footer>
       </div>
+       <Footer/>
     </div>
   );
 };

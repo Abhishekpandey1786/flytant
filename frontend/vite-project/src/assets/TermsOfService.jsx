@@ -1,7 +1,7 @@
 import React from "react";
 import PageHeader from "./PageHeader";
 import { FaUserCheck, FaUserLock, FaBan } from "react-icons/fa";
-
+import Footer from "./Footer";
 const TermsOfService = () => {
   return (
     <div className="min-h-screen bg-slate-900 text-white">
@@ -93,7 +93,9 @@ const TermsOfService = () => {
             terms@vistafluence.com
           </a>
         </footer>
+       
       </div>
+       <Footer/>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import PageHeader from "./PageHeader";
-
+import Footer from "./Footer";
 const blogPosts = [
   {
     id: 1,
@@ -41,6 +41,7 @@ const Blog = () => {
           ))}
         </div>
       </div>
+       <Footer/>
     </div>
   );
 };

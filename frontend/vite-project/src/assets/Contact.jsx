@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import PageHeader from "./PageHeader";
 import { FaEnvelope, FaHeadset, FaPhoneAlt, FaFacebook, FaInstagram, FaLinkedin } from "react-icons/fa";
 import axios from "axios";
-
+import Footer from "./Footer";
 const Contact = () => {
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [success, setSuccess] = useState("");
@@ -158,6 +158,7 @@ const Contact = () => {
           </form>
         </div>
       </div>
+       <Footer/>
     </div>
   );
 };
