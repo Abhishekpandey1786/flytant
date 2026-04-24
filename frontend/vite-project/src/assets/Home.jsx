@@ -110,9 +110,9 @@ const Home = () => {
             <div className="absolute w-5 h-7 md:w-6 md:h-8 bg-gradient-to-tr from-pink-500 to-magenta-600 rounded-tl-xl rounded-br-sm transform skew-x-[20deg] -translate-x-1.5 md:-translate-x-2"></div>
           </div>
           <div className="flex flex-col leading-tight">
-            <span className="text-lg md:text-2xl font-black tracking-tighter bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent uppercase">
+           <Link to="/"> <span className="text-lg md:text-2xl font-black tracking-tighter bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent uppercase">
               Vistafluence
-            </span>
+            </span></Link>
             <span className=" md:block md:text-[9px] text-[7px] tracking-[0.2em] text-slate-400 font-bold uppercase">
               No Middlemen. Just Real Collaborations.
             </span>

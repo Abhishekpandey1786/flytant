@@ -15,36 +15,33 @@ import p8 from "./image/p8.webp";
 const plans = [
   {
     name: "Basic",
-    price: 10,
-    oldPrice: 199,
-    discount: "Get 50% Off",
+    price: 99,
+    oldPrice: 4,
+    discount: "Get 20% Off",
     features: [
       "Higher Visibility",
       "Apply For 6 Campaigns Monthly",
-      "Profile Recommendation to Brands",
     ],
   },
   {
     name: "Standard",
-    price: 299,
-    oldPrice: 499,
-    discount: "Get 40% Off",
+    price:199,
+    oldPrice: 599,
+    discount: "Get 30% Off",
     features: [
       "Higher Visibility",
-      "Apply For 15 Campaigns Monthly",
-      "Profile Recommendation to Brands",
+      "Apply For 15 Campaigns Monthly","Direct Message"
     ],
   },
   {
     name: "Advance",
-    price: 599,
-    oldPrice: 999,
+    price: 499,
+    oldPrice: 1000,
     discount: "Get 40% Off",
-    popular: true,
     features: [
       "Higher Visibility",
-      "Apply For 40 Campaigns Monthly",
-      "Profile Recommendation to Brands",
+      "Apply For 40 Campaigns Monthly","Direct Message","Access to Vistafluence Academy Course",
+      "Profile Recommendation to brands",
     ],
   },
   {
@@ -54,8 +51,10 @@ const plans = [
     discount: "Get 50% Off",
     features: [
       "Higher Visibility",
-      "Apply For Unlimited Campaigns",
-      "Profile Recommendation to Brands",
+      "Apply For Unlimited Campaigns Monthly",
+      "Direct Message","Access to Vistafluence","personalized recommendation  To Brands",
+      " Video Editing Services ( 3 videos a month)","Profile Recommendation to brands",
+    
     ],
   },
 ];

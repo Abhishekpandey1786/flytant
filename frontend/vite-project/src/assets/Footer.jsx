@@ -17,9 +17,9 @@ function Footer() {
                 <div className="absolute w-5 h-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-tr-xl rounded-bl-sm transform skew-x-[-20deg] translate-x-1.5"></div>
                 <div className="absolute w-5 h-7 bg-gradient-to-tr from-pink-500 to-magenta-600 rounded-tl-xl rounded-br-sm transform skew-x-[20deg] -translate-x-1.5"></div>
               </div>
-              <span className="text-xl font-black tracking-tighter text-white uppercase">
+              <Link to="/"><span className="text-xl font-black tracking-tighter text-white uppercase">
                 Vistafluence
-              </span>
+              </span></Link>
             </div>
             
             <p className="text-sm leading-relaxed max-w-xs">

@@ -4,56 +4,52 @@ import { Link } from "react-router-dom";
 const plans = [
   {
     name: "Basic",
-    price: 3,
+    price: 99,
     oldPrice: 4,
     discount: "Get 20% Off",
     features: [
       "Higher Visibility",
       "Apply For 6 Campaigns Monthly",
-      "Profile Recommendation to brands",
     ],
     popular: false,
   },
   {
     name: "Standard",
-    price: 5,
-    oldPrice: 7,
+    price:199,
+    oldPrice: 599,
     discount: "Get 30% Off",
     features: [
       "Higher Visibility",
-      "Apply For 15 Campaigns Monthly",
-      " Profile Recommendation to brands",
+      "Apply For 15 Campaigns Monthly","Direct Message",
     ],
     popular: false,
   },
   {
     name: "Advance",
-    price: 9,
-    oldPrice: 18,
+    price: 499,
+    oldPrice: 1000,
     discount: "Get 40% Off",
     features: [
       "Higher Visibility",
-      "Apply For 40 Campaigns Monthly",
+      "Apply For 40 Campaigns Monthly","Direct Message","Access to Vistafluence Academy Course",
       "Profile Recommendation to brands",
     ],
     popular: true,
   },
   {
     name: "Premium",
-    price: 19,
-    oldPrice: 39,
+    price: 999,
+    oldPrice: 1999,
     discount: "Get 50% Off",
     features: [
       "Higher Visibility",
       "Apply For Unlimited Campaigns Monthly",
-      "Profile Recommendation to brands",
+      "Direct Message","Access to Vistafluence","personalized recommendation  To Brands",
+      " Video Editing Services ( 3 videos a month)","Profile Recommendation to brands",
     ],
     popular: false,
   },
 ];
-
-
-
 export default function Subscription() {
   return (
     <div className="bg-gradient-to-b from-slate-950 to-slate-900 flex flex-col items-center py-16 px-4 md:px-10">
