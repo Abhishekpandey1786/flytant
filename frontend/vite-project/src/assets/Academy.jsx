@@ -1,119 +1,51 @@
 import React, { useState } from "react";
+import axios from "axios";
 
-const coursesData = [
-  {
-    title: "Beginner Course",
-    desc: "Start your influencer journey from scratch.",
-    videos: ["https://www.youtube.com/embed/dQw4w9WgXcQ"],
-    pdfs: ["/pdfs/beginner.pdf"],
-    color: "from-pink-500 to-purple-500",
-  },
-  {
-    title: "Advanced Growth",
-    desc: "Scale your audience and earn big brand deals.",
-    videos: ["https://www.youtube.com/embed/dQw4w9WgXcQ"],
-    pdfs: ["/pdfs/advanced.pdf"],
-    color: "from-blue-500 to-cyan-500",
-  },
-  {
-    title: "Trending Content Ideas",
-    desc: "Daily viral hooks & trending formats.",
-    videos: ["https://www.youtube.com/embed/dQw4w9WgXcQ"],
-    pdfs: ["/pdfs/trending.pdf"],
-    color: "from-yellow-500 to-orange-500",
-  },
-  {
-    title: "Tools & Services",
-    desc: "Editing, thumbnails & growth tools.",
-    videos: ["https://www.youtube.com/embed/dQw4w9WgXcQ"],
-    pdfs: ["/pdfs/tools.pdf"],
-    color: "from-green-500 to-emerald-500",
-  },
-];
+const Academy = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [credentials, setCredentials] = useState({ email: "", password: "" });
 
-function Academy() {
-  const [activeCourse, setActiveCourse] = useState(null);
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      // Login route bhi update ho gaya: /api/academy/login
+      const res = await axios.post("https://vistafluence.onrender.com/api/academy/login", credentials);
+      if (res.data.success) {
+        localStorage.setItem("studentToken", res.data.token);
+        setIsLoggedIn(true);
+      }
+    } catch (err) {
+      alert("Ghalat details! Admin se password maango.");
+    }
+  };
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        {/* Tera Login Form yahan aayega (Wahi fuchsia theme wala) */}
+        <form onSubmit={handleLogin} className="bg-slate-900 p-8 rounded-3xl border border-fuchsia-600">
+           <h2 className="text-white text-2xl mb-4">Academy Login</h2>
+           <input 
+             type="email" placeholder="Email" className="w-full mb-3 p-3 rounded bg-slate-800 text-white"
+             onChange={(e) => setCredentials({...credentials, email: e.target.value})}
+           />
+           <input 
+             type="password" placeholder="Password" className="w-full mb-6 p-3 rounded bg-slate-800 text-white"
+             onChange={(e) => setCredentials({...credentials, password: e.target.value})}
+           />
+           <button className="w-full bg-fuchsia-600 p-3 rounded font-bold text-white">Login</button>
+        </form>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-slate-950 text-white min-h-screen px-6 md:px-16 py-12">
-      
-      {/* HEADER */}
-      <h1 className="text-4xl md:text-6xl font-black mb-12 text-center bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent">
-        Vistafluence Academy
-      </h1>
-
-      {/* COURSE GRID */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-        {coursesData.map((course, index) => (
-          <div
-            key={index}
-            onClick={() => setActiveCourse(course)}
-            className="group cursor-pointer relative p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl hover:scale-105 transition duration-300 overflow-hidden"
-          >
-            {/* Gradient Glow */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${course.color} opacity-0 group-hover:opacity-20 transition`} />
-
-            <h2 className="text-xl font-bold mb-3">{course.title}</h2>
-            <p className="text-sm text-slate-400">{course.desc}</p>
-
-            <div className="mt-6 text-xs text-fuchsia-400 font-bold">
-              Explore →
-            </div>
-          </div>
-        ))}
-
-      </div>
-
-      {/* COURSE MODAL */}
-      {activeCourse && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-          
-          <div className="bg-slate-900 w-full max-w-4xl rounded-3xl p-6 border border-white/10 relative">
-
-            {/* CLOSE */}
-            <button
-              className="absolute top-4 right-5 text-3xl"
-              onClick={() => setActiveCourse(null)}
-            >
-              ×
-            </button>
-
-            <h2 className="text-3xl font-bold mb-4">
-              {activeCourse.title}
-            </h2>
-
-            {/* VIDEOS */}
-            <div className="grid md:grid-cols-2 gap-4 mb-6">
-              {activeCourse.videos.map((vid, i) => (
-                <iframe
-                  key={i}
-                  src={vid}
-                  className="w-full h-56 rounded-xl"
-                  allow="autoplay"
-                />
-              ))}
-            </div>
-
-            {/* PDFs */}
-            <div className="flex flex-wrap gap-4">
-              {activeCourse.pdfs.map((pdf, i) => (
-                <a
-                  key={i}
-                  href={pdf}
-                  target="_blank"
-                  className="px-6 py-2 bg-fuchsia-600 rounded-full hover:bg-fuchsia-700 transition font-bold text-sm"
-                >
-                  📄 View PDF {i + 1}
-                </a>
-              ))}
-            </div>
-
-          </div>
-        </div>
-      )}
+    <div className="min-h-screen bg-slate-950 text-white p-10">
+      <h1 className="text-4xl font-bold">🎓 Welcome to Vistafluence Academy</h1>
+      <p className="mt-4 text-slate-400">Yahan tera saara premium content (Videos/PDFs) dikhega.</p>
+      {/* Yahan courses map kar dena */}
     </div>
   );
-}
+};
 
 export default Academy;
