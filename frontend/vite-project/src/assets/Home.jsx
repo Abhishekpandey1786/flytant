@@ -4,23 +4,23 @@ import Footer from "./Footer";
 import img1 from "./image/banner2.png";
 import img2 from "./image/allinone.png";
 import img5 from "./image/in1.avif";
-import img6 from "./image/in2.avif"
-import img7 from "./image/in3.avif"
-import img8 from "./image/in4.avif"
-import img9 from "./image/in5.avif"
-import img10 from "./image/in6.avif"
-import img11 from "./image/in7.avif"
-import img12 from "./image/in8.avif"
-import img13 from "./image/in9.avif"
-import img14 from "./image/in10.avif"
-import img15 from "./image/in11.avif"
-import img16 from "./image/in12.avif"
-import img17 from "./image/in13.avif"
-import img18 from "./image/in14.avif"
-import img19 from "./image/air1.jpg"
-import img20 from "./image/air2.jpg"
-import img21 from "./image/new1.jpg"
-import img22 from "./image/new2.jpg"
+import img6 from "./image/in2.avif";
+import img7 from "./image/in3.avif";
+import img8 from "./image/in4.avif";
+import img9 from "./image/in5.avif";
+import img10 from "./image/in6.avif";
+import img11 from "./image/in7.avif";
+import img12 from "./image/in8.avif";
+import img13 from "./image/in9.avif";
+import img14 from "./image/in10.avif";
+import img15 from "./image/in11.avif";
+import img16 from "./image/in12.avif";
+import img17 from "./image/in13.avif";
+import img18 from "./image/in14.avif";
+import img19 from "./image/air1.jpg";
+import img20 from "./image/air2.jpg";
+import img21 from "./image/new1.jpg";
+import img22 from "./image/new2.jpg";
 const Home = () => {
   const [showVideo, setShowVideo] = useState(false);
   const [influencerOffset, setInfluencerOffset] = useState(0);
@@ -245,8 +245,11 @@ const Home = () => {
         >
           <img
             src={img1}
+            width="450"
+            height="300"
+            fetchPriority="high" // इसे सबसे पहले लोड करने के लिए
             className="w-full max-w-[450px] aspect-video md:aspect-auto md:h-[300px] rounded-3xl object-cover border-4 border-slate-800 shadow-2xl"
-            alt="hero"
+            alt="Vistafluence Hero Banner"
           />
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-14 h-14 md:w-16 md:h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 group-hover:scale-110 transition">
@@ -321,6 +324,10 @@ const Home = () => {
               >
                 <img
                   src={item.img}
+                  loading="lazy"
+                  width="200"
+                  height="240"
+                  alt={item.name}
                   className="h-48 md:h-60 w-full object-cover"
                 />
                 <div className="p-3 md:p-4">
@@ -370,8 +377,13 @@ const Home = () => {
                 >
                   <img
                     src={logo}
+                    loading="lazy"
+                    width="200"
+                    height="240"
                     className="w-8 h-8 md:w-12 md:h-12 object-contain brightness-0 invert opacity-70"
+                    alt="brand"
                   />
+                  <img />
                 </div>
               ))}
             </div>
@@ -473,9 +485,13 @@ const Home = () => {
           <div className="w-full sm:w-1/2 relative min-h-[200px] md:min-h-[250px]">
             <img
               src={articles[articleIndex].img}
+              loading="lazy"
+              width="200"
+              height="240"
               className="absolute inset-0 w-full h-full object-cover rounded-[25px] md:rounded-[35px]"
               alt="article"
             />
+
             <span className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full text-xs font-bold uppercase">
               {articles[articleIndex].tag}
             </span>
@@ -517,6 +533,10 @@ const Home = () => {
                 <img
                   src={item.img}
                   className="h-24 md:h-32 w-full object-cover"
+                  loading="lazy"
+                  width="200"
+                  height="240"
+                  alt=" all in one"
                 />
                 <p className="p-3 md:p-4 text-[10px] md:text-xs font-medium leading-relaxed">
                   {item.text}
@@ -556,31 +576,31 @@ const Home = () => {
       </div>
       {/* VIDEO MODAL */}
       {/* --- IMAGE VIEW MODAL START --- */}
-{selectedImage && (
-  <div 
-    className="fixed inset-0 bg-slate-950/90 flex items-center justify-center z-[110] p-4 backdrop-blur-md"
-    onClick={() => setSelectedImage(null)} 
-  >
-    {/* Close Button */}
-    <button
-      className="absolute top-5 right-5 text-white text-5xl z-[120] hover:text-fuchsia-500 transition"
-      onClick={() => setSelectedImage(null)}
-    >
-      &times;
-    </button>
-    
-    {/* Badi Image Container */}
-    <div className="relative max-w-5xl w-full h-full flex items-center justify-center">
-      <img
-        src={selectedImage}
-        alt="Full View"
-        className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-white/10 animate-in zoom-in-95 duration-300"
-        onClick={(e) => e.stopPropagation()} // Image pe click karne pe band nahi hoga
-      />
-    </div>
-  </div>
-)}
-{/* --- IMAGE VIEW MODAL END --- */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-slate-950/90 flex items-center justify-center z-[110] p-4 backdrop-blur-md"
+          onClick={() => setSelectedImage(null)}
+        >
+          {/* Close Button */}
+          <button
+            className="absolute top-5 right-5 text-white text-5xl z-[120] hover:text-fuchsia-500 transition"
+            onClick={() => setSelectedImage(null)}
+          >
+            &times;
+          </button>
+
+          {/* Badi Image Container */}
+          <div className="relative max-w-5xl w-full h-full flex items-center justify-center">
+            <img
+              src={selectedImage}
+              alt="Full View"
+              className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-white/10 animate-in zoom-in-95 duration-300"
+              onClick={(e) => e.stopPropagation()} // Image pe click karne pe band nahi hoga
+            />
+          </div>
+        </div>
+      )}
+      {/* --- IMAGE VIEW MODAL END --- */}
       {showVideo && (
         <div className="fixed inset-0 bg-slate-950/95 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
           <div className="relative w-full max-w-3xl bg-black rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl border border-slate-700">
