@@ -30,6 +30,7 @@ import UserNotifications from "./assets/UserNotifications.jsx";
 import MyOrders from "./assets/MyOrders.jsx";
 import PaymentSuccess from "./assets/PaymentSuccess.jsx";
 import RefundPolicy from "./assets/RefundPolicy.jsx";
+import Academy from "./assets/Academy.jsx"
 function App() {
   return (
     <BrowserRouter>
@@ -58,6 +59,7 @@ function App() {
               <Route path="/campaigns" element={<Campaigns />} />
               <Route path="/create-campaign" element={<CreateCampaign />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/Academy" element={<Academy/>}/>
               <Route
                 path="/chats/campaign/:campaignId/user/:userId"
                 element={<Chats />}

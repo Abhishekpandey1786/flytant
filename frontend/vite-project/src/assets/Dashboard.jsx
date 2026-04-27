@@ -8,7 +8,7 @@ import Subscription from "./Subscription";
 import InfluencersList from "./InfluencersList";
 import Chats from "./Chats";
 import { FiBell } from "react-icons/fi";
-import { FiMessageCircle,  FiSettings,FiCreditCard} from "react-icons/fi";
+import { FiMessageCircle, FiSettings, FiCreditCard } from "react-icons/fi";
 
 import {
   FaUser,
@@ -24,7 +24,7 @@ import AppliedCampaigns from "./AppliedCampaigns";
 import Campaigns from "./Campaigns";
 import UserNotifications from "./UserNotifications";
 import MyOrders from "./MyOrders";
-
+import Academy from "./Academy"
 const Dashboard = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [role, setRole] = useState("Influencer");
@@ -137,20 +137,20 @@ const Dashboard = () => {
       >
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-2 md:gap-3">
-                    <div className="relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10">
-                      <div className="absolute w-5 h-7 md:w-6 md:h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-tr-xl rounded-bl-sm transform skew-x-[-20deg] translate-x-1.5 md:translate-x-2"></div>
-                      <div className="absolute w-5 h-7 md:w-6 md:h-8 bg-gradient-to-tr from-pink-500 to-magenta-600 rounded-tl-xl rounded-br-sm transform skew-x-[20deg] -translate-x-1.5 md:-translate-x-2"></div>
-                    </div>
-                    <div className="flex flex-col leading-tight">
-                        <span className="text-lg md:text-2xl font-black tracking-tighter bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent uppercase">
-                          Vistafluence
-                        </span>
-                      <span className=" md:block md:text-[9px] text-[7px] tracking-[0.2em] text-slate-400 font-bold uppercase">
-                        No Middlemen. Just Real Collaborations.
-                      </span>
-                    </div>
-                  </div>
-          
+            <div className="relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10">
+              <div className="absolute w-5 h-7 md:w-6 md:h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-tr-xl rounded-bl-sm transform skew-x-[-20deg] translate-x-1.5 md:translate-x-2"></div>
+              <div className="absolute w-5 h-7 md:w-6 md:h-8 bg-gradient-to-tr from-pink-500 to-magenta-600 rounded-tl-xl rounded-br-sm transform skew-x-[20deg] -translate-x-1.5 md:-translate-x-2"></div>
+            </div>
+            <div className="flex flex-col leading-tight">
+              <span className="text-lg md:text-2xl font-black tracking-tighter bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent uppercase">
+                Vistafluence
+              </span>
+              <span className=" md:block md:text-[9px] text-[7px] tracking-[0.2em] text-slate-400 font-bold uppercase">
+                No Middlemen. Just Real Collaborations.
+              </span>
+            </div>
+          </div>
+
           <button
             className="md:hidden text-white text-xl"
             onClick={() => setSidebarOpen(false)}
@@ -172,12 +172,41 @@ const Dashboard = () => {
               <span>Feed</span>
             </li>
             {[
-              { name: "Sponsorships", icon:<FiSettings className="text-xl animate-spin  text-fuchsia-400" />, key: "campaigns" },
-              { name: "Chats", icon: <FiMessageCircle className="text-2xl text-fuchsia-400 animate-pulse" />
-, key: "Chats" },
-              { name: "Notifications", icon: <FiBell className="text-2xl text-fuchsia-400 animate-bounce drop-shadow-[0_0_10px_rgba(255,100,255,0.6)]" />
-, key: "notifications" },
-              { name: "Subscription", icon: <FiCreditCard className="text-xl animate-pulse  text-fuchsia-400" />, key: "subscription" },
+              {
+                name: "Sponsorships",
+                icon: (
+                  <FiSettings className="text-xl animate-spin  text-fuchsia-400" />
+                ),
+                key: "campaigns",
+              },
+              {
+                name: "Chats",
+                icon: (
+                  <FiMessageCircle className="text-2xl text-fuchsia-400 animate-pulse" />
+                ),
+                key: "Chats",
+              },
+              {
+                name: "Notifications",
+                icon: (
+                  <FiBell className="text-2xl text-fuchsia-400 animate-bounce drop-shadow-[0_0_10px_rgba(255,100,255,0.6)]" />
+                ),
+                key: "notifications",
+              },
+              {
+                name: "Subscription",
+                icon: (
+                  <FiCreditCard className="text-xl animate-pulse  text-fuchsia-400" />
+                ),
+                key: "subscription",
+              },
+              {
+                name: "Academy Subscription",
+                icon: (
+                  <FiCreditCard className="text-xl animate-pulse  text-fuchsia-400" />
+                ),
+                key: "Academy",
+              },
             ].map((item) => (
               <li
                 key={item.key}
@@ -284,8 +313,8 @@ const Dashboard = () => {
                           item.danger
                             ? "hover:text-red-500 text-red-400"
                             : activePage === item.key
-                            ? "bg-fuchsia-800 text-white"
-                            : "neno-button shadow-xl hover:shadow-fuchsia-800/50 text-white hover:bg-fuchsia-800 border-fuchsia-800 transition"
+                              ? "bg-fuchsia-800 text-white"
+                              : "neno-button shadow-xl hover:shadow-fuchsia-800/50 text-white hover:bg-fuchsia-800 border-fuchsia-800 transition"
                         }`}
                       >
                         {item.icon}
@@ -308,6 +337,8 @@ const Dashboard = () => {
           {activePage === "campaigns" && <Campaigns />}
           {activePage === "notifications" && <UserNotifications />}
           {activePage === "orders" && <MyOrders />}
+          {activePage === "Academy" && <Academy />}
+
         </div>
       </main>
     </div>

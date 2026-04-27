@@ -247,7 +247,7 @@ const Home = () => {
             src={img1}
             width="450"
             height="300"
-            fetchPriority="high" // इसे सबसे पहले लोड करने के लिए
+            fetchPriority="high"
             className="w-full max-w-[450px] aspect-video md:aspect-auto md:h-[300px] rounded-3xl object-cover border-4 border-slate-800 shadow-2xl"
             alt="Vistafluence Hero Banner"
           />
