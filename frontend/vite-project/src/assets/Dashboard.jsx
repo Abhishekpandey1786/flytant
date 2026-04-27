@@ -201,7 +201,7 @@ const Dashboard = () => {
                 key: "subscription",
               },
               {
-                name: "Academy Subscription",
+                name: "Academy",
                 icon: (
                   <FiCreditCard className="text-xl animate-pulse  text-fuchsia-400" />
                 ),
