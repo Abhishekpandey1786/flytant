@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
-const AcademyUser = require("../models/AcademyUser"); // Naya model import kiya
+const AcademyUser = require("../models/AcademyUser");
 
 // 🔒 Admin Verify Middleware
 const verifyAdminToken = (req, res, next) => {
@@ -16,50 +16,59 @@ const verifyAdminToken = (req, res, next) => {
   } catch (err) { res.status(403).json({ error: "Invalid Token" }); }
 };
 
-// 🔥 1. Admin creates user (Saves to MongoDB & Mails)
+// 🔥 Admin creates user (Database + Safe Mail)
 router.post("/create-user", verifyAdminToken, async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Check if user already exists
+    // 1. Check if user already exists
     let user = await AcademyUser.findOne({ email });
-    if (user) return res.status(400).json({ success: false, message: "User already exists!" });
+    if (user) return res.status(400).json({ success: false, message: "Bhai, ye email pehle se exist karta hai!" });
 
-    // DB mein save karo
+    // 2. DB mein save karo
     user = new AcademyUser({ email, password });
     await user.save();
 
-    // Nodemailer setup
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    // 3. Nodemailer (Mailing part ko try-catch mein rakha hai taaki server na phate)
+    try {
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS, // Yahan Render wala lamba password aayega
+        },
+      });
 
-    await transporter.sendMail({
-      from: `"Vistafluence Academy" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "Your Premium Academy Access 🎓",
-      html: `<div style="font-family: sans-serif; background: #0f172a; color: white; padding: 20px; border-radius: 15px;">
-              <h2 style="color: #d946ef;">Welcome to the Academy!</h2>
-              <p>Your account has been created successfully.</p>
-              <p><strong>Login Email:</strong> ${email}</p>
-              <p><strong>Password:</strong> ${password}</p>
-              <br/>
-              <a href="https://vistafluence.com/academy" style="background: #d946ef; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login to Dashboard</a>
-            </div>`,
-    });
+      await transporter.sendMail({
+        from: `"Vistafluence Academy" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: "Your Premium Academy Access 🎓",
+        html: `<div style="font-family: sans-serif; background: #0f172a; color: white; padding: 20px; border-radius: 15px;">
+                <h2 style="color: #d946ef;">Welcome to the Academy!</h2>
+                <p>Account created successfully.</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Password:</strong> ${password}</p>
+                <br/>
+                <a href="https://vistafluence.com/academy" style="background: #d946ef; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login Now</a>
+              </div>`,
+      });
 
-    res.json({ success: true, message: "User created & Mail sent!" });
+      // Mail chala gaya
+      return res.json({ success: true, message: "User created & Mail sent! ✅" });
+
+    } catch (mailError) {
+      console.error("NODEMAILER ERROR:", mailError.message);
+      // User ban gaya par mail nahi gayi, phir bhi success bhej rahe hain
+      return res.json({ success: true, message: "User created! (But mail failed, check App Password) ⚠️" });
+    }
+
   } catch (err) {
-    console.error(err);
+    console.error("DATABASE ERROR:", err);
     res.status(500).json({ success: false, message: "Server Error", error: err.message });
   }
 });
 
-// 🔐 2. Academy User Login (Check from MongoDB)
+// 🔐 Academy User Login
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {

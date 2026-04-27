@@ -41,24 +41,28 @@ const AdminDashboard = () => {
     } catch (err) { console.error("Error fetching stats:", err); }
   };
 
-  // 🔥 NAYA FUNCTION: Manual Password Create & Mail
+  // 🔥 UPDATED FUNCTION: Manual Password Create & Mail (With Real Error Tracking)
   const handleCreateUser = async (e) => {
     e.preventDefault();
     if (!userData.email || !userData.password) return alert("Bhai, email aur password dono likho!");
     
     setCreatingUser(true);
     try {
-      // Note: Backend setup hone par ye route chalega
       const res = await axios.post("https://vistafluence.onrender.com/api/academy/create-user", userData, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
+      // Backend se success aane par
       if (res.data.success) {
-        alert("Chaka-chak! User ban gaya aur mail chala gaya. ✅");
+        alert(res.data.message || "Chaka-chak! User ban gaya aur mail chala gaya. ✅");
         setUserData({ email: "", password: "" });
       }
     } catch (err) {
-      console.error(err);
-      alert("Error: Shayad backend setup nahi hai.");
+      console.error("Full Backend Error:", err.response?.data || err.message);
+      
+      // Ye alert ab exact wajah batayega (e.g. Email already exists ya Server down)
+      const errorDetail = err.response?.data?.message || "Shayad backend setup nahi hai ya internet issue hai.";
+      alert(`Error: ${errorDetail}`);
     }
     setCreatingUser(false);
   };
