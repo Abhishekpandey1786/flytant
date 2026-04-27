@@ -324,10 +324,6 @@ const Home = () => {
               >
                 <img
                   src={item.img}
-                  loading="lazy"
-                  width="200"
-                  height="240"
-                  alt={item.name}
                   className="h-48 md:h-60 w-full object-cover"
                 />
                 <div className="p-3 md:p-4">
@@ -377,13 +373,8 @@ const Home = () => {
                 >
                   <img
                     src={logo}
-                    loading="lazy"
-                    width="200"
-                    height="240"
                     className="w-8 h-8 md:w-12 md:h-12 object-contain brightness-0 invert opacity-70"
-                    alt="brand"
                   />
-                  <img />
                 </div>
               ))}
             </div>
@@ -485,13 +476,9 @@ const Home = () => {
           <div className="w-full sm:w-1/2 relative min-h-[200px] md:min-h-[250px]">
             <img
               src={articles[articleIndex].img}
-              loading="lazy"
-              width="200"
-              height="240"
               className="absolute inset-0 w-full h-full object-cover rounded-[25px] md:rounded-[35px]"
               alt="article"
             />
-
             <span className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full text-xs font-bold uppercase">
               {articles[articleIndex].tag}
             </span>
@@ -533,10 +520,6 @@ const Home = () => {
                 <img
                   src={item.img}
                   className="h-24 md:h-32 w-full object-cover"
-                  loading="lazy"
-                  width="200"
-                  height="240"
-                  alt=" all in one"
                 />
                 <p className="p-3 md:p-4 text-[10px] md:text-xs font-medium leading-relaxed">
                   {item.text}
