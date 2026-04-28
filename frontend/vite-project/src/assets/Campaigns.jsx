@@ -11,7 +11,7 @@ import {
   FaYoutube,
   FaEnvelope,
   FaTimesCircle,
-  FaTrashAlt, // New icon for auto-delete
+  FaTrashAlt,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -24,30 +24,21 @@ const resolveAssetUrl = (assetPath) => {
   }
   return `https://vistafluence.onrender.com/${assetPath}`;
 };
+
 const resolveSocialLink = (url, platform) => {
   if (!url) return "#";
-
   let cleanUrl = url.trim();
-
-  // 1. Check agar user ne pehle se hi poora URL (http/https) dala hai
   if (cleanUrl.startsWith("http://") || cleanUrl.startsWith("https://")) {
     return cleanUrl;
   }
-
-  // 2. Agar user ne sirf username dala hai (@ ke saath ya bina)
   const username = cleanUrl.replace("@", "");
-
   switch (platform) {
     case "instagram":
       return `https://www.instagram.com/${username}/`;
-
     case "facebook":
       return `https://www.facebook.com/${username}/`;
-
     case "youtube":
-      // YouTube ke liye handle karein agar sirf channel ID/name hai
       return `https://www.youtube.com/${username}`;
-
     default:
       return "#";
   }
@@ -98,7 +89,7 @@ function Campaigns() {
 
   useEffect(() => {
     fetchCampaigns();
-  }, [user, token]); // Refetch when user logs in/out
+  }, [user, token]);
 
   const handleApply = async (campaignId) => {
     if (!token) {
@@ -251,7 +242,6 @@ function Campaigns() {
                   (a) => a.user?._id === currentUserId,
                 );
 
-                // REJECTION CHECK LOGIC
                 const isRejected = campaign.approvalStatus === "rejected";
 
                 return (
@@ -263,7 +253,6 @@ function Campaigns() {
                         : "border-fuchsia-800"
                     }`}
                   >
-                    {/* REJECTION ALERT UI */}
                     {user?.userType === "advertiser" && isRejected && (
                       <div className="w-full bg-red-950/40 border border-red-600/50 p-3 rounded-xl mb-4">
                         <div className="flex items-center gap-2 text-red-500 font-black text-[10px] uppercase tracking-widest">
@@ -275,7 +264,6 @@ function Campaigns() {
                             Reason: "{campaign.feedback}"
                           </p>
                         )}
-                        {/* AUTO DELETE WARNING */}
                         <div className="mt-2 flex items-center gap-1 text-[9px] text-red-400 font-bold">
                           <FaTrashAlt /> Auto-deleting from database in 24h
                         </div>
@@ -364,13 +352,14 @@ function Campaigns() {
                                 <li
                                   key={applicant.user._id}
                                   className="group relative flex items-center gap-3 text-xs sm:text-sm text-gray-400 bg-slate-700 p-2 rounded-lg cursor-pointer hover:bg-slate-600 transition-colors"
-                                  onClick={() =>
-                                    navigate(
-                                      `/chats/campaign/${campaign._id}/user/${applicant.user._id}`,
-                                    )
-                                  }
+                                  onClick={(e) => {
+                                    // Yeh check karega ki click kisi anchor ya icon par toh nahi hua
+                                    if (e.target.closest('a') || e.target.closest('svg')) {
+                                      return; 
+                                    }
+                                    navigate(`/chats/campaign/${campaign._id}/user/${applicant.user._id}`);
+                                  }}
                                 >
-                                  {/* --- PROFILE HOVER CARD (Kept same) --- */}
                                   <div className="absolute left-1/2 -translate-x-1/2 bottom-full pb-4 hidden group-hover:flex flex-col items-center w-64 z-[100] transition-opacity duration-300 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
                                     <div className="bg-slate-900 border border-fuchsia-500 rounded-xl p-4 shadow-[0_0_20px_rgba(217,70,239,0.5)] w-full">
                                       <div className="flex flex-col items-center text-center">
@@ -393,12 +382,12 @@ function Campaigns() {
                                           {applicant.user.email}
                                         </p>
 
-                                        <div className="w-full border-t border-slate-700 pt-3 flex justify-around">
+                                        <div className="w-full border-t border-slate-700 pt-3 flex justify-around pointer-events-auto">
                                           <a
                                             href={resolveSocialLink(applicant.user.instagram, "instagram")}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1"
+                                            className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1 z-[110]"
                                             onClick={(e) => e.stopPropagation()}
                                           >
                                             <FaInstagram className="text-pink-500 text-xl" />
@@ -410,7 +399,7 @@ function Campaigns() {
                                             href={resolveSocialLink(applicant.user.facebook, "facebook")}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1"
+                                            className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1 z-[110]"
                                             onClick={(e) => e.stopPropagation()}
                                           >
                                             <FaFacebook className="text-blue-500 text-xl" />
@@ -419,10 +408,10 @@ function Campaigns() {
                                             </span>
                                           </a>
                                           <a
-                                           href={resolveSocialLink(applicant.user.youtube, "youtube")}
+                                            href={resolveSocialLink(applicant.user.youtube, "youtube")}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1"
+                                            className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1 z-[110]"
                                             onClick={(e) => e.stopPropagation()}
                                           >
                                             <FaYoutube className="text-red-500 text-xl" />
