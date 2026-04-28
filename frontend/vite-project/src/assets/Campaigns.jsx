@@ -310,7 +310,7 @@ function Campaigns() {
 
                                         {/* YouTube: Profile data uses "youtube" */}
                                         <a 
-                                          href={applicant.user.youtube?.startsWith('http') ? applicant.user.youtube : `https://youtube.com/@${applicant.user.youtube || ''}`} 
+                                          href={applicant.user.youtube?.startsWith('http') ? applicant.user.youtube : `https://youtube.com/${applicant.user.youtube || ''}`} 
                                           target="_blank" 
                                           rel="noopener noreferrer"
                                           className="flex flex-col items-center gap-1 hover:scale-125 transition-transform"
