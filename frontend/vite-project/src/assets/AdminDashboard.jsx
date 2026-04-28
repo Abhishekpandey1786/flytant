@@ -1,301 +1,292 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { FaUsers, FaChartLine, FaDollarSign, FaCreditCard, FaUserPlus, FaBullhorn, FaCheck, FaTimes } from "react-icons/fa";
+import { 
+  FaUsers, FaChartLine, FaDollarSign, FaCreditCard, 
+  FaUserPlus, FaBullhorn, FaCheck, FaTimes 
+} from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import { BiImageAdd } from "react-icons/bi";
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({ users: 0, payments: 0, newSignups: 0, revenue: 0 });
   const [notifications, setNotifications] = useState([]);
-  const [pendingCampaigns, setPendingCampaigns] = useState([]); // 🔥 Naya State
+  const [pendingCampaigns, setPendingCampaigns] = useState([]);
+  const [messages, setMessages] = useState([]);
+  
   const [newNotification, setNewNotification] = useState({
     title: "",
     message: "",
     link: "",
     imageFile: null,
   });
-  const [messages, setMessages] = useState([]);
 
-  // --- Manual User Creation State ---
   const [userData, setUserData] = useState({ email: "", password: "" });
   const [creatingUser, setCreatingUser] = useState(false);
 
   const token = localStorage.getItem("adminToken");
-  
+  const API_BASE_URL = "https://vistafluence.onrender.com/api";
+
+  // --- HELPER: Image URL Resolver ---
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
-    if (imagePath.startsWith("http") || imagePath.startsWith("https")) return imagePath;
-    return `https://vistafluence.onrender.com${imagePath}`;
+    if (imagePath.startsWith("http")) return imagePath;
+    return `${API_BASE_URL.replace('/api', '')}${imagePath}`;
   };
+
+  // --- API CALLS ---
 
   const fetchStats = async () => {
     try {
-      const res = await axios.get("https://vistafluence.onrender.com/api/admin/stats", {
+      const res = await axios.get(`${API_BASE_URL}/admin/stats`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setStats({
-        users: res.data.users,
-        payments: res.data.payments,
-        newSignups: res.data.newSignups || 0, 
-        revenue: res.data.revenue || 0, 
-      });
-    } catch (err) { console.error("Error fetching stats:", err); }
+      setStats(res.data);
+    } catch (err) { console.error("Stats fetch error"); }
   };
 
-  // 🔥 NAYA FUNCTION: Pending Campaigns Fetch Karna
   const fetchPendingCampaigns = async () => {
     try {
-      const res = await axios.get("https://vistafluence.onrender.com/api/admin/campaigns/pending", {
+      const res = await axios.get(`${API_BASE_URL}/admin/campaigns/pending`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setPendingCampaigns(res.data);
-    } catch (err) { console.error("Error fetching campaigns:", err); }
+    } catch (err) { console.error("Campaigns fetch error"); }
   };
 
-  // 🔥 NAYA FUNCTION: Approve ya Reject Karna
   const handleCampaignStatus = async (id, status) => {
+    if (!window.confirm(`Are you sure you want to ${status} this campaign?`)) return;
     try {
-      await axios.patch(`https://vistafluence.onrender.com/api/admin/campaigns/${id}/status`, 
+      await axios.patch(`${API_BASE_URL}/admin/campaigns/${id}/status`, 
         { status }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setPendingCampaigns(prev => prev.filter(c => c._id !== id));
-      alert(`Campaign ${status} successfully!`);
-    } catch (err) { alert("Status update failed"); }
+      alert(`Campaign ${status.toUpperCase()} successfully!`);
+    } catch (err) { alert("Action failed"); }
   };
 
   const handleCreateUser = async (e) => {
     e.preventDefault();
-    if (!userData.email || !userData.password) return alert("Bhai, email aur password dono likho!");
     setCreatingUser(true);
     try {
-      const res = await axios.post("https://vistafluence.onrender.com/api/academy/create-user", userData, {
+      await axios.post(`${API_BASE_URL}/academy/create-user`, userData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.data.success) {
-        alert(res.data.message || "Chaka-chak! User ban gaya aur mail chala gaya. ✅");
-        setUserData({ email: "", password: "" });
-      }
-    } catch (err) {
-      const errorDetail = err.response?.data?.message || "Shayad backend setup nahi hai ya internet issue hai.";
-      alert(`Error: ${errorDetail}`);
-    }
+      alert("User created and credentials mailed! ✅");
+      setUserData({ email: "", password: "" });
+    } catch (err) { alert(err.response?.data?.message || "Error creating user"); }
     setCreatingUser(false);
   };
 
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get("https://vistafluence.onrender.com/api/admin/notifications", {
+      const res = await axios.get(`${API_BASE_URL}/admin/notifications`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications(res.data);
-    } catch (err) { console.error("Error fetching notifications:", err); }
+    } catch (err) { console.error("Notifications fetch error"); }
   };
 
   const postNotification = async () => {
-    if (!newNotification.title && !newNotification.message && !newNotification.imageFile) return;
     const formData = new FormData();
     formData.append("title", newNotification.title);
     formData.append("message", newNotification.message);
-    formData.append("link", newNotification.link || "");
+    formData.append("link", newNotification.link);
     if (newNotification.imageFile) formData.append("image", newNotification.imageFile);
 
     try {
-      await axios.post("https://vistafluence.onrender.com/api/admin/notifications", formData, {
+      await axios.post(`${API_BASE_URL}/admin/notifications`, formData, {
         headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
       });
-      setNewNotification({ title: "", message: "", link: "", imageFile: null });
-      fetchNotifications(); 
       alert("Notification sent!");
-    } catch (err) { console.error("Error posting notification:", err); }
+      setNewNotification({ title: "", message: "", link: "", imageFile: null });
+      fetchNotifications();
+    } catch (err) { alert("Failed to send notification"); }
   };
 
   const deleteNotification = async (id) => {
-    if (!window.confirm("Are you sure to delete this notification?")) return;
+    if (!window.confirm("Delete notification?")) return;
     try {
-      await axios.delete(`https://vistafluence.onrender.com/api/admin/notifications/${id}`, {
+      await axios.delete(`${API_BASE_URL}/admin/notifications/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      fetchNotifications(); 
-      alert("Notification deleted!");
-    } catch (err) { console.error("Error deleting notification:", err); }
+      fetchNotifications();
+    } catch (err) { alert("Delete failed"); }
   };
 
   const fetchMessages = async () => {
     try {
-      const res = await axios.get("https://vistafluence.onrender.com/api/contact/all", {
+      const res = await axios.get(`${API_BASE_URL}/contact/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessages(res.data);
-    } catch (err) { console.error("Error fetching messages:", err); }
+    } catch (err) { console.error("Messages fetch error"); }
   };
 
   useEffect(() => {
     if (token) {
       fetchStats(); fetchNotifications(); fetchMessages(); fetchPendingCampaigns();
-      const intervalId = setInterval(() => {
-        fetchStats(); fetchNotifications(); fetchMessages(); fetchPendingCampaigns();
-      }, 15000); 
-      return () => clearInterval(intervalId);
+      const interval = setInterval(() => {
+        fetchStats(); fetchPendingCampaigns();
+      }, 30000); // Har 30 sec me refresh
+      return () => clearInterval(interval);
     }
-  }, [token]); 
+  }, [token]);
 
   return (
-    <div className="min-h-screen p-8 bg-slate-800 text-white relative overflow-hidden">
-      {/* Background Stying */}
-      <style jsx="true">{`
-        .animate-blob { animation: blob 7s infinite; }
-        .animation-delay-2000 { animation-delay: 2s; }
-        @keyframes blob {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-      `}</style>
+    <div className="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-10">
+        
+        {/* HEADER */}
+        <div className="text-center">
+          <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white uppercase italic">
+            Vistafluence <span className="text-fuchsia-600">Control Panel</span>
+          </h1>
+        </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto">
-        <h1 className="text-5xl font-extrabold mb-12 text-center drop-shadow-lg tracking-wide">
-          <span className="bg-clip-text text-transparent bg-white">Vistafluence Admin</span>
-        </h1>
-
-        {/* --- STATS SECTION --- */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-          <div className="bg-white/10 backdrop-blur-lg p-8 rounded-3xl text-center border-2 border-fuchsia-800 shadow-xl shadow-fuchsia-900/20">
-            <div className="text-4xl mb-3 text-cyan-300 flex justify-center"><FaUsers /></div>
-            <h2 className="text-xl">Total Users</h2>
-            <p className="text-5xl font-bold mt-3">{stats.users}</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-lg p-8 rounded-3xl text-center border-2 border-fuchsia-800 shadow-xl shadow-fuchsia-900/20">
-            <div className="text-4xl mb-3 text-green-300 flex justify-center"><FaCreditCard /></div>
-            <h2 className="text-xl">Total Payments</h2>
-            <p className="text-5xl font-bold mt-3">{stats.payments}</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-lg p-8 rounded-3xl text-center border-2 border-fuchsia-800 shadow-xl shadow-fuchsia-900/20">
-            <div className="text-4xl mb-3 text-yellow-300 flex justify-center"><FaChartLine /></div>
-            <h2 className="text-xl">New Signups</h2>
-            <p className="text-5xl font-bold mt-3">{stats.newSignups}</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-lg p-8 rounded-3xl text-center border-2 border-fuchsia-800 shadow-xl shadow-fuchsia-900/20">
-            <div className="text-4xl mb-3 text-fuchsia-300 flex justify-center"><FaDollarSign /></div>
-            <h2 className="text-xl">Total Revenue</h2>
-            <p className="text-5xl font-bold mt-3">${stats.revenue}</p>
-          </div>
+        {/* STATS */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Users", val: stats.users, icon: <FaUsers/>, color: "text-cyan-400" },
+            { label: "Payments", val: stats.payments, icon: <FaCreditCard/>, color: "text-green-400" },
+            { label: "Signups", val: stats.newSignups, icon: <FaChartLine/>, color: "text-yellow-400" },
+            { label: "Revenue", val: `$${stats.revenue}`, icon: <FaDollarSign/>, color: "text-fuchsia-400" }
+          ].map((item, i) => (
+            <div key={i} className="bg-slate-800/50 p-6 rounded-3xl border border-slate-700 shadow-2xl">
+              <div className={`text-2xl ${item.color} mb-2`}>{item.icon}</div>
+              <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">{item.label}</p>
+              <p className="text-3xl font-black mt-1">{item.val}</p>
+            </div>
+          ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* --- LEFT SIDE: TOOLS --- */}
-          <div className="lg:col-span-1 space-y-8">
-            {/* Academy Access */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 border-2 border-cyan-500">
-              <div className="flex items-center space-x-3 mb-6 text-cyan-300">
-                <FaUserPlus className="text-2xl" />
-                <h2 className="text-2xl font-semibold">Academy Access</h2>
+          {/* COLUMN 1: PENDING CAMPAIGNS (FULL WIDTH IN MOBILE) */}
+          <div className="lg:col-span-2 space-y-6">
+            <h2 className="text-2xl font-black flex items-center gap-3">
+              <FaBullhorn className="text-yellow-500 animate-pulse" /> PENDING CAMPAIGNS
+            </h2>
+            
+            {pendingCampaigns.length === 0 ? (
+              <div className="bg-slate-800/30 p-10 rounded-3xl border-2 border-dashed border-slate-700 text-center text-slate-500">
+                Sari campaigns approved hain! ✅
               </div>
-              <form onSubmit={handleCreateUser} className="space-y-4">
-                <input
-                  type="email" placeholder="Student Email" required
-                  className="w-full p-4 rounded-xl bg-white/5 border-2 border-fuchsia-800 outline-none focus:border-cyan-400"
-                  value={userData.email}
-                  onChange={(e) => setUserData({ ...userData, email: e.target.value })}
+            ) : (
+              pendingCampaigns.map((camp) => (
+                <div key={camp._id} className="group bg-slate-800 rounded-3xl overflow-hidden border border-slate-700 hover:border-fuchsia-500/50 transition-all">
+                  <div className="flex flex-col md:flex-row">
+                    {/* CAMPAIGN IMAGE CHECK */}
+                    <div className="md:w-64 h-64 md:h-auto bg-slate-950 overflow-hidden">
+                      {camp.imagePath ? (
+                        <img 
+                          src={getImageUrl(camp.imagePath)} 
+                          alt="Verification" 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-700 italic">No Image Uploaded</div>
+                      )}
+                    </div>
+                    
+                    {/* DETAILS */}
+                    <div className="p-6 flex-grow flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-start">
+                          <h3 className="text-2xl font-bold text-white leading-tight">{camp.name}</h3>
+                          <span className="text-fuchsia-500 font-black text-lg">${camp.budget}</span>
+                        </div>
+                        <p className="text-cyan-400 text-sm font-bold mb-3 uppercase tracking-tighter">
+                          Brand: {camp.createdBy?.businessName || "Individual Client"}
+                        </p>
+                        <p className="text-slate-400 text-sm line-clamp-3 mb-4">{camp.description}</p>
+                      </div>
+
+                      <div className="flex gap-4">
+                        <button 
+                          onClick={() => handleCampaignStatus(camp._id, 'approved')}
+                          className="flex-1 bg-green-600 hover:bg-green-500 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95"
+                        >
+                          <FaCheck /> APPROVE
+                        </button>
+                        <button 
+                          onClick={() => handleCampaignStatus(camp._id, 'rejected')}
+                          className="flex-1 bg-red-600 hover:bg-red-500 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95"
+                        >
+                          <FaTimes /> REJECT
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* COLUMN 2: TOOLS & NOTIFS */}
+          <div className="space-y-8">
+            
+            {/* ACADEMY ACCESS */}
+            <div className="bg-slate-800 p-6 rounded-3xl border-2 border-cyan-900/50 shadow-xl">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-cyan-400">
+                <FaUserPlus/> MANUAL ACADEMY ACCESS
+              </h3>
+              <form onSubmit={handleCreateUser} className="space-y-3">
+                <input 
+                  type="email" placeholder="Email Address" 
+                  className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl outline-none focus:border-cyan-500"
+                  value={userData.email} onChange={e => setUserData({...userData, email: e.target.value})}
                 />
-                <input
-                  type="text" placeholder="Manual Password" required
-                  className="w-full p-4 rounded-xl bg-white/5 border-2 border-fuchsia-800 outline-none focus:border-cyan-400"
-                  value={userData.password}
-                  onChange={(e) => setUserData({ ...userData, password: e.target.value })}
+                <input 
+                  type="text" placeholder="Password" 
+                  className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl outline-none focus:border-cyan-500"
+                  value={userData.password} onChange={e => setUserData({...userData, password: e.target.value})}
                 />
-                <button type="submit" disabled={creatingUser} className="w-full bg-cyan-600 hover:bg-cyan-500 py-4 rounded-xl font-bold">
-                  {creatingUser ? "Creating..." : "Create & Mail Access"}
+                <button 
+                  disabled={creatingUser}
+                  className="w-full bg-cyan-600 py-3 rounded-xl font-black hover:bg-cyan-500 transition-all disabled:opacity-30"
+                >
+                  {creatingUser ? "CREATING..." : "CREATE & SEND MAIL"}
                 </button>
               </form>
             </div>
 
-            {/* Send Notification */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 border-2 border-fuchsia-800">
-              <h2 className="text-2xl font-semibold mb-6">Send Notification</h2>
-              <div className="space-y-5">
-                <input type="text" placeholder="Notification Title" value={newNotification.title}
-                  onChange={(e) => setNewNotification({ ...newNotification, title: e.target.value })}
-                  className="w-full p-4 rounded-xl bg-white/5 border-2 border-fuchsia-800" />
-                <textarea rows="3" placeholder="Message" value={newNotification.message}
-                  onChange={(e) => setNewNotification({ ...newNotification, message: e.target.value })}
-                  className="w-full p-4 rounded-xl bg-white/5 border-2 border-fuchsia-800"></textarea>
-                <input type="text" placeholder="Link" value={newNotification.link}
-                  onChange={(e) => setNewNotification({ ...newNotification, link: e.target.value })}
-                  className="w-full p-4 rounded-xl bg-white/5 border-2 border-fuchsia-800" />
-                <label className="flex items-center space-x-3 w-full p-4 rounded-xl bg-white/5 border border-white/20 cursor-pointer">
-                  <BiImageAdd className="text-2xl" />
-                  <span>{newNotification.imageFile ? newNotification.imageFile.name : "Image (Optional)"}</span>
-                  <input type="file" onChange={(e) => setNewNotification({ ...newNotification, imageFile: e.target.files[0] })} className="hidden" />
+            {/* SEND NOTIFICATION */}
+            <div className="bg-slate-800 p-6 rounded-3xl border-2 border-fuchsia-900/50">
+              <h3 className="text-xl font-bold mb-4 text-fuchsia-500">PUSH NOTIFICATION</h3>
+              <div className="space-y-3">
+                <input 
+                  type="text" placeholder="Title" 
+                  className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl outline-none focus:border-fuchsia-500"
+                  value={newNotification.title} onChange={e => setNewNotification({...newNotification, title: e.target.value})}
+                />
+                <textarea 
+                  placeholder="Message..." 
+                  className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl outline-none focus:border-fuchsia-500 h-24"
+                  value={newNotification.message} onChange={e => setNewNotification({...newNotification, message: e.target.value})}
+                ></textarea>
+                <label className="block w-full text-center py-3 border-2 border-dashed border-slate-700 rounded-xl cursor-pointer hover:bg-slate-700/30 transition-all">
+                  <span className="text-slate-400 text-sm flex items-center justify-center gap-2">
+                    <BiImageAdd className="text-xl"/> {newNotification.imageFile ? newNotification.imageFile.name : "Add Image (Optional)"}
+                  </span>
+                  <input type="file" className="hidden" onChange={e => setNewNotification({...newNotification, imageFile: e.target.files[0]})} />
                 </label>
-                <button onClick={postNotification} className="w-full bg-fuchsia-700 py-4 rounded-xl font-bold">Send Now</button>
+                <button 
+                  onClick={postNotification}
+                  className="w-full bg-fuchsia-700 py-3 rounded-xl font-black hover:bg-fuchsia-600 transition-all shadow-lg shadow-fuchsia-900/40"
+                >
+                  BLAST NOTIFICATION
+                </button>
               </div>
             </div>
-          </div>
 
-          {/* --- RIGHT SIDE: CAMPAIGNS & NOTIFS --- */}
-          <div className="lg:col-span-2 space-y-12">
-            
-            {/* 🔥 CAMPAIGN APPROVAL SECTION (Naya Integrated) */}
-            <div className="space-y-6">
-              <h2 className="text-3xl font-bold flex items-center gap-3">
-                <FaBullhorn className="text-yellow-400" /> Pending Campaigns Approval
-              </h2>
-              {pendingCampaigns.length === 0 ? (
-                <div className="p-10 bg-white/5 rounded-3xl border border-white/10 text-center text-slate-500 italic">
-                  Sab clear hai! Koi pending campaign nahi hai.
-                </div>
-              ) : (
-                pendingCampaigns.map((camp) => (
-                  <div key={camp._id} className="bg-slate-900/80 backdrop-blur-md rounded-3xl p-6 border-2 border-slate-700 hover:border-fuchsia-500 transition-all shadow-xl">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-2">
-                        <h3 className="text-2xl font-bold text-white">{camp.name}</h3>
-                        <p className="text-fuchsia-400 font-medium">Brand: {camp.createdBy?.businessName || camp.createdBy?.name}</p>
-                        <p className="text-slate-400 text-sm">{camp.description}</p>
-                        <div className="flex gap-3 mt-3">
-                          <span className="bg-slate-800 px-3 py-1 rounded text-xs">Budget: ${camp.budget}</span>
-                          <span className="bg-slate-800 px-3 py-1 rounded text-xs">Niche: {camp.requiredNiche?.[0]}</span>
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <button onClick={() => handleCampaignStatus(camp._id, 'approved')} className="p-4 bg-green-600 rounded-2xl hover:bg-green-500 shadow-lg shadow-green-900/20"><FaCheck/></button>
-                        <button onClick={() => handleCampaignStatus(camp._id, 'rejected')} className="p-4 bg-red-600 rounded-2xl hover:bg-red-500 shadow-lg shadow-red-900/20"><FaTimes/></button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Notifications List */}
-            <div className="space-y-6">
-              <h2 className="text-2xl font-semibold">Live Notifications</h2>
-              {notifications.map((n) => (
-                <div key={n._id} className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 border border-fuchsia-800/30">
-                  <div className="flex justify-between">
-                    <div>
-                      <h3 className="font-bold text-xl">{n.title}</h3>
-                      <p className="text-gray-300 mt-1">{n.message}</p>
-                    </div>
-                    <button onClick={() => deleteNotification(n._id)} className="text-white bg-red-600 p-2 rounded-xl h-fit"><MdDeleteForever /></button>
-                  </div>
-                  {n.image && <img src={getImageUrl(n.image)} alt="notif" className="mt-4 rounded-xl w-full max-h-48 object-cover" />}
-                </div>
-              ))}
-            </div>
-            
-            {/* Contact Messages */}
+            {/* MESSAGES PREVIEW */}
             <div className="space-y-4">
-              <h2 className="text-2xl font-semibold">User Messages</h2>
-              {messages.map((msg) => (
-                <div key={msg._id} className="p-5 bg-white/5 rounded-2xl border border-white/10">
-                  <div className="flex justify-between text-sm text-cyan-400 mb-2">
-                    <span>{msg.name}</span>
-                    <span>{msg.email}</span>
-                  </div>
-                  <p className="text-slate-300 italic">"{msg.message}"</p>
+              <h3 className="text-lg font-bold tracking-widest text-slate-500 uppercase">Latest Contact Messages</h3>
+              {messages.slice(0, 5).map(m => (
+                <div key={m._id} className="bg-slate-800/40 p-4 rounded-2xl border border-slate-800">
+                  <p className="text-xs text-cyan-500 font-bold">{m.email}</p>
+                  <p className="text-sm text-slate-300 mt-1 italic">"{m.message}"</p>
                 </div>
               ))}
             </div>
