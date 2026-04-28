@@ -39,6 +39,19 @@ const CampaignSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+
+    // --- 🔥 APPROVAL SYSTEM FIELDS (IMPORTANT) ---
+    approvalStatus: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending' // Default pending rahega jab brand create karega
+    },
+    isActive: {
+        type: Boolean,
+        default: false // Jab admin approve karega, tabhi true hoga
+    },
+    // ----------------------------------------------
+
     createdAt: {
         type: Date,
         default: Date.now
