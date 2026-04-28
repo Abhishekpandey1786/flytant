@@ -27,23 +27,39 @@ const resolveAssetUrl = (assetPath) => {
 const resolveSocialLink = (url, platform) => {
   if (!url) return "#";
 
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
+  const cleanUrl = url.trim();
+
+  // Already valid full URL
+  if (
+    cleanUrl.startsWith("http://") ||
+    cleanUrl.startsWith("https://")
+  ) {
+    return cleanUrl;
   }
+
+  // Prevent opening current website routes
+  if (
+    cleanUrl.includes("vistafluence.com") ||
+    cleanUrl.includes("localhost")
+  ) {
+    return "#";
+  }
+
   switch (platform) {
     case "instagram":
-      return `https://instagram.com/${url.replace("@", "")}`;
+      return `https://instagram.com/${cleanUrl.replace("@", "")}`;
 
     case "facebook":
-      return `https://facebook.com/${url}`;
+      return `https://facebook.com/${cleanUrl.replace("@", "")}`;
 
     case "youtube":
-      return url.includes("youtube.com") || url.includes("youtu.be")
-        ? `https://${url}`
-        : `https://youtube.com/${url}`;
+      return cleanUrl.includes("youtube.com") ||
+        cleanUrl.includes("youtu.be")
+        ? `https://${cleanUrl}`
+        : `https://youtube.com/${cleanUrl}`;
 
     default:
-      return `https://${url}`;
+      return "#";
   }
 };
 
@@ -57,8 +73,6 @@ function Campaigns() {
 
   const fetchCampaigns = async () => {
     try {
-      // LOGIC UPDATE: Agar user advertiser hai toh "my-campaigns" fetch karo (rejected dekhne ke liye)
-      // Warna sirf public fetch karo
       const endpoint =
         user?.userType === "advertiser" && token
           ? "https://vistafluence.onrender.com/api/campaigns/my-campaigns"
