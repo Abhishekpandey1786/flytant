@@ -10,7 +10,7 @@ import {
   FaFacebook,
   FaYoutube,
   FaEnvelope,
-  FaTimesCircle, 
+  FaTimesCircle, // New icon for rejection
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -198,12 +198,19 @@ function Campaigns() {
                 return (
                   <div
                     key={campaign._id}
-                    className="relative bg-slate-800 rounded-2xl shadow-xl border border-fuchsia-800 p-4 sm:p-6 flex flex-col items-start transition-all duration-300 hover:scale-105 neno-button hover:shadow-fuchsia-800/50 overflow-hidden"
+                    className="relative bg-slate-800 rounded-2xl shadow-xl border border-fuchsia-800 p-4 sm:p-6 flex flex-col items-start transition-all duration-300 hover:scale-105 neno-button hover:shadow-fuchsia-800/50 overflow-visible"
                   >
-                    {/* YEH RHA REJECT ALERT JO AAPNE MANGA THA */}
+                    {/* REJECTION ALERT FOR ADVERTISER (BRAND) */}
                     {user?.userType === "advertiser" && campaign.status === "rejected" && (
-                      <div className="absolute top-0 left-0 w-full bg-red-600 text-white text-[10px] font-bold py-1 px-3 text-center uppercase tracking-widest z-10">
-                        Campaign Rejected: {campaign.feedback || "Action Required"}
+                      <div className="w-full bg-red-950/40 border border-red-600/50 p-3 rounded-xl mb-4 animate-pulse">
+                        <div className="flex items-center gap-2 text-red-500 font-black text-[10px] uppercase tracking-widest">
+                          <FaTimesCircle /> Rejected by Admin
+                        </div>
+                        {campaign.feedback && (
+                          <p className="text-gray-300 text-xs mt-1 italic">
+                            Reason: "{campaign.feedback}"
+                          </p>
+                        )}
                       </div>
                     )}
 
@@ -276,7 +283,7 @@ function Campaigns() {
                                     )
                                   }
                                 >
-                                  {/* PROFILE HOVER CARD */}
+                                  {/* --- PROFILE HOVER CARD --- */}
                                   <div 
                                     className="absolute left-1/2 -translate-x-1/2 bottom-full pb-4 hidden group-hover:flex flex-col items-center w-64 z-[100] transition-opacity duration-300 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
                                   >
