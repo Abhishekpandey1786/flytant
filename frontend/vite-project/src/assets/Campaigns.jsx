@@ -303,7 +303,7 @@ function Campaigns() {
                                         
                                         <div className="w-full border-t border-slate-700 pt-3 flex justify-around">
                                           <a 
-                                            href={`https://instagram.com/${applicant.user.instagram || ''}`} 
+                                            href={`${applicant.user.instagram || ''}`} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
                                             className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1"
@@ -314,7 +314,7 @@ function Campaigns() {
                                           </a>
 
                                           <a 
-                                            href={`https://facebook.com/${applicant.user.facebook || ''}`} 
+                                            href={`${applicant.user.facebook || ''}`} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
                                             className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1"
@@ -325,7 +325,7 @@ function Campaigns() {
                                           </a>
 
                                           <a 
-                                            href={applicant.user.youtube?.startsWith('http') ? applicant.user.youtube : `https://youtube.com/${applicant.user.youtube || ''}`} 
+                                            href={applicant.user.youtube?.startsWith('http') ? applicant.user.youtube : `${applicant.user.youtube || ''}`} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
                                             className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1"
