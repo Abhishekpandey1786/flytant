@@ -27,36 +27,26 @@ const resolveAssetUrl = (assetPath) => {
 const resolveSocialLink = (url, platform) => {
   if (!url) return "#";
 
-  const cleanUrl = url.trim();
+  let cleanUrl = url.trim();
 
-  // Already valid full URL
-  if (
-    cleanUrl.startsWith("http://") ||
-    cleanUrl.startsWith("https://")
-  ) {
+  // 1. Check agar user ne pehle se hi poora URL (http/https) dala hai
+  if (cleanUrl.startsWith("http://") || cleanUrl.startsWith("https://")) {
     return cleanUrl;
   }
 
-  // Prevent opening current website routes
-  if (
-    cleanUrl.includes("vistafluence.com") ||
-    cleanUrl.includes("localhost")
-  ) {
-    return "#";
-  }
+  // 2. Agar user ne sirf username dala hai (@ ke saath ya bina)
+  const username = cleanUrl.replace("@", "");
 
   switch (platform) {
     case "instagram":
-      return `https://instagram.com/${cleanUrl.replace("@", "")}`;
+      return `https://www.instagram.com/${username}/`;
 
     case "facebook":
-      return `https://facebook.com/${cleanUrl.replace("@", "")}`;
+      return `https://www.facebook.com/${username}/`;
 
     case "youtube":
-      return cleanUrl.includes("youtube.com") ||
-        cleanUrl.includes("youtu.be")
-        ? `https://${cleanUrl}`
-        : `https://youtube.com/${cleanUrl}`;
+      // YouTube ke liye handle karein agar sirf channel ID/name hai
+      return `https://www.youtube.com/${username}`;
 
     default:
       return "#";
