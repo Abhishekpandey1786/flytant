@@ -52,7 +52,7 @@ const plans = [
     features: [
       "Higher Visibility",
       "Apply For Unlimited Campaigns Monthly",
-      "Direct Message","Access to Vistafluence","personalized recommendation  To Brands",
+      "Direct Message","Access to Vistafluence Academy Course","personalized recommendation  To Brands",
       " Video Editing Services ( 3 videos a month)","Profile Recommendation to brands",
     
     ],
