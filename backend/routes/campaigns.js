@@ -78,7 +78,20 @@ const checkAndResetSubscription = (user) => {
   return shouldSave;
 };
 
-// --- CREATE CAMPAIGN (Integrated with Approval System) ---
+// --- NEW ROUTE: GET ADVERTISER'S OWN CAMPAIGNS (Including Rejected) ---
+router.get("/my-campaigns", auth, roleMiddleware("advertiser"), async (req, res) => {
+  try {
+    const campaigns = await Campaign.find({ createdBy: req.user.id })
+      .populate("applicants.user", "name email avatar")
+      .sort({ createdAt: -1 });
+    res.json(campaigns);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+// --- CREATE CAMPAIGN ---
 router.post(
   "/",
   auth,
@@ -113,7 +126,6 @@ router.post(
         endDate,
         imagePath: imageUrl,
         createdBy: req.user.id,
-        // 🔥 Ye do fields auto-set hongi jab brand create karega
         approvalStatus: "pending",
         isActive: false
       });
@@ -127,10 +139,9 @@ router.post(
   }
 );
 
-// --- GET PUBLIC CAMPAIGNS (Filter Only Approved & Active) ---
+// --- GET PUBLIC CAMPAIGNS ---
 router.get("/public", async (req, res) => {
   try {
-    // 🔥 Sirf wahi campaigns dikhengi jo Admin ne approve ki hain
     const campaigns = await Campaign.find({ approvalStatus: "approved", isActive: true })
       .populate("createdBy", "name email")
       .populate("applicants.user", "name email avatar")
@@ -143,7 +154,7 @@ router.get("/public", async (req, res) => {
   }
 });
 
-// --- APPLY TO CAMPAIGN (No changes to your logic) ---
+// --- APPLY TO CAMPAIGN ---
 router.post("/:campaignId/apply", auth, async (req, res) => {
   try {
     const campaign = await Campaign.findById(req.params.campaignId);
@@ -152,7 +163,6 @@ router.post("/:campaignId/apply", auth, async (req, res) => {
     if (!campaign) return res.status(404).json({ msg: "Campaign not found" });
     if (!userDoc) return res.status(404).json({ msg: "User not found" });
 
-    // Check if campaign is approved before applying
     if (campaign.approvalStatus !== "approved") {
       return res.status(403).json({ msg: "This campaign is not yet approved by admin." });
     }
