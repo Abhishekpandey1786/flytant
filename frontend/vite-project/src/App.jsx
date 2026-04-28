@@ -43,7 +43,7 @@ function App() {
             <Route path="/signup" element={<Login />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
-            
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/contact" element={<Contact />} />
               <Route path="/about" element={<About />} />
               <Route path="/blogs" element={<Blog />} />
@@ -51,16 +51,14 @@ function App() {
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/Refund-Policy" element={<RefundPolicy />} />
               <Route path="/success" element={<PaymentSuccess />} />
-            <Route element={<PrivateRoutes />}>
+              <Route element={<PrivateRoutes />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/dashboard/brand" element={<Brand />} />
               <Route path="/dashboard/influencer" element={<Dashboard />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/campaigns" element={<Campaigns />} />
               <Route path="/create-campaign" element={<CreateCampaign />} />
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="/Academy" element={<Academy/>}/>
-              <Route
+              <Route path="/Academy" element={<Academy/>}/><Route
                 path="/chats/campaign/:campaignId/user/:userId"
                 element={<Chats />}
               />
