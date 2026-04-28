@@ -197,13 +197,14 @@ function Campaigns() {
                 return (
                   <div
                     key={campaign._id}
-                    className="bg-slate-800 rounded-2xl shadow-xl border border-fuchsia-800 p-4 sm:p-6 flex flex-col items-start transition-transform duration-300 hover:scale-105 neno-button hover:shadow-fuchsia-800/50"
+                    // FIX: overflow-visible ensures the hover card isn't clipped
+                    className="relative bg-slate-800 rounded-2xl shadow-xl border border-fuchsia-800 p-4 sm:p-6 flex flex-col items-start transition-all duration-300 hover:scale-105 neno-button hover:shadow-fuchsia-800/50 overflow-visible"
                   >
                     {campaign.imagePath && (
                       <img
                         src={campaign.imagePath}
                         alt={campaign.name}
-                        className="w-full h-40 sm:h-48 object-cover rounded-xl mb-4 neno-button shadow-xl hover:shadow-fuchsia-800/50"
+                        className="w-full h-40 sm:h-48 object-cover rounded-xl mb-4 neno-button shadow-xl"
                       />
                     )}
                     <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
@@ -239,7 +240,7 @@ function Campaigns() {
                         <button
                           onClick={() => handleApply(campaign._id)}
                           disabled={hasApplied || isLimitReached}
-                          className={`mt-4 w-full py-2 text-white rounded-lg font-semibold transition-colors active:scale-95 neno-button shadow-xl hover:shadow-fuchsia-800/50 border-fuchsia-800 ${
+                          className={`mt-4 w-full py-2 text-white rounded-lg font-semibold transition-colors active:scale-95 neno-button shadow-xl border-fuchsia-800 ${
                             hasApplied || isLimitReached
                               ? "bg-gray-500 cursor-not-allowed"
                               : "bg-fuchsia-600 hover:bg-fuchsia-700"
@@ -261,6 +262,7 @@ function Campaigns() {
                               applicant.user ? (
                                 <li
                                   key={applicant.user._id}
+                                  // FIX: Added 'group' to trigger hover card correctly
                                   className="group relative flex items-center gap-3 text-xs sm:text-sm text-gray-400 bg-slate-700 p-2 rounded-lg cursor-pointer hover:bg-slate-600 transition-colors"
                                   onClick={() =>
                                     navigate(
@@ -268,8 +270,8 @@ function Campaigns() {
                                     )
                                   }
                                 >
-                                  {/* --- PROFILE HOVER CARD --- */}
-                                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[110%] hidden group-hover:block w-64 bg-slate-900 border border-fuchsia-500 rounded-xl p-4 shadow-[0_0_20px_rgba(217,70,239,0.5)] z-[9999]">
+                                  {/* --- PROFILE HOVER CARD FIX --- */}
+                                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:flex flex-col items-center w-64 bg-slate-900 border border-fuchsia-500 rounded-xl p-4 shadow-[0_0_20px_rgba(217,70,239,0.5)] z-[100] pointer-events-none group-hover:pointer-events-auto">
                                     <div className="flex flex-col items-center text-center">
                                       {applicant.user.avatar ? (
                                         <img src={applicant.user.avatar} className="w-16 h-16 rounded-full border-2 border-fuchsia-500 object-cover mb-2" alt="avatar" />
@@ -284,7 +286,6 @@ function Campaigns() {
                                       </p>
                                       
                                       <div className="w-full border-t border-slate-700 pt-3 flex justify-around">
-                                        {/* Instagram: Profile data uses "instagram" */}
                                         <a 
                                           href={`https://instagram.com/${applicant.user.instagram || ''}`} 
                                           target="_blank" 
@@ -296,7 +297,6 @@ function Campaigns() {
                                           <span className="text-[10px] text-fuchsia-300 font-bold underline italic">Visit</span>
                                         </a>
 
-                                        {/* Facebook: Profile data uses "facebook" */}
                                         <a 
                                           href={`https://facebook.com/${applicant.user.facebook || ''}`} 
                                           target="_blank" 
@@ -308,7 +308,6 @@ function Campaigns() {
                                           <span className="text-[10px] text-fuchsia-300 font-bold underline italic">Visit</span>
                                         </a>
 
-                                        {/* YouTube: Profile data uses "youtube" */}
                                         <a 
                                           href={applicant.user.youtube?.startsWith('http') ? applicant.user.youtube : `https://youtube.com/${applicant.user.youtube || ''}`} 
                                           target="_blank" 
@@ -321,6 +320,7 @@ function Campaigns() {
                                         </a>
                                       </div>
                                     </div>
+                                    {/* Arrow icon */}
                                     <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-fuchsia-500"></div>
                                   </div>
 
