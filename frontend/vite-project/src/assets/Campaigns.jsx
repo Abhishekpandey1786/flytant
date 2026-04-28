@@ -10,7 +10,7 @@ import {
   FaFacebook,
   FaYoutube,
   FaEnvelope,
-  FaTimesCircle, // Naya icon rejection ke liye
+  FaTimesCircle, // New icon for rejection
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -34,14 +34,7 @@ function Campaigns() {
 
   const fetchCampaigns = async () => {
     try {
-      // --- LOGIC: Advertiser ke liye unka apna data, baakiyo ke liye public data ---
-      const url = (token && user?.userType === "advertiser")
-        ? "https://vistafluence.onrender.com/api/campaigns/my-campaigns"
-        : "https://vistafluence.onrender.com/api/campaigns/public";
-
-      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-      
-      const res = await axios.get(url, config);
+      const res = await axios.get("https://vistafluence.onrender.com/api/campaigns/public");
 
       const updatedCampaigns = res.data.map(campaign => ({
         ...campaign,
@@ -65,7 +58,7 @@ function Campaigns() {
 
   useEffect(() => {
     fetchCampaigns();
-  }, [user?.userType]); // User type badalne par refetch karein
+  }, []);
 
   const handleApply = async (campaignId) => {
     if (!token) {
@@ -190,7 +183,14 @@ function Campaigns() {
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {campaigns.map((campaign) => {
+            {campaigns
+              .filter((campaign) => {
+                if (user?.userType === "advertiser") {
+                  return campaign.createdBy?._id === currentUserId;
+                }
+                return true;
+              })
+              .map((campaign) => {
                 const hasApplied = campaign.applicants?.some(
                   (a) => a.user?._id === currentUserId
                 );
@@ -200,15 +200,15 @@ function Campaigns() {
                     key={campaign._id}
                     className="relative bg-slate-800 rounded-2xl shadow-xl border border-fuchsia-800 p-4 sm:p-6 flex flex-col items-start transition-all duration-300 hover:scale-105 neno-button hover:shadow-fuchsia-800/50 overflow-visible"
                   >
-                    {/* --- REJECTION STATUS SECTION (For Advertisers) --- */}
-                    {user?.userType === "advertiser" && campaign.approvalStatus === "rejected" && (
+                    {/* REJECTION ALERT FOR ADVERTISER (BRAND) */}
+                    {user?.userType === "advertiser" && campaign.status === "rejected" && (
                       <div className="w-full bg-red-950/40 border border-red-600/50 p-3 rounded-xl mb-4 animate-pulse">
                         <div className="flex items-center gap-2 text-red-500 font-black text-[10px] uppercase tracking-widest">
                           <FaTimesCircle /> Rejected by Admin
                         </div>
                         {campaign.feedback && (
-                          <p className="text-gray-300 text-[11px] mt-1 italic leading-tight">
-                            Reason: {campaign.feedback}
+                          <p className="text-gray-300 text-xs mt-1 italic">
+                            Reason: "{campaign.feedback}"
                           </p>
                         )}
                       </div>
