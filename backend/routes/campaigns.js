@@ -91,6 +91,38 @@ router.get("/my-campaigns", auth, roleMiddleware("advertiser"), async (req, res)
   }
 });
 
+// --- NEW ROUTE: ADMIN STATUS UPDATE (With Auto-Delete Logic) ---
+// Is route ko Admin Dashboard se call karein
+router.patch("/admin/:id/status", auth, async (req, res) => {
+  const { status, feedback } = req.body; // status: 'approved' or 'rejected'
+  try {
+    const updateData = { 
+      approvalStatus: status, 
+      feedback: feedback,
+      isActive: status === "approved" ? true : false
+    };
+
+    // Agar reject hua toh deletion timer start karo (e.g., 24 hours)
+    if (status === "rejected") {
+      updateData.rejectedAt = new Date(); 
+    } else {
+      updateData.rejectedAt = null; // Reset if approved later
+    }
+
+    const campaign = await Campaign.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+    
+    if (!campaign) return res.status(404).json({ msg: "Campaign not found" });
+    res.json(campaign);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
 // --- CREATE CAMPAIGN ---
 router.post(
   "/",
@@ -127,7 +159,8 @@ router.post(
         imagePath: imageUrl,
         createdBy: req.user.id,
         approvalStatus: "pending",
-        isActive: false
+        isActive: false,
+        rejectedAt: null // Initialize null
       });
 
       const campaign = await newCampaign.save();

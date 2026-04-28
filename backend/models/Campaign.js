@@ -40,15 +40,25 @@ const CampaignSchema = new mongoose.Schema({
         required: true
     },
 
-    // --- 🔥 APPROVAL SYSTEM FIELDS (IMPORTANT) ---
+    // --- 🔥 APPROVAL SYSTEM FIELDS ---
     approvalStatus: {
         type: String,
         enum: ['pending', 'approved', 'rejected'],
-        default: 'pending' // Default pending rahega jab brand create karega
+        default: 'pending'
     },
     isActive: {
         type: Boolean,
-        default: false // Jab admin approve karega, tabhi true hoga
+        default: false
+    },
+    
+    // --- 🚨 REJECTION & AUTO-DELETE FIELDS ---
+    feedback: { 
+        type: String, 
+        default: "" // Admin yahan rejection reason likhega
+    },
+    rejectedAt: { 
+        type: Date, 
+        default: null // Jab admin reject karega tab yahan timestamp aayega
     },
     // ----------------------------------------------
 
@@ -74,5 +84,9 @@ const CampaignSchema = new mongoose.Schema({
         }
     ]
 });
+
+// 🔥 Sabse Important: TTL Index
+// 'rejectedAt' field ke 86400 seconds (24 hours) baad document auto-delete ho jayega
+CampaignSchema.index({ "rejectedAt": 1 }, { expireAfterSeconds: 86400 });
 
 module.exports = mongoose.model('Campaign', CampaignSchema);

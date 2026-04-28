@@ -10,7 +10,8 @@ import {
   FaFacebook,
   FaYoutube,
   FaEnvelope,
-  FaTimesCircle, // New icon for rejection
+  FaTimesCircle,
+  FaTrashAlt, // New icon for auto-delete
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -34,7 +35,15 @@ function Campaigns() {
 
   const fetchCampaigns = async () => {
     try {
-      const res = await axios.get("https://vistafluence.onrender.com/api/campaigns/public");
+      // LOGIC UPDATE: Agar user advertiser hai toh "my-campaigns" fetch karo (rejected dekhne ke liye)
+      // Warna sirf public fetch karo
+      const endpoint = (user?.userType === "advertiser" && token)
+        ? "https://vistafluence.onrender.com/api/campaigns/my-campaigns"
+        : "https://vistafluence.onrender.com/api/campaigns/public";
+
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      
+      const res = await axios.get(endpoint, config);
 
       const updatedCampaigns = res.data.map(campaign => ({
         ...campaign,
@@ -58,7 +67,7 @@ function Campaigns() {
 
   useEffect(() => {
     fetchCampaigns();
-  }, []);
+  }, [user, token]); // Refetch when user logs in/out
 
   const handleApply = async (campaignId) => {
     if (!token) {
@@ -186,7 +195,7 @@ function Campaigns() {
             {campaigns
               .filter((campaign) => {
                 if (user?.userType === "advertiser") {
-                  return campaign.createdBy?._id === currentUserId;
+                  return campaign.createdBy?._id === currentUserId || campaign.createdBy === currentUserId;
                 }
                 return true;
               })
@@ -195,22 +204,31 @@ function Campaigns() {
                   (a) => a.user?._id === currentUserId
                 );
 
+                // REJECTION CHECK LOGIC
+                const isRejected = campaign.approvalStatus === "rejected";
+
                 return (
                   <div
                     key={campaign._id}
-                    className="relative bg-slate-800 rounded-2xl shadow-xl border border-fuchsia-800 p-4 sm:p-6 flex flex-col items-start transition-all duration-300 hover:scale-105 neno-button hover:shadow-fuchsia-800/50 overflow-visible"
+                    className={`relative bg-slate-800 rounded-2xl shadow-xl border p-4 sm:p-6 flex flex-col items-start transition-all duration-300 hover:scale-105 neno-button hover:shadow-fuchsia-800/50 overflow-visible ${
+                      isRejected ? "border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.3)]" : "border-fuchsia-800"
+                    }`}
                   >
-                    {/* REJECTION ALERT FOR ADVERTISER (BRAND) */}
-                    {user?.userType === "advertiser" && campaign.status === "rejected" && (
-                      <div className="w-full bg-red-950/40 border border-red-600/50 p-3 rounded-xl mb-4 animate-pulse">
+                    {/* REJECTION ALERT UI */}
+                    {user?.userType === "advertiser" && isRejected && (
+                      <div className="w-full bg-red-950/40 border border-red-600/50 p-3 rounded-xl mb-4">
                         <div className="flex items-center gap-2 text-red-500 font-black text-[10px] uppercase tracking-widest">
-                          <FaTimesCircle /> Rejected by Admin
+                          <FaTimesCircle className="animate-pulse" /> Rejected by Admin
                         </div>
                         {campaign.feedback && (
                           <p className="text-gray-300 text-xs mt-1 italic">
                             Reason: "{campaign.feedback}"
                           </p>
                         )}
+                        {/* AUTO DELETE WARNING */}
+                        <div className="mt-2 flex items-center gap-1 text-[9px] text-red-400 font-bold">
+                          <FaTrashAlt /> Auto-deleting from database in 24h
+                        </div>
                       </div>
                     )}
 
@@ -218,11 +236,12 @@ function Campaigns() {
                       <img
                         src={campaign.imagePath}
                         alt={campaign.name}
-                        className="w-full h-40 sm:h-48 object-cover rounded-xl mb-4 neno-button shadow-xl"
+                        className={`w-full h-40 sm:h-48 object-cover rounded-xl mb-4 neno-button shadow-xl ${isRejected ? 'grayscale opacity-50' : ''}`}
                       />
                     )}
                     <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
                       {campaign.name}
+                      {isRejected && <span className="ml-2 text-xs bg-red-600 px-2 py-0.5 rounded uppercase">Rejected</span>}
                     </h3>
                     <p className="text-xs sm:text-sm text-gray-300 mb-4 flex-grow">
                       {campaign.description}
@@ -250,7 +269,7 @@ function Campaigns() {
                     </div>
 
                     {campaign.createdBy?._id !== currentUserId &&
-                      isInfluencer && (
+                      isInfluencer && !isRejected && (
                         <button
                           onClick={() => handleApply(campaign._id)}
                           disabled={hasApplied || isLimitReached}
@@ -270,7 +289,7 @@ function Campaigns() {
                           <FaUsers className="text-fuchsia-400" /> Applicants (
                           {campaign.applicants.length})
                         </h4>
-                        {campaign.createdBy?._id === currentUserId ? (
+                        {(campaign.createdBy?._id === currentUserId || campaign.createdBy === currentUserId) ? (
                           <ul className="space-y-2">
                             {campaign.applicants.map((applicant) =>
                               applicant.user ? (
@@ -283,7 +302,7 @@ function Campaigns() {
                                     )
                                   }
                                 >
-                                  {/* --- PROFILE HOVER CARD --- */}
+                                  {/* --- PROFILE HOVER CARD (Kept same) --- */}
                                   <div 
                                     className="absolute left-1/2 -translate-x-1/2 bottom-full pb-4 hidden group-hover:flex flex-col items-center w-64 z-[100] transition-opacity duration-300 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
                                   >
@@ -302,35 +321,15 @@ function Campaigns() {
                                         </p>
                                         
                                         <div className="w-full border-t border-slate-700 pt-3 flex justify-around">
-                                          <a 
-                                            href={`${applicant.user.instagram || ''}`} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1"
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
+                                          <a href={`${applicant.user.instagram || ''}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1" onClick={(e) => e.stopPropagation()}>
                                             <FaInstagram className="text-pink-500 text-xl" />
                                             <span className="text-[10px] text-fuchsia-300 font-bold underline italic">Visit</span>
                                           </a>
-
-                                          <a 
-                                            href={`${applicant.user.facebook || ''}`} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1"
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
+                                          <a href={`${applicant.user.facebook || ''}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1" onClick={(e) => e.stopPropagation()}>
                                             <FaFacebook className="text-blue-500 text-xl" />
                                             <span className="text-[10px] text-fuchsia-300 font-bold underline italic">Visit</span>
                                           </a>
-
-                                          <a 
-                                            href={applicant.user.youtube?.startsWith('http') ? applicant.user.youtube : `${applicant.user.youtube || ''}`} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1"
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
+                                          <a href={applicant.user.youtube?.startsWith('http') ? applicant.user.youtube : `${applicant.user.youtube || ''}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1" onClick={(e) => e.stopPropagation()}>
                                             <FaYoutube className="text-red-500 text-xl" />
                                             <span className="text-[10px] text-fuchsia-300 font-bold underline italic">Visit</span>
                                           </a>
