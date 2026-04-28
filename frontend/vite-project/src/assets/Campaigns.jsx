@@ -256,7 +256,7 @@ function Campaigns() {
                           {campaign.applicants.length})
                         </h4>
                         {campaign.createdBy?._id === currentUserId ? (
-                          <ul className="space-y-2 max-h-40 overflow-y-auto">
+                          <ul className="space-y-2">
                             {campaign.applicants.map((applicant) =>
                               applicant.user ? (
                                 <li
@@ -268,8 +268,8 @@ function Campaigns() {
                                     )
                                   }
                                 >
-                                  {/* --- HOVER PROFILE CARD START --- */}
-                                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block w-64 bg-slate-900 border border-fuchsia-500 rounded-xl p-4 shadow-2xl z-50 animate-in fade-in zoom-in duration-200">
+                                  {/* --- PROFILE HOVER CARD WITH LINKS --- */}
+                                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[110%] hidden group-hover:block w-64 bg-slate-900 border border-fuchsia-500 rounded-xl p-4 shadow-[0_0_20px_rgba(217,70,239,0.5)] z-[9999]">
                                     <div className="flex flex-col items-center text-center">
                                       {applicant.user.avatar ? (
                                         <img src={applicant.user.avatar} className="w-16 h-16 rounded-full border-2 border-fuchsia-500 object-cover mb-2" alt="avatar" />
@@ -279,29 +279,51 @@ function Campaigns() {
                                         </div>
                                       )}
                                       <h5 className="text-white font-bold text-lg">{applicant.user.name}</h5>
-                                      <p className="text-gray-400 text-xs mb-3 flex items-center gap-1">
+                                      <p className="text-gray-400 text-[10px] mb-3 flex items-center gap-1 justify-center">
                                         <FaEnvelope className="text-fuchsia-400" /> {applicant.user.email}
                                       </p>
                                       
                                       <div className="w-full border-t border-slate-700 pt-3 flex justify-around">
-                                        {/* Social Links - Backend fields name change as per your schema */}
-                                        <div className="flex flex-col items-center gap-1">
-                                          <FaInstagram className="text-pink-500 text-lg" />
-                                          <span className="text-[10px] text-gray-300">{applicant.user.instagramId || 'N/A'}</span>
-                                        </div>
-                                        <div className="flex flex-col items-center gap-1">
-                                          <FaFacebook className="text-blue-500 text-lg" />
-                                          <span className="text-[10px] text-gray-300">{applicant.user.facebookId || 'N/A'}</span>
-                                        </div>
-                                        <div className="flex flex-col items-center gap-1">
-                                          <FaYoutube className="text-red-500 text-lg" />
-                                          <span className="text-[10px] text-gray-300">{applicant.user.youtubeChannel || 'N/A'}</span>
-                                        </div>
+                                        {/* Clickable Instagram Icon */}
+                                        <a 
+                                          href={`https://instagram.com/${applicant.user.instagramId}`} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="flex flex-col items-center gap-1 hover:scale-125 transition-transform"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <FaInstagram className="text-pink-500 text-xl" />
+                                          <span className="text-[10px] text-fuchsia-300 font-bold underline italic">Visit</span>
+                                        </a>
+
+                                        {/* Clickable Facebook Icon */}
+                                        <a 
+                                          href={`https://facebook.com/${applicant.user.facebookId}`} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="flex flex-col items-center gap-1 hover:scale-125 transition-transform"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <FaFacebook className="text-blue-500 text-xl" />
+                                          <span className="text-[10px] text-fuchsia-300 font-bold underline italic">Visit</span>
+                                        </a>
+
+                                        {/* Clickable YouTube Icon */}
+                                        <a 
+                                          href={applicant.user.youtubeChannel?.startsWith('http') ? applicant.user.youtubeChannel : `https://youtube.com/@${applicant.user.youtubeChannel}`} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="flex flex-col items-center gap-1 hover:scale-125 transition-transform"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <FaYoutube className="text-red-500 text-xl" />
+                                          <span className="text-[10px] text-fuchsia-300 font-bold underline italic">Visit</span>
+                                        </a>
                                       </div>
                                     </div>
-                                    <div className="absolute left-6 -bottom-2 w-4 h-4 bg-slate-900 border-r border-b border-fuchsia-500 rotate-45"></div>
+                                    <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-fuchsia-500"></div>
                                   </div>
-                                  {/* --- HOVER PROFILE CARD END --- */}
+                                  {/* --- END HOVER CARD --- */}
 
                                   {applicant.user.avatar ? (
                                     <img
