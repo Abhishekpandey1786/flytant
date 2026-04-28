@@ -84,9 +84,6 @@ const CampaignSchema = new mongoose.Schema({
         }
     ]
 });
-
-// 🔥 Sabse Important: TTL Index
-// 'rejectedAt' field ke 86400 seconds (24 hours) baad document auto-delete ho jayega
 CampaignSchema.index({ "rejectedAt": 1 }, { expireAfterSeconds: 86400 });
 
 module.exports = mongoose.model('Campaign', CampaignSchema);

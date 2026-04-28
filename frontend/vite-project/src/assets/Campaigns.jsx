@@ -28,20 +28,19 @@ const resolveAssetUrl = (assetPath) => {
 const resolveSocialLink = (url, platform) => {
   if (!url) return "#";
   let cleanUrl = url.trim();
-  if (cleanUrl.startsWith("http://") || cleanUrl.startsWith("https://")) {
-    return cleanUrl;
-  }
-  const username = cleanUrl.replace("@", "");
-  switch (platform) {
-    case "instagram":
-      return `https://www.instagram.com/${username}/`;
-    case "facebook":
-      return `https://www.facebook.com/${username}/`;
-    case "youtube":
-      return `https://www.youtube.com/${username}`;
-    default:
-      return "#";
-  }
+  
+  // Agar pura link hai (http/https), toh wahi return kar do
+  if (cleanUrl.startsWith("http")) return cleanUrl;
+
+  // Agar sirf username hai, toh link banao
+  const username = cleanUrl.replace(/^@/, "");
+  const baseUrls = {
+    instagram: "https://www.instagram.com/",
+    facebook: "https://www.facebook.com/",
+    youtube: "https://www.youtube.com/"
+  };
+  
+  return baseUrls[platform] ? `${baseUrls[platform]}${username}` : "#";
 };
 
 function Campaigns() {
@@ -74,6 +73,9 @@ function Campaigns() {
             ? {
                 ...applicant.user,
                 avatar: resolveAssetUrl(applicant.user.avatar),
+                instagram: applicant.user.instagram,
+          facebook: applicant.user.facebook,
+          youtube: applicant.user.youtube,
               }
             : applicant.user,
         })),

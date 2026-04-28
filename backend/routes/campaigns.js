@@ -82,7 +82,7 @@ const checkAndResetSubscription = (user) => {
 router.get("/my-campaigns", auth, roleMiddleware("advertiser"), async (req, res) => {
   try {
     const campaigns = await Campaign.find({ createdBy: req.user.id })
-      .populate("applicants.user", "name email avatar")
+      .populate("applicants.user", "name email avatar instagram youtube facebook")
       .sort({ createdAt: -1 });
     res.json(campaigns);
   } catch (err) {
@@ -177,7 +177,7 @@ router.get("/public", async (req, res) => {
   try {
     const campaigns = await Campaign.find({ approvalStatus: "approved", isActive: true })
       .populate("createdBy", "name email")
-      .populate("applicants.user", "name email avatar")
+      .populate("applicants.user", "name email avatar instagram youtube facebook")
       .sort({ createdAt: -1 });
 
     res.json(campaigns);
@@ -236,7 +236,7 @@ router.post("/:campaignId/apply", auth, async (req, res) => {
 
     const updatedCampaign = await Campaign.findById(req.params.campaignId)
       .populate("createdBy", "name email")
-      .populate("applicants.user", "name email avatar");
+      .populate("applicants.user", "name email avatar instagram youtube facebook");
     res.json({
       msg: "Applied successfully!",
       campaign: updatedCampaign,
