@@ -14,6 +14,19 @@ const InfluencersList = () => {
   const defaultAvatar =
     "https://via.placeholder.com/150/5B21B6/FFFFFF?text=User";
 
+    const getSocialLink = (platform, username) => {
+    if (!username) return null;
+    // Agar user ne poora URL daala hai toh wahi return karo, nahi toh base URL jodo
+    if (username.startsWith("http")) return username;
+    
+    const baseUrls = {
+      instagram: "https://instagram.com/",
+      youtube: "https://youtube.com/",
+      facebook: "https://facebook.com/",
+    };
+    return `${baseUrls[platform]}${username.replace("@", "")}`; // @ hatane ke liye fix
+  };  
+
   useEffect(() => {
     const fetchInfluencers = async () => {
       try {
@@ -112,36 +125,33 @@ const InfluencersList = () => {
                 <div className="flex space-x-4 sm:space-x-5 text-white">
                   {influencer.instagram && (
                     <a
-                      href={`https://instagram.com/${influencer.instagram}`}
+                      href={getSocialLink("instagram", influencer.instagram)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-pink-700 transition"
-                      aria-label={`Visit ${influencer.instagram}'s Instagram profile`}
+                      className="hover:text-pink-500 transition-transform hover:scale-125 p-1"
                     >
-                      <FaInstagram size={22} className="sm:w-6 sm:h-6" />
+                      <FaInstagram size={24} />
                     </a>
                   )}
                    {influencer.youtube && (
                     <a
-                      href={`https://youtube.com/${influencer.youtube}`}
+                      href={getSocialLink("youtube", influencer.youtube)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-red-500 transition"
-                      aria-label={`Visit ${influencer.youtube}'s YouTube channel`}
+                      className="hover:text-red-500 transition-transform hover:scale-125 p-1"
                     >
-                      <FaYoutube size={22} className="sm:w-6 sm:h-6" />
+                      <FaYoutube size={24} />
                     </a>
                   )}
 
                   {influencer.facebook && (
                     <a
-                      href={`https://facebook.com/${influencer.facebook}`}
+                      href={getSocialLink("facebook", influencer.facebook)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-blue-500 transition"
-                      aria-label={`Visit ${influencer.facebook}'s Facebook profile`}
+                      className="hover:text-blue-500 transition-transform hover:scale-125 p-1"
                     >
-                      <FaFacebook size={22} className="sm:w-6 sm:h-6" />
+                      <FaFacebook size={24} />
                     </a>
                   )}
                 </div>
