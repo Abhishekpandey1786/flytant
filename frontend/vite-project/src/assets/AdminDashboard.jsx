@@ -204,7 +204,7 @@ const AdminDashboard = () => {
                           <h3 className="text-3xl md:text-4xl font-black text-white leading-none uppercase italic">{camp.name}</h3>
                           <div className="text-right">
                              <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Budget</p>
-                             <p className="text-3xl font-black text-green-500">${camp.budget}</p>
+                             <p className="text-3xl font-black text-green-500">₹{camp.budget}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 mb-6">

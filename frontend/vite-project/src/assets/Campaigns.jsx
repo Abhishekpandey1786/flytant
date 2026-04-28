@@ -321,15 +321,15 @@ function Campaigns() {
                                         </p>
                                         
                                         <div className="w-full border-t border-slate-700 pt-3 flex justify-around">
-                                          <a href={`${applicant.user.instagram || ''}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1" onClick={(e) => e.stopPropagation()}>
+                                          <a  href={`https://instagram.com/${influencer.instagram}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1" onClick={(e) => e.stopPropagation()}>
                                             <FaInstagram className="text-pink-500 text-xl" />
                                             <span className="text-[10px] text-fuchsia-300 font-bold underline italic">Visit</span>
                                           </a>
-                                          <a href={`${applicant.user.facebook || ''}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1" onClick={(e) => e.stopPropagation()}>
+                                          <a href={`https://facebook.com/${influencer.facebook}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1" onClick={(e) => e.stopPropagation()}>
                                             <FaFacebook className="text-blue-500 text-xl" />
                                             <span className="text-[10px] text-fuchsia-300 font-bold underline italic">Visit</span>
                                           </a>
-                                          <a href={applicant.user.youtube?.startsWith('http') ? applicant.user.youtube : `${applicant.user.youtube || ''}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1" onClick={(e) => e.stopPropagation()}>
+                                          <a  href={`https://youtube.com/${influencer.youtube}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1" onClick={(e) => e.stopPropagation()}>
                                             <FaYoutube className="text-red-500 text-xl" />
                                             <span className="text-[10px] text-fuchsia-300 font-bold underline italic">Visit</span>
                                           </a>
