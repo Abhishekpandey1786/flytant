@@ -47,16 +47,29 @@ const AdminDashboard = () => {
     } catch (err) { console.error("Campaigns fetch error"); }
   };
 
+  // UPDATED LOGIC FOR REJECTION ALERT
   const handleCampaignStatus = async (id, status) => {
-    if (!window.confirm(`Are you sure you want to ${status} this campaign?`)) return;
+    let feedback = "";
+    
+    if (status === 'rejected') {
+      // Reject karne par reason pucho
+      feedback = window.prompt("Reason for rejection? (Brand will see this alert):", "Invalid image or details.");
+      if (feedback === null) return; // Agar admin cancel kar de
+    } else {
+      if (!window.confirm(`Are you sure you want to approve this campaign?`)) return;
+    }
+
     try {
       await axios.patch(`${API_BASE_URL}/admin/campaigns/${id}/status`, 
-        { status }, 
+        { status, feedback }, // Feedback (reason) backend ko bhej rahe hain
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      
       setPendingCampaigns(prev => prev.filter(c => c._id !== id));
       alert(`Campaign ${status.toUpperCase()} successfully!`);
-    } catch (err) { alert("Action failed"); }
+    } catch (err) { 
+      alert("Action failed: " + (err.response?.data?.message || "Error")); 
+    }
   };
 
   const handleCreateUser = async (e) => {
@@ -159,7 +172,7 @@ const AdminDashboard = () => {
           ))}
         </div>
 
-        {/* --- PENDING CAMPAIGNS (BIG IMAGE UI) --- */}
+        {/* --- PENDING CAMPAIGNS --- */}
         <div className="space-y-8">
           <h2 className="text-3xl font-black flex items-center gap-4 text-white uppercase tracking-tight">
             <FaBullhorn className="text-fuchsia-600" /> Pending Approvals
@@ -173,7 +186,6 @@ const AdminDashboard = () => {
               {pendingCampaigns.map((camp) => (
                 <div key={camp._id} className="bg-slate-900 rounded-[2.5rem] border border-slate-800 shadow-2xl overflow-hidden hover:border-slate-700 transition-all">
                   <div className="flex flex-col lg:flex-row">
-                    {/* BIG IMAGE CONTAINER */}
                     <div className="lg:w-1/2 h-[400px] lg:h-auto relative group overflow-hidden">
                       <img 
                         src={getImageUrl(camp.imagePath)} 
@@ -186,7 +198,6 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     
-                    {/* CAMPAIGN DETAILS */}
                     <div className="lg:w-1/2 p-8 md:p-12 flex flex-col justify-between space-y-8">
                       <div>
                         <div className="flex justify-between items-start mb-4">
@@ -221,11 +232,9 @@ const AdminDashboard = () => {
           )}
         </div>
 
-        {/* BOTTOM SECTION: TOOLS & NOTIFICATIONS (AS REQUESTED) */}
+        {/* BOTTOM SECTION */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          
           <div className="lg:col-span-1 space-y-10">
-            {/* ACADEMY ACCESS */}
             <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-xl">
               <h3 className="text-xl font-black mb-8 flex items-center gap-3 text-cyan-400 uppercase tracking-tighter">
                 <FaUserPlus/> Academy Deployment
@@ -239,7 +248,6 @@ const AdminDashboard = () => {
               </form>
             </div>
 
-            {/* NOTIFICATION SENDER */}
             <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800 shadow-xl">
               <h3 className="text-xl font-black mb-8 text-fuchsia-500 uppercase tracking-tighter">Notification Blast</h3>
               <div className="space-y-4">
@@ -256,7 +264,6 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* NOTIFICATIONS LIST GRID (AS REQUESTED) */}
           <div className="lg:col-span-2 space-y-8">
             <h2 className="text-2xl font-black uppercase tracking-tight">Active Feed</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -272,25 +279,23 @@ const AdminDashboard = () => {
               ))}
             </div>
 
-            {/* MESSAGES LIST */}
             <div className="space-y-6 pt-10">
-               <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] border-b border-slate-800 pb-4 flex items-center gap-2">
-                 <FaEnvelope/> Recent Inquiries
-               </h3>
-               <div className="space-y-4">
-                 {messages.slice(0, 3).map(m => (
-                   <div key={m._id} className="p-6 bg-slate-900/40 rounded-2xl border border-slate-800 flex items-center justify-between group">
-                     <div>
-                       <p className="text-cyan-400 text-xs font-black uppercase mb-1 tracking-wider">{m.name}</p>
-                       <p className="text-slate-300 text-sm font-medium italic">"{m.message}"</p>
-                     </div>
-                     <p className="text-[10px] font-black text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity uppercase">{m.email}</p>
-                   </div>
-                 ))}
-               </div>
+                <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] border-b border-slate-800 pb-4 flex items-center gap-2">
+                  <FaEnvelope/> Recent Inquiries
+                </h3>
+                <div className="space-y-4">
+                  {messages.slice(0, 3).map(m => (
+                    <div key={m._id} className="p-6 bg-slate-900/40 rounded-2xl border border-slate-800 flex items-center justify-between group">
+                      <div>
+                        <p className="text-cyan-400 text-xs font-black uppercase mb-1 tracking-wider">{m.name}</p>
+                        <p className="text-slate-300 text-sm font-medium italic">"{m.message}"</p>
+                      </div>
+                      <p className="text-[10px] font-black text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity uppercase">{m.email}</p>
+                    </div>
+                  ))}
+                </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>

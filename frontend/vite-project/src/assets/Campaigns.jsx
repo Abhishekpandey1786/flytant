@@ -10,6 +10,7 @@ import {
   FaFacebook,
   FaYoutube,
   FaEnvelope,
+  FaTimesCircle, // New icon for rejection
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -199,6 +200,20 @@ function Campaigns() {
                     key={campaign._id}
                     className="relative bg-slate-800 rounded-2xl shadow-xl border border-fuchsia-800 p-4 sm:p-6 flex flex-col items-start transition-all duration-300 hover:scale-105 neno-button hover:shadow-fuchsia-800/50 overflow-visible"
                   >
+                    {/* REJECTION ALERT FOR ADVERTISER (BRAND) */}
+                    {user?.userType === "advertiser" && campaign.status === "rejected" && (
+                      <div className="w-full bg-red-950/40 border border-red-600/50 p-3 rounded-xl mb-4 animate-pulse">
+                        <div className="flex items-center gap-2 text-red-500 font-black text-[10px] uppercase tracking-widest">
+                          <FaTimesCircle /> Rejected by Admin
+                        </div>
+                        {campaign.feedback && (
+                          <p className="text-gray-300 text-xs mt-1 italic">
+                            Reason: "{campaign.feedback}"
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     {campaign.imagePath && (
                       <img
                         src={campaign.imagePath}
@@ -268,11 +283,10 @@ function Campaigns() {
                                     )
                                   }
                                 >
-                                  {/* --- PROFILE HOVER CARD (SMOOTH & PERSISTENT) --- */}
+                                  {/* --- PROFILE HOVER CARD --- */}
                                   <div 
                                     className="absolute left-1/2 -translate-x-1/2 bottom-full pb-4 hidden group-hover:flex flex-col items-center w-64 z-[100] transition-opacity duration-300 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
                                   >
-                                    {/* Bridge padding (pb-4) ensures mouse can move from row to card without losing hover */}
                                     <div className="bg-slate-900 border border-fuchsia-500 rounded-xl p-4 shadow-[0_0_20px_rgba(217,70,239,0.5)] w-full">
                                       <div className="flex flex-col items-center text-center">
                                         {applicant.user.avatar ? (
@@ -323,7 +337,6 @@ function Campaigns() {
                                         </div>
                                       </div>
                                     </div>
-                                    {/* Arrow icon positioned inside the bridge area */}
                                     <div className="absolute left-1/2 -translate-x-1/2 top-[calc(100%-16px)] w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-fuchsia-500"></div>
                                   </div>
 
