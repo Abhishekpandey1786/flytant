@@ -15,14 +15,36 @@ import {
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
-import { AuthContext } from './AuthContext';
+import { AuthContext } from "./AuthContext";
 
 const resolveAssetUrl = (assetPath) => {
   if (!assetPath) return null;
-  if (assetPath.startsWith('http') || assetPath.startsWith('https')) {
+  if (assetPath.startsWith("http") || assetPath.startsWith("https")) {
     return assetPath;
   }
   return `https://vistafluence.onrender.com/${assetPath}`;
+};
+const resolveSocialLink = (url, platform) => {
+  if (!url) return "#";
+
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  switch (platform) {
+    case "instagram":
+      return `https://instagram.com/${url.replace("@", "")}`;
+
+    case "facebook":
+      return `https://facebook.com/${url}`;
+
+    case "youtube":
+      return url.includes("youtube.com") || url.includes("youtu.be")
+        ? `https://${url}`
+        : `https://youtube.com/${url}`;
+
+    default:
+      return `https://${url}`;
+  }
 };
 
 function Campaigns() {
@@ -37,24 +59,29 @@ function Campaigns() {
     try {
       // LOGIC UPDATE: Agar user advertiser hai toh "my-campaigns" fetch karo (rejected dekhne ke liye)
       // Warna sirf public fetch karo
-      const endpoint = (user?.userType === "advertiser" && token)
-        ? "https://vistafluence.onrender.com/api/campaigns/my-campaigns"
-        : "https://vistafluence.onrender.com/api/campaigns/public";
+      const endpoint =
+        user?.userType === "advertiser" && token
+          ? "https://vistafluence.onrender.com/api/campaigns/my-campaigns"
+          : "https://vistafluence.onrender.com/api/campaigns/public";
 
-      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-      
+      const config = token
+        ? { headers: { Authorization: `Bearer ${token}` } }
+        : {};
+
       const res = await axios.get(endpoint, config);
 
-      const updatedCampaigns = res.data.map(campaign => ({
+      const updatedCampaigns = res.data.map((campaign) => ({
         ...campaign,
         imagePath: resolveAssetUrl(campaign.imagePath),
-        applicants: campaign.applicants?.map(applicant => ({
+        applicants: campaign.applicants?.map((applicant) => ({
           ...applicant,
-          user: applicant.user ? {
-            ...applicant.user,
-            avatar: resolveAssetUrl(applicant.user.avatar),
-          } : applicant.user,
-        }))
+          user: applicant.user
+            ? {
+                ...applicant.user,
+                avatar: resolveAssetUrl(applicant.user.avatar),
+              }
+            : applicant.user,
+        })),
       }));
 
       setCampaigns(updatedCampaigns);
@@ -75,7 +102,7 @@ function Campaigns() {
       return;
     }
 
-    if (user?.userType !== 'influencer') {
+    if (user?.userType !== "influencer") {
       alert("Only influencers can apply to campaigns.");
       return;
     }
@@ -83,11 +110,12 @@ function Campaigns() {
     const userSubscription = user?.subscription;
     const userPlan = userSubscription?.plan || "Free";
     const maxApplications = userSubscription?.maxApplications || 3;
-    const applicationsMade = userSubscription?.applications_made_this_month || 0;
+    const applicationsMade =
+      userSubscription?.applications_made_this_month || 0;
 
     if (applicationsMade >= maxApplications && maxApplications < 9999) {
       alert(
-        `Your ${userPlan} plan allows only ${maxApplications} applications this month. Please upgrade to apply more.`
+        `Your ${userPlan} plan allows only ${maxApplications} applications this month. Please upgrade to apply more.`,
       );
       navigate("/SubscriptionPlans");
       return;
@@ -97,20 +125,23 @@ function Campaigns() {
       const response = await axios.post(
         `https://vistafluence.onrender.com/api/campaigns/${campaignId}/apply`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       alert("Applied successfully! 🎉");
       updateUserSubscription({
         applications_made_this_month: response.data.newApplicationCount,
-        maxApplications: response.data.newMaxApplications
+        maxApplications: response.data.newMaxApplications,
       });
 
       fetchCampaigns();
-
     } catch (error) {
-      const errorMsg = error.response?.data?.msg || "Failed to apply. An error occurred.";
-      if (error.response?.status === 403 && error.response?.data?.redirect === '/SubscriptionPlans') {
+      const errorMsg =
+        error.response?.data?.msg || "Failed to apply. An error occurred.";
+      if (
+        error.response?.status === 403 &&
+        error.response?.data?.redirect === "/SubscriptionPlans"
+      ) {
         alert(errorMsg);
         navigate("/SubscriptionPlans");
         return;
@@ -143,13 +174,13 @@ function Campaigns() {
   }
 
   const userSubscription = user?.subscription;
-  const isInfluencer = user?.userType === 'influencer';
+  const isInfluencer = user?.userType === "influencer";
   const planName = userSubscription?.plan || "Free";
   const appsMade = userSubscription?.applications_made_this_month || 0;
   const maxApps = userSubscription?.maxApplications || 3;
 
   const isLimitReached = appsMade >= maxApps && maxApps < 9999;
-  const maxAppsDisplay = maxApps >= 9999 ? 'Unlimited' : maxApps;
+  const maxAppsDisplay = maxApps >= 9999 ? "Unlimited" : maxApps;
 
   return (
     <div className="bg-slate-900 min-h-screen text-gray-100 p-4 sm:p-6 md:p-8">
@@ -157,12 +188,19 @@ function Campaigns() {
         {isInfluencer && (
           <div className="bg-fuchsia-800/20 p-4 rounded-xl mb-6 border border-fuchsia-700 shadow-lg">
             <p className="text-white font-semibold">
-              Your Plan: <span className="text-fuchsia-400">{planName}</span> ({userSubscription?.status || 'Inactive'})
+              Your Plan: <span className="text-fuchsia-400">{planName}</span> (
+              {userSubscription?.status || "Inactive"})
             </p>
             <p className="text-sm text-gray-300 mt-1 flex items-center flex-wrap">
-              Applications Used: <span className="font-bold ml-1">{appsMade}</span> / <span className="font-bold mr-2">{maxAppsDisplay}</span> this month.
+              Applications Used:{" "}
+              <span className="font-bold ml-1">{appsMade}</span> /{" "}
+              <span className="font-bold mr-2">{maxAppsDisplay}</span> this
+              month.
               {isLimitReached && (
-                <span className="text-red-400 font-bold"> (Limit Reached!)</span>
+                <span className="text-red-400 font-bold">
+                  {" "}
+                  (Limit Reached!)
+                </span>
               )}
               <span
                 className="ml-4 cursor-pointer text-fuchsia-300 hover:text-fuchsia-100 font-medium"
@@ -175,7 +213,9 @@ function Campaigns() {
         )}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 sm:mb-10">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white text-center sm:text-left">
-            {user?.userType === "advertiser" ? "My Campaigns" : "All Public Campaigns"}
+            {user?.userType === "advertiser"
+              ? "My Campaigns"
+              : "All Public Campaigns"}
           </h2>
           <button
             onClick={handleCreateCampaign}
@@ -195,13 +235,16 @@ function Campaigns() {
             {campaigns
               .filter((campaign) => {
                 if (user?.userType === "advertiser") {
-                  return campaign.createdBy?._id === currentUserId || campaign.createdBy === currentUserId;
+                  return (
+                    campaign.createdBy?._id === currentUserId ||
+                    campaign.createdBy === currentUserId
+                  );
                 }
                 return true;
               })
               .map((campaign) => {
                 const hasApplied = campaign.applicants?.some(
-                  (a) => a.user?._id === currentUserId
+                  (a) => a.user?._id === currentUserId,
                 );
 
                 // REJECTION CHECK LOGIC
@@ -211,14 +254,17 @@ function Campaigns() {
                   <div
                     key={campaign._id}
                     className={`relative bg-slate-800 rounded-2xl shadow-xl border p-4 sm:p-6 flex flex-col items-start transition-all duration-300 hover:scale-105 neno-button hover:shadow-fuchsia-800/50 overflow-visible ${
-                      isRejected ? "border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.3)]" : "border-fuchsia-800"
+                      isRejected
+                        ? "border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.3)]"
+                        : "border-fuchsia-800"
                     }`}
                   >
                     {/* REJECTION ALERT UI */}
                     {user?.userType === "advertiser" && isRejected && (
                       <div className="w-full bg-red-950/40 border border-red-600/50 p-3 rounded-xl mb-4">
                         <div className="flex items-center gap-2 text-red-500 font-black text-[10px] uppercase tracking-widest">
-                          <FaTimesCircle className="animate-pulse" /> Rejected by Admin
+                          <FaTimesCircle className="animate-pulse" /> Rejected
+                          by Admin
                         </div>
                         {campaign.feedback && (
                           <p className="text-gray-300 text-xs mt-1 italic">
@@ -236,40 +282,53 @@ function Campaigns() {
                       <img
                         src={campaign.imagePath}
                         alt={campaign.name}
-                        className={`w-full h-40 sm:h-48 object-cover rounded-xl mb-4 neno-button shadow-xl ${isRejected ? 'grayscale opacity-50' : ''}`}
+                        className={`w-full h-40 sm:h-48 object-cover rounded-xl mb-4 neno-button shadow-xl ${isRejected ? "grayscale opacity-50" : ""}`}
                       />
                     )}
                     <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
                       {campaign.name}
-                      {isRejected && <span className="ml-2 text-xs bg-red-600 px-2 py-0.5 rounded uppercase">Rejected</span>}
+                      {isRejected && (
+                        <span className="ml-2 text-xs bg-red-600 px-2 py-0.5 rounded uppercase">
+                          Rejected
+                        </span>
+                      )}
                     </h3>
                     <p className="text-xs sm:text-sm text-gray-300 mb-4 flex-grow">
                       {campaign.description}
                     </p>
                     <div className="w-full space-y-2 mt-auto">
                       <p className="text-xs sm:text-sm text-gray-400 flex items-center gap-2">
-                        <span className="font-semibold text-white">Budget:</span> ₹
-                        {campaign.budget?.toLocaleString() || 0}
+                        <span className="font-semibold text-white">
+                          Budget:
+                        </span>{" "}
+                        ₹{campaign.budget?.toLocaleString() || 0}
                       </p>
                       <p className="text-xs sm:text-sm text-gray-400 flex items-center gap-2">
                         <FaBullhorn className="text-fuchsia-400" />
-                        <span className="font-semibold text-white">Platforms:</span>{" "}
+                        <span className="font-semibold text-white">
+                          Platforms:
+                        </span>{" "}
                         {campaign.platforms.join(", ")}
                       </p>
                       <p className="text-xs sm:text-sm text-gray-400 flex items-center gap-2">
                         <FaTag className="text-fuchsia-400" />
-                        <span className="font-semibold text-white">Niches:</span>{" "}
+                        <span className="font-semibold text-white">
+                          Niches:
+                        </span>{" "}
                         {campaign.requiredNiche.join(", ")}
                       </p>
                       <p className="text-xs sm:text-sm text-gray-400 flex items-center gap-2">
                         <FaExternalLinkAlt className="text-fuchsia-400" />
-                        <span className="font-semibold text-white">CTA:</span>{" "}
+                        <span className="font-semibold text-white">
+                          CTA:
+                        </span>{" "}
                         {campaign.cta || "N/A"}
                       </p>
                     </div>
 
                     {campaign.createdBy?._id !== currentUserId &&
-                      isInfluencer && !isRejected && (
+                      isInfluencer &&
+                      !isRejected && (
                         <button
                           onClick={() => handleApply(campaign._id)}
                           disabled={hasApplied || isLimitReached}
@@ -279,7 +338,11 @@ function Campaigns() {
                               : "bg-fuchsia-600 hover:bg-fuchsia-700"
                           }`}
                         >
-                          {hasApplied ? "Applied" : isLimitReached ? "Limit Reached (Upgrade)" : "Apply Now"}
+                          {hasApplied
+                            ? "Applied"
+                            : isLimitReached
+                              ? "Limit Reached (Upgrade)"
+                              : "Apply Now"}
                         </button>
                       )}
 
@@ -289,7 +352,8 @@ function Campaigns() {
                           <FaUsers className="text-fuchsia-400" /> Applicants (
                           {campaign.applicants.length})
                         </h4>
-                        {(campaign.createdBy?._id === currentUserId || campaign.createdBy === currentUserId) ? (
+                        {campaign.createdBy?._id === currentUserId ||
+                        campaign.createdBy === currentUserId ? (
                           <ul className="space-y-2">
                             {campaign.applicants.map((applicant) =>
                               applicant.user ? (
@@ -298,40 +362,69 @@ function Campaigns() {
                                   className="group relative flex items-center gap-3 text-xs sm:text-sm text-gray-400 bg-slate-700 p-2 rounded-lg cursor-pointer hover:bg-slate-600 transition-colors"
                                   onClick={() =>
                                     navigate(
-                                      `/chats/campaign/${campaign._id}/user/${applicant.user._id}`
+                                      `/chats/campaign/${campaign._id}/user/${applicant.user._id}`,
                                     )
                                   }
                                 >
                                   {/* --- PROFILE HOVER CARD (Kept same) --- */}
-                                  <div 
-                                    className="absolute left-1/2 -translate-x-1/2 bottom-full pb-4 hidden group-hover:flex flex-col items-center w-64 z-[100] transition-opacity duration-300 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
-                                  >
+                                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full pb-4 hidden group-hover:flex flex-col items-center w-64 z-[100] transition-opacity duration-300 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
                                     <div className="bg-slate-900 border border-fuchsia-500 rounded-xl p-4 shadow-[0_0_20px_rgba(217,70,239,0.5)] w-full">
                                       <div className="flex flex-col items-center text-center">
                                         {applicant.user.avatar ? (
-                                          <img src={applicant.user.avatar} className="w-16 h-16 rounded-full border-2 border-fuchsia-500 object-cover mb-2" alt="avatar" />
+                                          <img
+                                            src={applicant.user.avatar}
+                                            className="w-16 h-16 rounded-full border-2 border-fuchsia-500 object-cover mb-2"
+                                            alt="avatar"
+                                          />
                                         ) : (
                                           <div className="w-16 h-16 rounded-full bg-fuchsia-700 flex items-center justify-center text-white text-xl font-bold mb-2">
                                             {applicant.user.name?.[0]?.toUpperCase()}
                                           </div>
                                         )}
-                                        <h5 className="text-white font-bold text-lg">{applicant.user.name}</h5>
+                                        <h5 className="text-white font-bold text-lg">
+                                          {applicant.user.name}
+                                        </h5>
                                         <p className="text-gray-400 text-[10px] mb-3 flex items-center gap-1 justify-center">
-                                          <FaEnvelope className="text-fuchsia-400" /> {applicant.user.email}
+                                          <FaEnvelope className="text-fuchsia-400" />{" "}
+                                          {applicant.user.email}
                                         </p>
-                                        
+
                                         <div className="w-full border-t border-slate-700 pt-3 flex justify-around">
-                                          <a href={`${applicant.user.instagram || ''}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1" onClick={(e) => e.stopPropagation()}>
+                                          <a
+                                            href={resolveSocialLink(applicant.user.instagram, "instagram")}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
                                             <FaInstagram className="text-pink-500 text-xl" />
-                                            <span className="text-[10px] text-fuchsia-300 font-bold underline italic">Visit</span>
+                                            <span className="text-[10px] text-fuchsia-300 font-bold underline italic">
+                                              Visit
+                                            </span>
                                           </a>
-                                          <a href={`${applicant.user.facebook || ''}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1" onClick={(e) => e.stopPropagation()}>
+                                          <a
+                                            href={resolveSocialLink(applicant.user.facebook, "facebook")}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
                                             <FaFacebook className="text-blue-500 text-xl" />
-                                            <span className="text-[10px] text-fuchsia-300 font-bold underline italic">Visit</span>
+                                            <span className="text-[10px] text-fuchsia-300 font-bold underline italic">
+                                              Visit
+                                            </span>
                                           </a>
-                                          <a href={applicant.user.youtube?.startsWith('http') ? applicant.user.youtube : `${applicant.user.youtube || ''}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1" onClick={(e) => e.stopPropagation()}>
+                                          <a
+                                           href={resolveSocialLink(applicant.user.youtube, "youtube")}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
                                             <FaYoutube className="text-red-500 text-xl" />
-                                            <span className="text-[10px] text-fuchsia-300 font-bold underline italic">Visit</span>
+                                            <span className="text-[10px] text-fuchsia-300 font-bold underline italic">
+                                              Visit
+                                            </span>
                                           </a>
                                         </div>
                                       </div>
@@ -347,7 +440,8 @@ function Campaigns() {
                                     />
                                   ) : (
                                     <div className="w-8 h-8 rounded-full bg-fuchsia-700 flex items-center justify-center text-white font-bold text-sm">
-                                      {applicant.user.name?.[0]?.toUpperCase() || 'U'}
+                                      {applicant.user.name?.[0]?.toUpperCase() ||
+                                        "U"}
                                     </div>
                                   )}
                                   <div>
@@ -359,7 +453,7 @@ function Campaigns() {
                                     </p>
                                   </div>
                                 </li>
-                              ) : null
+                              ) : null,
                             )}
                           </ul>
                         ) : (
