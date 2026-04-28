@@ -6,6 +6,10 @@ import {
   FaBullhorn,
   FaUsers,
   FaPlusCircle,
+  FaInstagram,
+  FaFacebook,
+  FaYoutube,
+  FaEnvelope,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
@@ -180,11 +184,10 @@ function Campaigns() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {campaigns
               .filter((campaign) => {
-                // Agar advertiser hai to sirf uski ID wale campaigns dikhao
                 if (user?.userType === "advertiser") {
                   return campaign.createdBy?._id === currentUserId;
                 }
-                return true; // Influencer ko sab dikhao
+                return true;
               })
               .map((campaign) => {
                 const hasApplied = campaign.applicants?.some(
@@ -258,13 +261,48 @@ function Campaigns() {
                               applicant.user ? (
                                 <li
                                   key={applicant.user._id}
-                                  className="flex items-center gap-3 text-xs sm:text-sm text-gray-400 bg-slate-700 p-2 rounded-lg cursor-pointer hover:bg-slate-600 transition-colors"
+                                  className="group relative flex items-center gap-3 text-xs sm:text-sm text-gray-400 bg-slate-700 p-2 rounded-lg cursor-pointer hover:bg-slate-600 transition-colors"
                                   onClick={() =>
                                     navigate(
                                       `/chats/campaign/${campaign._id}/user/${applicant.user._id}`
                                     )
                                   }
                                 >
+                                  {/* --- HOVER PROFILE CARD START --- */}
+                                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block w-64 bg-slate-900 border border-fuchsia-500 rounded-xl p-4 shadow-2xl z-50 animate-in fade-in zoom-in duration-200">
+                                    <div className="flex flex-col items-center text-center">
+                                      {applicant.user.avatar ? (
+                                        <img src={applicant.user.avatar} className="w-16 h-16 rounded-full border-2 border-fuchsia-500 object-cover mb-2" alt="avatar" />
+                                      ) : (
+                                        <div className="w-16 h-16 rounded-full bg-fuchsia-700 flex items-center justify-center text-white text-xl font-bold mb-2">
+                                          {applicant.user.name?.[0]?.toUpperCase()}
+                                        </div>
+                                      )}
+                                      <h5 className="text-white font-bold text-lg">{applicant.user.name}</h5>
+                                      <p className="text-gray-400 text-xs mb-3 flex items-center gap-1">
+                                        <FaEnvelope className="text-fuchsia-400" /> {applicant.user.email}
+                                      </p>
+                                      
+                                      <div className="w-full border-t border-slate-700 pt-3 flex justify-around">
+                                        {/* Social Links - Backend fields name change as per your schema */}
+                                        <div className="flex flex-col items-center gap-1">
+                                          <FaInstagram className="text-pink-500 text-lg" />
+                                          <span className="text-[10px] text-gray-300">{applicant.user.instagramId || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex flex-col items-center gap-1">
+                                          <FaFacebook className="text-blue-500 text-lg" />
+                                          <span className="text-[10px] text-gray-300">{applicant.user.facebookId || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex flex-col items-center gap-1">
+                                          <FaYoutube className="text-red-500 text-lg" />
+                                          <span className="text-[10px] text-gray-300">{applicant.user.youtubeChannel || 'N/A'}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="absolute left-6 -bottom-2 w-4 h-4 bg-slate-900 border-r border-b border-fuchsia-500 rotate-45"></div>
+                                  </div>
+                                  {/* --- HOVER PROFILE CARD END --- */}
+
                                   {applicant.user.avatar ? (
                                     <img
                                       src={applicant.user.avatar}
@@ -277,7 +315,7 @@ function Campaigns() {
                                     </div>
                                   )}
                                   <div>
-                                    <p className="text-white text-xs sm:text-sm">
+                                    <p className="text-white text-xs sm:text-sm font-medium">
                                       {applicant.user.name}
                                     </p>
                                     <p className="text-[10px] sm:text-xs text-gray-400 break-all">
