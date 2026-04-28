@@ -268,7 +268,7 @@ function Campaigns() {
                                     )
                                   }
                                 >
-                                  {/* --- PROFILE HOVER CARD WITH LINKS --- */}
+                                  {/* --- PROFILE HOVER CARD --- */}
                                   <div className="absolute left-1/2 -translate-x-1/2 bottom-[110%] hidden group-hover:block w-64 bg-slate-900 border border-fuchsia-500 rounded-xl p-4 shadow-[0_0_20px_rgba(217,70,239,0.5)] z-[9999]">
                                     <div className="flex flex-col items-center text-center">
                                       {applicant.user.avatar ? (
@@ -284,9 +284,9 @@ function Campaigns() {
                                       </p>
                                       
                                       <div className="w-full border-t border-slate-700 pt-3 flex justify-around">
-                                        {/* Clickable Instagram Icon */}
+                                        {/* Instagram: Profile data uses "instagram" */}
                                         <a 
-                                          href={`https://instagram.com/${applicant.user.instagramId}`} 
+                                          href={`https://instagram.com/${applicant.user.instagram || ''}`} 
                                           target="_blank" 
                                           rel="noopener noreferrer"
                                           className="flex flex-col items-center gap-1 hover:scale-125 transition-transform"
@@ -296,9 +296,9 @@ function Campaigns() {
                                           <span className="text-[10px] text-fuchsia-300 font-bold underline italic">Visit</span>
                                         </a>
 
-                                        {/* Clickable Facebook Icon */}
+                                        {/* Facebook: Profile data uses "facebook" */}
                                         <a 
-                                          href={`https://facebook.com/${applicant.user.facebookId}`} 
+                                          href={`https://facebook.com/${applicant.user.facebook || ''}`} 
                                           target="_blank" 
                                           rel="noopener noreferrer"
                                           className="flex flex-col items-center gap-1 hover:scale-125 transition-transform"
@@ -308,9 +308,9 @@ function Campaigns() {
                                           <span className="text-[10px] text-fuchsia-300 font-bold underline italic">Visit</span>
                                         </a>
 
-                                        {/* Clickable YouTube Icon */}
+                                        {/* YouTube: Profile data uses "youtube" */}
                                         <a 
-                                          href={applicant.user.youtubeChannel?.startsWith('http') ? applicant.user.youtubeChannel : `https://youtube.com/@${applicant.user.youtubeChannel}`} 
+                                          href={applicant.user.youtube?.startsWith('http') ? applicant.user.youtube : `https://youtube.com/@${applicant.user.youtube || ''}`} 
                                           target="_blank" 
                                           rel="noopener noreferrer"
                                           className="flex flex-col items-center gap-1 hover:scale-125 transition-transform"
@@ -323,7 +323,6 @@ function Campaigns() {
                                     </div>
                                     <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-fuchsia-500"></div>
                                   </div>
-                                  {/* --- END HOVER CARD --- */}
 
                                   {applicant.user.avatar ? (
                                     <img
