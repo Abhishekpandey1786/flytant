@@ -35,6 +35,7 @@ const userSchema = new mongoose.Schema(
     followers: Number,
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true },
+    lastMessageAt: { type: Date,default: Date.now },
     avatar: { type: String },
     subscription: {
       plan: {

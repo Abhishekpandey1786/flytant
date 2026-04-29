@@ -84,64 +84,49 @@ io.on("connection", (socket) => {
     try {
       if (!socket.userId || socket.userId !== data.sender) {
         console.log("❌ Unauthorized sender");
-
         return;
       }
-
       if (!data.roomId || !data.text || !data.sender || !data.receiver) {
         console.log("❌ Invalid message payload");
-
         return;
       }
 
       const message = new Chat({
         roomId: data.roomId,
-
         text: data.text,
-
         sender: data.sender,
-
         receiver: data.receiver,
-
         senderName: data.senderName,
-
         senderAvatar: data.senderAvatar,
       });
-
       await message.save();
+      await User.updateMany(
+      { _id: { $in: [data.sender, data.receiver] } },
+      { $set: { lastMessageAt: new Date() } }
+    );
       io.to(data.roomId).emit("message_received", message);
-      const receiverSocketId = connectedUsers.get(data.receiver);
 
-      if (receiverSocketId && receiverSocketId !== socket.id) {
-        // GET ACTUAL USER DATA
+      const receiverSocketId = connectedUsers.get(data.receiver);
+    if (receiverSocketId && receiverSocketId !== socket.id) {
 
         const senderUser = await User.findById(data.sender);
 
-        io.to(receiverSocketId).emit("inbox_ping", {
-          id: message._id,
-
-          text: data.text,
-
-          from:
-            senderUser?.name ||
-            senderUser?.businessName ||
-            data.senderName ||
-            "New Message",
-
-          senderId: data.sender,
-
-          roomId: data.roomId,
-
-          createdAt: message.createdAt,
-        });
+       io.to(receiverSocketId).emit("inbox_ping", {
+        id: message._id,
+        text: data.text,
+        from: senderUser?.name || senderUser?.businessName || data.senderName || "New Message",
+        senderId: data.sender,
+        roomId: data.roomId,
+        createdAt: message.createdAt,
+      });
 
         console.log(`📨 Notification sent to ${data.receiver}`);
-      }
-
-      console.log(`💬 Message sent: ${data.sender} -> ${data.receiver}`);
-    } catch (error) {
-      console.error("❌ Chat Send Error:", error);
     }
+
+    console.log(`💬 Message sent: ${data.sender} -> ${data.receiver} (LastMessageAt updated)`);
+  } catch (error) {
+    console.error("❌ Chat Send Error:", error);
+  }
   });
 
   socket.on("disconnect", () => {
