@@ -28,7 +28,7 @@ const resolveAssetUrl = (assetPath) => {
 const resolveSocialLink = (url, platform) => {
   if (!url) return "#";
   let cleanUrl = url.trim();
-  
+
   // Agar pura link hai (http/https), toh wahi return kar do
   if (cleanUrl.startsWith("http")) return cleanUrl;
 
@@ -37,9 +37,9 @@ const resolveSocialLink = (url, platform) => {
   const baseUrls = {
     instagram: "https://www.instagram.com/",
     facebook: "https://www.facebook.com/",
-    youtube: "https://www.youtube.com/"
+    youtube: "https://www.youtube.com/",
   };
-  
+
   return baseUrls[platform] ? `${baseUrls[platform]}${username}` : "#";
 };
 
@@ -74,8 +74,8 @@ function Campaigns() {
                 ...applicant.user,
                 avatar: resolveAssetUrl(applicant.user.avatar),
                 instagram: applicant.user.instagram,
-          facebook: applicant.user.facebook,
-          youtube: applicant.user.youtube,
+                facebook: applicant.user.facebook,
+                youtube: applicant.user.youtube,
               }
             : applicant.user,
         })),
@@ -245,6 +245,8 @@ function Campaigns() {
                 );
 
                 const isRejected = campaign.approvalStatus === "rejected";
+                const isPending = campaign.approvalStatus === "pending";
+                const isApproved = campaign.approvalStatus === "approved";
 
                 return (
                   <div
@@ -281,11 +283,25 @@ function Campaigns() {
                     )}
                     <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
                       {campaign.name}
-                      {isRejected && (
-                        <span className="ml-2 text-xs bg-red-600 px-2 py-0.5 rounded uppercase">
-                          Rejected
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {isPending && (
+                          <span className="text-[10px] bg-yellow-500 text-black font-bold px-2 py-1 rounded uppercase tracking-wider">
+                            Pending
+                          </span>
+                        )}
+
+                        {isApproved && (
+                          <span className="text-[10px] bg-green-600 text-white font-bold px-2 py-1 rounded uppercase tracking-wider">
+                            Approved
+                          </span>
+                        )}
+
+                        {isRejected && (
+                          <span className="text-[10px] bg-red-600 text-white font-bold px-2 py-1 rounded uppercase tracking-wider">
+                            Rejected
+                          </span>
+                        )}
+                      </div>
                     </h3>
                     <p className="text-xs sm:text-sm text-gray-300 mb-4 flex-grow">
                       {campaign.description}
@@ -356,10 +372,15 @@ function Campaigns() {
                                   className="group relative flex items-center gap-3 text-xs sm:text-sm text-gray-400 bg-slate-700 p-2 rounded-lg cursor-pointer hover:bg-slate-600 transition-colors"
                                   onClick={(e) => {
                                     // Yeh check karega ki click kisi anchor ya icon par toh nahi hua
-                                    if (e.target.closest('a') || e.target.closest('svg')) {
-                                      return; 
+                                    if (
+                                      e.target.closest("a") ||
+                                      e.target.closest("svg")
+                                    ) {
+                                      return;
                                     }
-                                    navigate(`/chats/campaign/${campaign._id}/user/${applicant.user._id}`);
+                                    navigate(
+                                      `/chats/campaign/${campaign._id}/user/${applicant.user._id}`,
+                                    );
                                   }}
                                 >
                                   <div className="absolute left-1/2 -translate-x-1/2 bottom-full pb-4 hidden group-hover:flex flex-col items-center w-64 z-[100] transition-opacity duration-300 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
@@ -386,7 +407,10 @@ function Campaigns() {
 
                                         <div className="w-full border-t border-slate-700 pt-3 flex justify-around pointer-events-auto">
                                           <a
-                                            href={resolveSocialLink(applicant.user.instagram, "instagram")}
+                                            href={resolveSocialLink(
+                                              applicant.user.instagram,
+                                              "instagram",
+                                            )}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1 z-[110]"
@@ -398,7 +422,10 @@ function Campaigns() {
                                             </span>
                                           </a>
                                           <a
-                                            href={resolveSocialLink(applicant.user.facebook, "facebook")}
+                                            href={resolveSocialLink(
+                                              applicant.user.facebook,
+                                              "facebook",
+                                            )}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1 z-[110]"
@@ -410,7 +437,10 @@ function Campaigns() {
                                             </span>
                                           </a>
                                           <a
-                                            href={resolveSocialLink(applicant.user.youtube, "youtube")}
+                                            href={resolveSocialLink(
+                                              applicant.user.youtube,
+                                              "youtube",
+                                            )}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="flex flex-col items-center gap-1 hover:scale-125 transition-transform p-1 z-[110]"
