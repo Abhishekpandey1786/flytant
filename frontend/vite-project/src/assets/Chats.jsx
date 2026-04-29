@@ -1,3 +1,7 @@
+// ===============================
+// src/components/Chats.jsx
+// ===============================
+
 import React, {
   useEffect,
   useRef,
@@ -16,7 +20,7 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 
-import { useLocation } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 const api = axios.create({
   baseURL: "https://vistafluence.onrender.com/api",
@@ -41,11 +45,17 @@ function getRoomId(me, other) {
 }
 
 export default function Chats() {
-  const { user } = useContext(AuthContext);
+  const { user } =
+    useContext(AuthContext);
 
-  const location = useLocation();
+  const [searchParams] =
+    useSearchParams();
 
-  const [users, setUsers] = useState([]);
+  const selectedUserId =
+    searchParams.get("user");
+
+  const [users, setUsers] =
+    useState([]);
 
   const [activeChat, setActiveChat] =
     useState(null);
@@ -53,7 +63,8 @@ export default function Chats() {
   const [messages, setMessages] =
     useState([]);
 
-  const [text, setText] = useState("");
+  const [text, setText] =
+    useState("");
 
   const [loading, setLoading] =
     useState(false);
@@ -65,33 +76,29 @@ export default function Chats() {
 
   const inputRef = useRef(null);
 
-  // AUTO SELECT USER
-
-  useEffect(() => {
-    if (location.state?.selectedUser) {
-      setActiveChat(
-        location.state.selectedUser
-      );
-    }
-  }, [location.state]);
-
+  // =========================
   // FETCH USERS
+  // =========================
 
   useEffect(() => {
     const fetchUsers = async () => {
       if (!user?._id) return;
 
       try {
-        const [brandsRes, influencersRes] =
-          await Promise.all([
-            api.get("/advertiser/brands"),
-            api.get("/users/influencers"),
-          ]);
+        const [
+          brandsRes,
+          influencersRes,
+        ] = await Promise.all([
+          api.get("/advertiser/brands"),
+          api.get("/users/influencers"),
+        ]);
 
         const combined = [
           ...brandsRes.data,
           ...influencersRes.data,
-        ].filter((u) => u._id !== user._id);
+        ].filter(
+          (u) => u._id !== user._id
+        );
 
         setUsers(combined);
       } catch (error) {
@@ -105,22 +112,47 @@ export default function Chats() {
     fetchUsers();
   }, [user]);
 
-  // SOCKET LISTENER
+  // =========================
+  // AUTO SELECT CHAT
+  // =========================
+
+  useEffect(() => {
+    if (
+      !selectedUserId ||
+      users.length === 0
+    )
+      return;
+
+    const foundUser = users.find(
+      (u) => u._id === selectedUserId
+    );
+
+    if (foundUser) {
+      setActiveChat(foundUser);
+    }
+  }, [selectedUserId, users]);
+
+  // =========================
+  // MESSAGE LISTENER
+  // =========================
 
   useEffect(() => {
     if (!user?._id) return;
 
     const handleMessage = (msg) => {
-      const currentRoom = activeChat
-        ? getRoomId(
-            user._id,
-            activeChat._id
-          )
-        : null;
+      const currentRoom =
+        activeChat
+          ? getRoomId(
+              user._id,
+              activeChat._id
+            )
+          : null;
 
-      // ACTIVE CHAT
+      // ACTIVE CHAT MESSAGE
 
-      if (msg.roomId === currentRoom) {
+      if (
+        msg.roomId === currentRoom
+      ) {
         setMessages((prev) => {
           const exists = prev.some(
             (m) => m._id === msg._id
@@ -136,7 +168,8 @@ export default function Chats() {
 
       if (
         msg.receiver === user._id &&
-        msg.sender !== activeChat?._id
+        msg.sender !==
+          activeChat?._id
       ) {
         setUnread((prev) => ({
           ...prev,
@@ -144,7 +177,7 @@ export default function Chats() {
         }));
       }
 
-      // REORDER
+      // SIDEBAR REORDER
 
       setUsers((prev) => {
         const otherId =
@@ -152,16 +185,20 @@ export default function Chats() {
             ? msg.receiver
             : msg.sender;
 
-        const targetUser = prev.find(
-          (u) => u._id === otherId
-        );
+        const targetUser =
+          prev.find(
+            (u) =>
+              u._id === otherId
+          );
 
-        if (!targetUser) return prev;
+        if (!targetUser)
+          return prev;
 
         return [
           targetUser,
           ...prev.filter(
-            (u) => u._id !== otherId
+            (u) =>
+              u._id !== otherId
           ),
         ];
       });
@@ -180,10 +217,15 @@ export default function Chats() {
     };
   }, [user, activeChat]);
 
+  // =========================
   // LOAD CHAT HISTORY
+  // =========================
 
   useEffect(() => {
-    if (!activeChat || !user?._id)
+    if (
+      !activeChat ||
+      !user?._id
+    )
       return;
 
     const roomId = getRoomId(
@@ -195,7 +237,10 @@ export default function Chats() {
 
     setLoading(true);
 
-    socket.emit("join_room", roomId);
+    socket.emit(
+      "join_room",
+      roomId
+    );
 
     setUnread((prev) => ({
       ...prev,
@@ -220,16 +265,22 @@ export default function Chats() {
       });
   }, [activeChat, user]);
 
+  // =========================
   // AUTO SCROLL
+  // =========================
 
   useEffect(() => {
     boxRef.current?.scrollTo({
-      top: boxRef.current.scrollHeight,
+      top:
+        boxRef.current
+          .scrollHeight,
       behavior: "smooth",
     });
   }, [messages]);
 
-  // SEND
+  // =========================
+  // SEND MESSAGE
+  // =========================
 
   const send = (e) => {
     e.preventDefault();
@@ -247,21 +298,30 @@ export default function Chats() {
       activeChat._id
     );
 
-    socket.emit("send_message", {
-      roomId,
-      text: text.trim(),
-      sender: user._id,
-      receiver: activeChat._id,
-      senderName: user.name,
-      senderAvatar: user.avatar,
-    });
+    socket.emit(
+      "send_message",
+      {
+        roomId,
+
+        text: text.trim(),
+
+        sender: user._id,
+
+        receiver:
+          activeChat._id,
+
+        senderName: user.name,
+
+        senderAvatar:
+          user.avatar,
+      }
+    );
 
     setText("");
   };
 
   return (
     <div className="flex h-[85vh] rounded-2xl overflow-hidden bg-slate-900 border border-fuchsia-700 shadow-2xl">
-
       {/* SIDEBAR */}
 
       <div
@@ -278,15 +338,17 @@ export default function Chats() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
-
           {users.map((u) => (
             <div
               key={u._id}
-              onClick={() => setActiveChat(u)}
-              className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer border transition-all ${
-                activeChat?._id === u._id
+              onClick={() =>
+                setActiveChat(u)
+              }
+              className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all duration-300 border ${
+                activeChat?._id ===
+                u._id
                   ? "bg-fuchsia-700/20 border-fuchsia-600"
-                  : "bg-slate-900 hover:bg-slate-800 border-transparent"
+                  : "bg-slate-900 border-transparent hover:bg-slate-800"
               }`}
             >
               <div className="relative">
@@ -297,11 +359,11 @@ export default function Chats() {
                     "https://placehold.co/50"
                   }
                   alt=""
-                  className="w-12 h-12 rounded-full object-cover"
+                  className="w-12 h-12 rounded-full object-cover border border-slate-700"
                 />
 
                 {unread[u._id] && (
-                  <span className="absolute top-0 right-0 w-3 h-3 bg-fuchsia-500 rounded-full animate-pulse"></span>
+                  <span className="absolute top-0 right-0 w-3 h-3 rounded-full bg-fuchsia-500 animate-pulse border-2 border-slate-900"></span>
                 )}
               </div>
 
@@ -311,9 +373,9 @@ export default function Chats() {
                     u.businessName}
                 </h3>
 
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-400 truncate">
                   {unread[u._id]
-                    ? "New message"
+                    ? "New message received"
                     : "Tap to chat"}
                 </p>
               </div>
@@ -335,8 +397,7 @@ export default function Chats() {
           <>
             {/* HEADER */}
 
-            <div className="flex items-center gap-3 p-4 border-b border-slate-800 bg-slate-800">
-
+            <div className="flex items-center gap-3 p-4 border-b border-slate-800 bg-slate-800/40 backdrop-blur-md">
               <button
                 onClick={() =>
                   setActiveChat(null)
@@ -356,74 +417,94 @@ export default function Chats() {
                 className="w-10 h-10 rounded-full object-cover border border-fuchsia-500"
               />
 
-              <h2 className="text-white font-bold">
-                {activeChat.name ||
-                  activeChat.businessName}
-              </h2>
+              <div>
+                <h2 className="text-white font-bold">
+                  {activeChat.name ||
+                    activeChat.businessName}
+                </h2>
+              </div>
             </div>
 
             {/* MESSAGES */}
 
             <div
               ref={boxRef}
-              className="flex-1 overflow-y-auto p-4 bg-slate-950 space-y-4"
+              className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-950"
             >
               {loading && (
-                <div className="text-center text-slate-400">
-                  Loading...
+                <div className="text-center text-slate-500 mt-10">
+                  Loading
+                  messages...
                 </div>
               )}
 
               {!loading &&
-                messages.map((m, i) => {
-                  const senderId =
-                    m.sender?._id ||
-                    m.sender;
+                messages.length ===
+                  0 && (
+                  <div className="text-center text-slate-500 mt-10">
+                    No messages yet
+                  </div>
+                )}
 
-                  const isMe =
-                    senderId === user._id;
+              {!loading &&
+                messages.map(
+                  (m, i) => {
+                    const senderId =
+                      m.sender?._id ||
+                      m.sender;
 
-                  return (
-                    <div
-                      key={m._id || i}
-                      className={`flex ${
-                        isMe
-                          ? "justify-end"
-                          : "justify-start"
-                      }`}
-                    >
+                    const isMe =
+                      senderId ===
+                      user._id;
+
+                    return (
                       <div
-                        className={`max-w-[75%] px-4 py-3 rounded-2xl ${
+                        key={
+                          m._id || i
+                        }
+                        className={`flex ${
                           isMe
-                            ? "bg-fuchsia-600 text-white rounded-br-none"
-                            : "bg-slate-800 text-white rounded-bl-none"
+                            ? "justify-end"
+                            : "justify-start"
                         }`}
                       >
-                        {!isMe && (
-                          <div className="text-xs text-fuchsia-400 mb-1 font-bold">
-                            {m.senderName}
-                          </div>
-                        )}
-
-                        <p>{m.text}</p>
-
-                        <div className="text-[10px] opacity-60 text-right mt-1">
-                          {new Date(
-                            m.createdAt
-                          ).toLocaleTimeString(
-                            [],
-                            {
-                              hour:
-                                "2-digit",
-                              minute:
-                                "2-digit",
-                            }
+                        <div
+                          className={`max-w-[80%] sm:max-w-[70%] px-4 py-3 rounded-2xl shadow-lg break-words ${
+                            isMe
+                              ? "bg-fuchsia-600 text-white rounded-br-none"
+                              : "bg-slate-800 text-slate-100 rounded-bl-none"
+                          }`}
+                        >
+                          {!isMe && (
+                            <div className="text-xs font-bold text-fuchsia-400 mb-1">
+                              {
+                                m.senderName
+                              }
+                            </div>
                           )}
+
+                          <p className="text-sm">
+                            {m.text}
+                          </p>
+
+                          <div className="text-[10px] opacity-60 text-right mt-1">
+                            {new Date(
+                              m.createdAt
+                            ).toLocaleTimeString(
+                              [],
+                              {
+                                hour:
+                                  "2-digit",
+                                minute:
+                                  "2-digit",
+                              }
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  }
+                )}
             </div>
 
             {/* INPUT */}
@@ -441,22 +522,25 @@ export default function Chats() {
                     e.target.value
                   )
                 }
-                placeholder="Type message..."
-                className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-fuchsia-600"
+                placeholder="Type your message..."
+                className="flex-1 bg-slate-950 border border-slate-700 focus:border-fuchsia-600 outline-none rounded-xl px-4 py-3 text-white transition-all"
               />
 
               <button
                 type="submit"
-                disabled={!text.trim()}
-                className="bg-fuchsia-600 hover:bg-fuchsia-500 px-5 rounded-xl text-white disabled:opacity-50"
+                disabled={
+                  !text.trim()
+                }
+                className="bg-fuchsia-600 hover:bg-fuchsia-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 rounded-xl transition-all flex items-center justify-center"
               >
                 <FaPaperPlane />
               </button>
             </form>
           </>
         ) : (
-          <div className="flex-1 hidden md:flex items-center justify-center text-slate-500">
-            Select a chat
+          <div className="flex-1 hidden md:flex items-center justify-center text-slate-500 text-lg">
+            Select a chat to
+            start messaging
           </div>
         )}
       </div>

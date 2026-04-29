@@ -11,26 +11,51 @@ export default function GlobalNotifications() {
   const navigate = useNavigate();
 
   const handleNotificationClick = (alert) => {
-    if (!alert.roomId || typeof alert.roomId !== "string" || !user || !user._id) {
-      console.error("Invalid notification or user data:", alert);
-      removeNotification(alert.id);
-      return;
-    }
+  if (
+    !alert.roomId ||
+    typeof alert.roomId !== "string" ||
+    !user ||
+    !user._id
+  ) {
+    console.error(
+      "Invalid notification or user data:",
+      alert
+    );
 
-    const parts = alert.roomId.split(":");
-    if (parts.length < 4) {
-      console.error("roomId format is incorrect:", alert.roomId);
-      removeNotification(alert.id);
-      return;
-    }
-
-    const [_, campId, user1, user2] = parts;
-    const newOtherUserId = user1 === user._id ? user2 : user1;
-
-    navigate(`/chats`);
     removeNotification(alert.id);
-  };
 
+    return;
+  }
+
+  const parts = alert.roomId.split(":");
+
+  if (parts.length < 4) {
+    console.error(
+      "roomId format is incorrect:",
+      alert.roomId
+    );
+
+    removeNotification(alert.id);
+
+    return;
+  }
+
+  const user1 = parts[2];
+  const user2 = parts[3];
+
+  const newOtherUserId =
+    user1 === user._id
+      ? user2
+      : user1;
+
+  // IMPORTANT CHANGE
+
+  navigate(
+    `/chats?user=${newOtherUserId}`
+  );
+
+  removeNotification(alert.id);
+};
   if (notifications.length === 0) return null;
 
   return (
