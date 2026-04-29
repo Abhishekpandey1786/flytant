@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useContext } from "react";
-import socket from "../socket"; // Central socket import
+import socket from "./socket.js"; // Central socket import
 import axios from "axios";
 import { AuthContext } from "./AuthContext.jsx";
 import { FaPaperPlane, FaArrowLeft } from "react-icons/fa";
