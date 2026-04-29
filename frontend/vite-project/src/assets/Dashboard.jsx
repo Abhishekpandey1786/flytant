@@ -95,7 +95,7 @@ const Dashboard = () => {
         <div className="text-center lg:text-left flex-1">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-2 leading-snug">
             Welcome back,{" "}
-            <span className="text-fuchsia-700">{user?.name || role}</span>!
+            <span className="text-fuchsia-700"> {user?.name || user?.businessName || role}</span>!
           </h1>
           <p className="text-sm sm:text-base md:text-lg text-gray-200 max-w-2xl mx-auto lg:mx-0">
             Your hub for all things influence. Discover new opportunities,
