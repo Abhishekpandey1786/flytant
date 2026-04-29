@@ -8,39 +8,21 @@ import React, {
 
 import socket from "./socket";
 
-// =========================
-// CONTEXT
-// =========================
-
 export const NotificationContext =
   createContext();
-
-// =========================
-// PROVIDER
-// =========================
 
 export function NotificationProvider({
   children,
 }) {
-  // =========================
-  // STATES
-  // =========================
-
   const [notifications, setNotifications] =
     useState([]);
 
   const [unread, setUnread] =
     useState({});
 
-  // =========================
-  // ADD NOTIFICATION
-  // =========================
-
   const addNotification = useCallback(
     (payload) => {
       setNotifications((prev) => {
-        // DUPLICATE PREVENTION
-
         const exists = prev.some(
           (n) => n.id === payload.id
         );
@@ -51,19 +33,13 @@ export function NotificationProvider({
           ...prev,
           {
             ...payload,
-
             id:
               payload.id ||
               Date.now() + Math.random(),
-
-            timestamp:
-              payload.createdAt ||
-              new Date(),
+            timestamp: new Date(),
           },
         ];
       });
-
-      // SET UNREAD
 
       if (payload.senderId) {
         setUnread((prev) => ({
@@ -75,29 +51,12 @@ export function NotificationProvider({
     []
   );
 
-  // =========================
-  // REMOVE NOTIFICATION
-  // =========================
-
   const removeNotification =
     useCallback((id) => {
       setNotifications((prev) =>
         prev.filter((n) => n.id !== id)
       );
     }, []);
-
-  // =========================
-  // CLEAR ALL
-  // =========================
-
-  const clearNotifications =
-    useCallback(() => {
-      setNotifications([]);
-    }, []);
-
-  // =========================
-  // MARK AS READ
-  // =========================
 
   const markAsRead = useCallback(
     (userId) => {
@@ -109,16 +68,12 @@ export function NotificationProvider({
     []
   );
 
-  // =========================
-  // SOCKET LISTENER
-  // =========================
-
   useEffect(() => {
     const handleInboxPing = (
       payload
     ) => {
       console.log(
-        "📨 Notification Received:",
+        "📨 Notification:",
         payload
       );
 
@@ -138,42 +93,21 @@ export function NotificationProvider({
     };
   }, [addNotification]);
 
-  // =========================
-  // CONTEXT VALUE
-  // =========================
-
-  const value = {
-    notifications,
-
-    unread,
-
-    setUnread,
-
-    addNotification,
-
-    removeNotification,
-
-    clearNotifications,
-
-    markAsRead,
-  };
-
-  // =========================
-  // PROVIDER
-  // =========================
-
   return (
     <NotificationContext.Provider
-      value={value}
+      value={{
+        notifications,
+        unread,
+        setUnread,
+        addNotification,
+        removeNotification,
+        markAsRead,
+      }}
     >
       {children}
     </NotificationContext.Provider>
   );
 }
-
-// =========================
-// CUSTOM HOOK
-// =========================
 
 export const useNotifications = () =>
   useContext(NotificationContext);

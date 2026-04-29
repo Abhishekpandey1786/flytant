@@ -66,10 +66,6 @@ export default function Chats() {
     fetchUsers();
   }, [user]);
 
-  // =========================
-  // GLOBAL MESSAGE LISTENER
-  // =========================
-
   useEffect(() => {
     if (!user?._id) return;
 
@@ -134,51 +130,41 @@ export default function Chats() {
   // =========================
 
   useEffect(() => {
-    if (!activeChat || !user?._id) return;
+  if (!activeChat || !user?._id) return;
 
-    const roomId = getRoomId(
-      user._id,
-      activeChat._id
-    );
+  const roomId = getRoomId(
+    user._id,
+    activeChat._id
+  );
 
-    setMessages([]);
-    setLoading(true);
+  setMessages([]);
+  setLoading(true);
 
-    socket.emit("join_room", roomId);
+  socket.emit("join_room", roomId);
 
-    const rejoinRoom = () => {
-      socket.emit("join_room", roomId);
-    };
+  setUnread((prev) => ({
+    ...prev,
+    [activeChat._id]: false,
+  }));
 
-    socket.on("connect", rejoinRoom);
+  inputRef.current?.focus();
 
-    setUnread((prev) => ({
-      ...prev,
-      [activeChat._id]: false,
-    }));
+  api
+    .get(`/chats/${roomId}`)
+    .then((res) => {
+      setMessages(res.data);
+    })
+    .catch((err) => {
+      console.error(
+        "Failed to load chats:",
+        err
+      );
+    })
+    .finally(() => {
+      setLoading(false);
+    });
 
-    inputRef.current?.focus();
-
-    api
-      .get(`/chats/${roomId}`)
-      .then((res) => {
-        setMessages(res.data);
-      })
-      .catch((err) => {
-        console.error("Failed to load chats:", err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-
-    return () => {
-      socket.off("connect", rejoinRoom);
-    };
-  }, [activeChat, user]);
-
-  // =========================
-  // AUTO SCROLL
-  // =========================
+}, [activeChat, user]);
 
   useEffect(() => {
     boxRef.current?.scrollTo({
@@ -221,11 +207,6 @@ export default function Chats() {
 
   return (
     <div className="flex h-[85vh] rounded-2xl overflow-hidden bg-slate-900 border border-fuchsia-700 shadow-2xl">
-
-      {/* ========================= */}
-      {/* SIDEBAR */}
-      {/* ========================= */}
-
       <div
         className={`flex flex-col border-r border-slate-800 w-full md:w-[340px] ${
           activeChat ? "hidden md:flex" : "flex"
@@ -281,11 +262,6 @@ export default function Chats() {
 
         </div>
       </div>
-
-      {/* ========================= */}
-      {/* CHAT AREA */}
-      {/* ========================= */}
-
       <div
         className={`flex-1 flex flex-col ${
           activeChat ? "flex" : "hidden md:flex"
