@@ -283,25 +283,27 @@ function Campaigns() {
                     )}
                     <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
                       {campaign.name}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {isPending && (
-                          <span className="text-[10px] bg-yellow-500 text-black font-bold px-2 py-1 rounded uppercase tracking-wider">
-                            Pending
-                          </span>
-                        )}
+                      {user?.userType === "advertiser" && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {isPending && (
+                            <span className="text-[10px] bg-yellow-500 text-black font-bold px-2 py-1 rounded uppercase tracking-wider">
+                              Pending
+                            </span>
+                          )}
 
-                        {isApproved && (
-                          <span className="text-[10px] bg-green-600 text-white font-bold px-2 py-1 rounded uppercase tracking-wider">
-                            Approved
-                          </span>
-                        )}
+                          {isApproved && (
+                            <span className="text-[10px] bg-green-600 text-white font-bold px-2 py-1 rounded uppercase tracking-wider">
+                              Approved
+                            </span>
+                          )}
 
-                        {isRejected && (
-                          <span className="text-[10px] bg-red-600 text-white font-bold px-2 py-1 rounded uppercase tracking-wider">
-                            Rejected
-                          </span>
-                        )}
-                      </div>
+                          {isRejected && (
+                            <span className="text-[10px] bg-red-600 text-white font-bold px-2 py-1 rounded uppercase tracking-wider">
+                              Rejected
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </h3>
                     <p className="text-xs sm:text-sm text-gray-300 mb-4 flex-grow">
                       {campaign.description}
