@@ -71,9 +71,18 @@ io.on("connection", (socket) => {
   });
 
   socket.on("join_room", (roomId) => {
+
+  const rooms = [...socket.rooms];
+
+  if (!rooms.includes(roomId)) {
+
     socket.join(roomId);
-    console.log(`👥 Socket ${socket.id} joined room ${roomId}`);
-  });
+
+    console.log(
+      `👥 ${socket.id} joined ${roomId}`
+    );
+  }
+});
 
   socket.on("send_message", async (data) => {
     try {
