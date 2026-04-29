@@ -1,7 +1,7 @@
 import React, { useEffect, useContext } from "react";
 import { AuthContext } from "./AuthContext.jsx";
 import { useNotifications } from "./NotificationContext.jsx";
-import { io } from "socket.io-client";
+import { io } from "./socket.js";
 
 const socket = io("https://vistafluence.onrender.com/", { transports: ["websocket"] });
 
