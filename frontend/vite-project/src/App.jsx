@@ -31,7 +31,7 @@ import MyOrders from "./assets/MyOrders.jsx";
 import PaymentSuccess from "./assets/PaymentSuccess.jsx";
 import RefundPolicy from "./assets/RefundPolicy.jsx";
 import Academy from "./assets/Academy.jsx"
-import SocketProvider from "./SocketProvider";
+import SocketProvider from "./assets/SocketProvider.jsx";
 function App() {
   return (
     <BrowserRouter>
