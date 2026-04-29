@@ -77,8 +77,6 @@ const checkAndResetSubscription = (user) => {
   }
   return shouldSave;
 };
-
-// --- NEW ROUTE: GET ADVERTISER'S OWN CAMPAIGNS (Including Rejected) ---
 router.get("/my-campaigns", auth, roleMiddleware("advertiser"), async (req, res) => {
   try {
     const campaigns = await Campaign.find({ createdBy: req.user.id })
@@ -90,42 +88,34 @@ router.get("/my-campaigns", auth, roleMiddleware("advertiser"), async (req, res)
     res.status(500).send("Server Error");
   }
 });
+
 router.patch("/admin/:id/status", auth, async (req, res) => {
   const { status, feedback } = req.body;
-  if (!['approved', 'rejected'].includes(status)) {
-    return res.status(400).json({ error: "Invalid status value" });
-  }
-
   try {
-    const campaign = await Campaign.findById(req.params.id);
-
-    if (!campaign) {
-      return res.status(404).json({ error: "Campaign not found" });
-    }
-    campaign.approvalStatus = status;
-    campaign.isActive = (status === "approved");
+    const updateData = { 
+      approvalStatus: status, 
+      feedback: feedback,
+      isActive: status === "approved" ? true : false
+    };
     if (status === "rejected") {
-      campaign.feedback = feedback || "No reason provided by admin.";
-      campaign.rejectedAt = new Date(); 
+      updateData.rejectedAt = new Date(); 
     } else {
-      campaign.feedback = ""; 
-      campaign.rejectedAt = null;
+      updateData.rejectedAt = null; 
     }
-    
-    await campaign.save();
 
-    res.json({ 
-      success: true, 
-      message: `Campaign ${status} successfully!`, 
-      campaign 
-    });
+    const campaign = await Campaign.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+    
+    if (!campaign) return res.status(404).json({ msg: "Campaign not found" });
+    res.json(campaign);
   } catch (err) {
-    console.error("Update Campaign Status Error:", err);
-    res.status(500).json({ error: "Server error during status update" });
+    console.error(err.message);
+    res.status(500).send("Server Error");
   }
 });
-
-
 router.post(
   "/",
   auth,
@@ -162,7 +152,7 @@ router.post(
         createdBy: req.user.id,
         approvalStatus: "pending",
         isActive: false,
-        rejectedAt: null // Initialize null
+        rejectedAt: null 
       });
 
       const campaign = await newCampaign.save();
@@ -173,8 +163,6 @@ router.post(
     }
   }
 );
-
-// --- GET PUBLIC CAMPAIGNS ---
 router.get("/public", async (req, res) => {
   try {
     const campaigns = await Campaign.find({ approvalStatus: "approved", isActive: true })
@@ -189,7 +177,6 @@ router.get("/public", async (req, res) => {
   }
 });
 
-// --- APPLY TO CAMPAIGN ---
 router.post("/:campaignId/apply", auth, async (req, res) => {
   try {
     const campaign = await Campaign.findById(req.params.campaignId);
