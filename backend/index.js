@@ -75,45 +75,36 @@ io.on("connection", (socket) => {
     console.log(`👥 Socket ${socket.id} joined room ${roomId}`);
   });
 
-  // ... baaki imports same rahenge
-
-socket.on("send_message", async (data) => {
+  socket.on("send_message", async (data) => {
   try {
-    // Basic Security Check
-    if (!socket.userId) {
-      console.error("❌ Socket not registered with a UserId");
-      return;
-    }
+    if (!socket.userId || socket.userId !== data.sender) return;
 
     const message = new Chat({
       roomId: data.roomId,
       text: data.text,
-      sender: data.sender, 
+      sender: data.sender,
       receiver: data.receiver,
       senderName: data.senderName,
-      createdAt: new Date()
     });
-
     await message.save();
 
+    // 1. Room me message bhejo (Current chat refresh karne ke liye)
     io.to(data.roomId).emit("message_received", message);
 
+    // 2. Receiver ko personal notify karo (Sidebar update aur notification ke liye)
     const receiverSocketId = connectedUsers.get(data.receiver);
     if (receiverSocketId) {
-  
-      io.to(receiverSocketId).emit("message_received", message);
+      io.to(receiverSocketId).emit("message_received", message); // Ye zaroori hai!
       
       io.to(receiverSocketId).emit("inbox_ping", {
-        id: message._id || Date.now(),
+        id: message._id,
         text: data.text,
         from: data.senderName,
         roomId: data.roomId,
       });
     }
-
-    console.log(`📨 Message sent in room ${data.roomId} and personally to ${data.receiver}`);
   } catch (error) {
-    console.error("❌ Error sending message:", error);
+    console.error("Chat Error:", error);
   }
 });
 
