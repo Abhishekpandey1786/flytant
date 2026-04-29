@@ -114,7 +114,7 @@ export default function GlobalNotifications() {
                 backdrop-blur-md
 
                 border border-slate-700
-                border-t-2 border-fuchsia-500
+                border-t-2 border-t-fuchsia-500
 
                 rounded-2xl
                 p-4
