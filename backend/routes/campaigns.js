@@ -90,40 +90,42 @@ router.get("/my-campaigns", auth, roleMiddleware("advertiser"), async (req, res)
     res.status(500).send("Server Error");
   }
 });
-
-// --- NEW ROUTE: ADMIN STATUS UPDATE (With Auto-Delete Logic) ---
-// Is route ko Admin Dashboard se call karein
 router.patch("/admin/:id/status", auth, async (req, res) => {
-  const { status, feedback } = req.body; // status: 'approved' or 'rejected'
+  const { status, feedback } = req.body;
+  if (!['approved', 'rejected'].includes(status)) {
+    return res.status(400).json({ error: "Invalid status value" });
+  }
+
   try {
-    const updateData = { 
-      approvalStatus: status, 
-      feedback: feedback,
-      isActive: status === "approved" ? true : false
-    };
+    const campaign = await Campaign.findById(req.params.id);
 
-    // Agar reject hua toh deletion timer start karo (e.g., 24 hours)
-    if (status === "rejected") {
-      updateData.rejectedAt = new Date(); 
-    } else {
-      updateData.rejectedAt = null; // Reset if approved later
+    if (!campaign) {
+      return res.status(404).json({ error: "Campaign not found" });
     }
-
-    const campaign = await Campaign.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true }
-    );
+    campaign.approvalStatus = status;
+    campaign.isActive = (status === "approved");
+    if (status === "rejected") {
+      campaign.feedback = feedback || "No reason provided by admin.";
+      campaign.rejectedAt = new Date(); 
+    } else {
+      campaign.feedback = ""; 
+      campaign.rejectedAt = null;
+    }
     
-    if (!campaign) return res.status(404).json({ msg: "Campaign not found" });
-    res.json(campaign);
+    await campaign.save();
+
+    res.json({ 
+      success: true, 
+      message: `Campaign ${status} successfully!`, 
+      campaign 
+    });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server Error");
+    console.error("Update Campaign Status Error:", err);
+    res.status(500).json({ error: "Server error during status update" });
   }
 });
 
-// --- CREATE CAMPAIGN ---
+
 router.post(
   "/",
   auth,
