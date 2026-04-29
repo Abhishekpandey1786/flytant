@@ -36,13 +36,13 @@ export default function ChatList() {
           api.get("/users/influencers"),
         ]);
         
-        // CRITICAL FIX: डेटाबेस से आने वाले lastMessageAt के आधार पर सॉर्टिंग
+        // SORTING LOGIC: DB से आने वाले lastMessageAt का उपयोग करके
         let combined = [...brandsRes.data, ...influencersRes.data]
           .filter(u => u._id !== user._id)
           .sort((a, b) => {
             const dateA = new Date(a.lastMessageAt || a.createdAt);
             const dateB = new Date(b.lastMessageAt || b.createdAt);
-            return dateB - dateA; // लेटेस्ट बातचीत सबसे ऊपर
+            return dateB - dateA; 
           });
 
         setUsers(combined);
@@ -64,7 +64,7 @@ export default function ChatList() {
       setLastMessages(prev => ({ ...prev, [otherId]: msg.text }));
       if (msg.sender !== user._id) setUnread(prev => ({ ...prev, [otherId]: true }));
 
-      // Real-time sorting: जैसे ही मैसेज आए, उसे तुरंत लिस्ट में सबसे ऊपर ले आएं
+      // REAL-TIME REORDERING: मैसेज आने पर यूजर को टॉप पर ले जाना
       setUsers((prevUsers) => {
         const updated = [...prevUsers];
         const index = updated.findIndex(u => u._id === otherId);
@@ -96,18 +96,25 @@ export default function ChatList() {
 
   return (
     <div className="flex flex-col h-full max-w-xl mx-auto rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden">
-      <div className="bg-slate-950 px-5 py-4 border-b border-slate-800"><h2 className="text-xl font-bold text-white">Conversations</h2></div>
+      <div className="bg-slate-950 px-5 py-4 border-b border-slate-800">
+        <h2 className="text-xl font-bold text-white">Conversations</h2>
+      </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {users.map((u) => {
           const isUnread = unread[u._id];
           return (
-            <div key={u._id} onClick={() => handleUserClick(u)} className={`flex items-center gap-4 rounded-2xl border p-3 cursor-pointer transition-all ${isUnread ? "bg-slate-800/80 border-fuchsia-500/40" : "bg-slate-900 border-transparent hover:bg-slate-800/60"}`}>
+            <div key={u._id} onClick={() => handleUserClick(u)} 
+                 className={`flex items-center gap-4 rounded-2xl border p-3 cursor-pointer transition-all ${isUnread ? "bg-slate-800/80 border-fuchsia-500/40" : "bg-slate-900 border-transparent hover:bg-slate-800/60"}`}>
               <div className="relative">
-                <img src={u.avatar || u.logo || "https://placehold.co/100"} className={`h-14 w-14 rounded-full object-cover border-2 ${isUnread ? "border-fuchsia-500" : "border-slate-700"}`} />
+                <img src={u.avatar || u.logo || "https://placehold.co/100"} 
+                     className={`h-14 w-14 rounded-full object-cover border-2 ${isUnread ? "border-fuchsia-500" : "border-slate-700"}`} />
                 {isUnread && <span className="absolute -top-1 -right-1 flex h-4 w-4"><span className="animate-ping absolute h-full w-full rounded-full bg-fuchsia-400 opacity-75"></span><span className="relative h-4 w-4 rounded-full bg-fuchsia-600 border-2 border-slate-900"></span></span>}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center"><h3 className={`truncate font-bold ${isUnread ? "text-fuchsia-400" : "text-slate-100"}`}>{u.name || u.businessName}</h3>{isUnread && <span className="text-[10px] bg-fuchsia-600 text-white px-2 py-0.5 rounded-full font-black animate-pulse">NEW</span>}</div>
+                <div className="flex justify-between items-center">
+                  <h3 className={`truncate font-bold ${isUnread ? "text-fuchsia-400" : "text-slate-100"}`}>{u.name || u.businessName}</h3>
+                  {isUnread && <span className="text-[10px] bg-fuchsia-600 text-white px-2 py-0.5 rounded-full font-black animate-pulse">NEW</span>}
+                </div>
                 <p className={`truncate text-sm mt-0.5 ${isUnread ? "text-slate-100 font-semibold" : "text-slate-500"}`}>{lastMessages[u._id] || "Tap to chat"}</p>
               </div>
             </div>
