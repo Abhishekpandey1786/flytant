@@ -12,7 +12,6 @@ import CreateCampaign from "./assets/CreateCampaign.jsx";
 import Chats from "./assets/Chats.jsx";
 import { NotificationProvider } from "./assets/NotificationContext.jsx";
 import GlobalNotifications from "./assets/GlobalNotifications.jsx";
-import NotificationManager from "./assets/NotificationManager.jsx";
 import Subscription from "./assets/Subscription.jsx";
 import AppliedCampaigns from "./assets/AppliedCampaigns.jsx";
 import ChatList from "./assets/ChatList.jsx";
@@ -38,7 +37,6 @@ function App() {
       <NotificationProvider>
         <AuthProvider>
           <SocketProvider />
-          <NotificationManager />
           <GlobalNotifications />
           <Routes>
             <Route path="/" element={<Home />} />
