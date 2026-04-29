@@ -41,33 +41,7 @@ export default function Chats() {
   const boxRef = useRef(null);
   const inputRef = useRef(null);
 
-  // =========================
-  // SOCKET REGISTER
-  // =========================
-
-  useEffect(() => {
-    if (!user?._id) return;
-
-    const registerUser = () => {
-      socket.emit("register", user._id);
-      console.log("✅ Registered:", user._id);
-    };
-
-    if (socket.connected) {
-      registerUser();
-    }
-
-    socket.on("connect", registerUser);
-
-    return () => {
-      socket.off("connect", registerUser);
-    };
-  }, [user]);
-
-  // =========================
-  // FETCH USERS
-  // =========================
-
+ 
   useEffect(() => {
     const fetchUsers = async () => {
       if (!user?._id) return;

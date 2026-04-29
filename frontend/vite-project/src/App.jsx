@@ -31,11 +31,13 @@ import MyOrders from "./assets/MyOrders.jsx";
 import PaymentSuccess from "./assets/PaymentSuccess.jsx";
 import RefundPolicy from "./assets/RefundPolicy.jsx";
 import Academy from "./assets/Academy.jsx"
+import SocketProvider from "./SocketProvider";
 function App() {
   return (
     <BrowserRouter>
       <NotificationProvider>
         <AuthProvider>
+          <SocketProvider />
           <NotificationManager />
           <GlobalNotifications />
           <Routes>
