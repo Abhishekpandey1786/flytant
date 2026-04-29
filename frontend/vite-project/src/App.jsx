@@ -31,6 +31,8 @@ import PaymentSuccess from "./assets/PaymentSuccess.jsx";
 import RefundPolicy from "./assets/RefundPolicy.jsx";
 import Academy from "./assets/Academy.jsx"
 import SocketProvider from "./assets/SocketProvider.jsx";
+import Latestarticles from "./assets/Latestarticles.jsx"
+import AddArticle from "./assets/AddArticle.jsx";
 function App() {
   return (
     <BrowserRouter>
@@ -51,6 +53,9 @@ function App() {
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/Refund-Policy" element={<RefundPolicy />} />
               <Route path="/success" element={<PaymentSuccess />} />
+              <Route path="/Latestarticles" element={<Latestarticles/>} />
+              <Route path="/latestarticles" element={<Latestarticles />} />
+              <Route path="/add-article" element={<AddArticle />} />
               <Route element={<PrivateRoutes />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/dashboard/brand" element={<Brand />} />

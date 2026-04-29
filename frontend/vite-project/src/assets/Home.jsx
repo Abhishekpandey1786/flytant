@@ -21,6 +21,7 @@ import img19 from "./image/air1.jpg";
 import img20 from "./image/air2.jpg";
 import img21 from "./image/new1.jpg";
 import img22 from "./image/new2.jpg";
+import vidoe1 from "./image/w.mp4"
 const Home = () => {
   const [showVideo, setShowVideo] = useState(false);
   const [influencerOffset, setInfluencerOffset] = useState(0);
@@ -490,9 +491,9 @@ const Home = () => {
             <p className="text-slate-400 text-xs md:text-sm mb-6">
               Access the latest insights from the industry.
             </p>
-            <button className="w-full sm:w-fit border neno-button shadow-xl hover:shadow-fuchsia-800/50 bg-fuchsia-700 text-white hover:bg-fuchsia-700 border-fuchsia-700 transition  px-6 py-2 rounded-full text-xs md:text-sm font-bold">
+           <Link to="/Latestarticles"><button className="w-full sm:w-fit border neno-button shadow-xl hover:shadow-fuchsia-800/50 bg-fuchsia-700 text-white hover:bg-fuchsia-700 border-fuchsia-700 transition  px-6 py-2 rounded-full text-xs md:text-sm font-bold">
               Read More
-            </button>
+            </button></Link>
           </div>
         </div>
 
@@ -595,7 +596,7 @@ const Home = () => {
             </button>
             <div className="aspect-video w-full">
               <iframe
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1"
+                src={vidoe1}
                 className="w-full h-full"
                 allow="autoplay"
               />
