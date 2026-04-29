@@ -76,37 +76,87 @@ io.on("connection", (socket) => {
   });
 
   socket.on("send_message", async (data) => {
-  try {
-    if (!socket.userId || socket.userId !== data.sender) return;
+    try {
+     
+      if (
+        !socket.userId ||
+        socket.userId !== data.sender
+      ) {
+        console.log("❌ Unauthorized sender");
 
-    const message = new Chat({
-      roomId: data.roomId,
-      text: data.text,
-      sender: data.sender,
-      receiver: data.receiver,
-      senderName: data.senderName,
-    });
-    await message.save();
+        return;
+      }
 
-    // 1. Room me message bhejo (Current chat refresh karne ke liye)
-    io.to(data.roomId).emit("message_received", message);
+      if (
+        !data.roomId ||
+        !data.text ||
+        !data.sender ||
+        !data.receiver
+      ) {
+        console.log("❌ Invalid message payload");
 
-    // 2. Receiver ko personal notify karo (Sidebar update aur notification ke liye)
-    const receiverSocketId = connectedUsers.get(data.receiver);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("message_received", message); // Ye zaroori hai!
-      
-      io.to(receiverSocketId).emit("inbox_ping", {
-        id: message._id,
-        text: data.text,
-        from: data.senderName,
+        return;
+      }
+
+      const message = new Chat({
         roomId: data.roomId,
+
+        text: data.text,
+
+        sender: data.sender,
+
+        receiver: data.receiver,
+
+        senderName: data.senderName,
+
+        senderAvatar: data.senderAvatar,
       });
+
+      await message.save();
+      io.to(data.roomId).emit(
+        "message_received",
+        message
+      );
+      const receiverSocketId =
+        connectedUsers.get(data.receiver);
+
+      if (
+        receiverSocketId &&
+        receiverSocketId !== socket.id
+      ) {
+        io.to(receiverSocketId).emit(
+          "inbox_ping",
+          {
+            id: message._id,
+
+            text: data.text,
+
+            from: data.senderName,
+
+            senderId: data.sender,
+
+            roomId: data.roomId,
+
+            createdAt: message.createdAt,
+          }
+        );
+
+        console.log(
+          `📨 Notification sent to ${data.receiver}`
+        );
+      }
+
+      console.log(
+        `💬 Message sent: ${data.sender} -> ${data.receiver}`
+      );
+    } catch (error) {
+      console.error(
+        "❌ Chat Send Error:",
+        error
+      );
     }
-  } catch (error) {
-    console.error("Chat Error:", error);
-  }
-});
+  });
+
 
   socket.on("disconnect", () => {
     console.log(`⚠️ Socket disconnected: ${socket.id}`);

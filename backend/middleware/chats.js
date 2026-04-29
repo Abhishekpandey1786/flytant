@@ -2,19 +2,104 @@ const jwt = require("jsonwebtoken");
 
 const authMiddleware = (req, res, next) => {
   try {
-    const authHeader = req.headers["authorization"];
+    // =========================
+    // GET AUTH HEADER
+    // =========================
+
+    const authHeader =
+      req.headers.authorization;
+
+    // =========================
+    // CHECK HEADER
+    // =========================
+
     if (!authHeader) {
-      return res.status(401).json({ message: "Authorization header missing" });
+      return res.status(401).json({
+        success: false,
+        message:
+          "Authorization header missing",
+      });
     }
-    const token = authHeader.split(" ")[1];
+
+    // =========================
+    // CHECK FORMAT
+    // =========================
+
+    if (!authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message:
+          "Invalid authorization format",
+      });
+    }
+
+    // =========================
+    // EXTRACT TOKEN
+    // =========================
+
+    const token =
+      authHeader.split(" ")[1];
+
     if (!token) {
-      return res.status(401).json({ message: "Token missing" });
+      return res.status(401).json({
+        success: false,
+        message: "Token missing",
+      });
     }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // =========================
+    // VERIFY TOKEN
+    // =========================
+
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET
+    );
+
+    // =========================
+    // SAVE USER
+    // =========================
+
     req.user = decoded;
+
     next();
+
   } catch (error) {
-    return res.status(401).json({ message: "Invalid or expired token" });
+    console.error(
+      "❌ Auth Middleware Error:",
+      error.message
+    );
+
+    // =========================
+    // TOKEN EXPIRED
+    // =========================
+
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        success: false,
+        message: "Token expired",
+      });
+    }
+
+    // =========================
+    // INVALID TOKEN
+    // =========================
+
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+      });
+    }
+
+    // =========================
+    // DEFAULT ERROR
+    // =========================
+
+    return res.status(401).json({
+      success: false,
+      message: "Authentication failed",
+    });
   }
 };
 
