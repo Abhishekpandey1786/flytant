@@ -3,21 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { useNotifications } from "./NotificationContext.jsx";
 import { AuthContext } from "./AuthContext.jsx";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  X,
-  MessageCircle,
-  ArrowUpRight,
-} from "lucide-react";
+import { X, MessageCircle, ArrowUpRight } from "lucide-react";
 
 export default function GlobalNotifications() {
+  const { notifications, removeNotification } = useNotifications();
 
-  const {
-    notifications,
-    removeNotification,
-  } = useNotifications();
-
-  const { user } =
-    useContext(AuthContext);
+  const { user } = useContext(AuthContext);
 
   const navigate = useNavigate();
 
@@ -25,34 +16,24 @@ export default function GlobalNotifications() {
   // OPEN CHAT
   // =========================================
 
-  const handleNotificationClick = (
-    alert
-  ) => {
-
+  const handleNotificationClick = (alert) => {
     if (
       !alert.roomId ||
       typeof alert.roomId !== "string" ||
       !user ||
       !user._id
     ) {
-      console.error(
-        "Invalid notification or user data:",
-        alert
-      );
+      console.error("Invalid notification or user data:", alert);
 
       removeNotification(alert.id);
 
       return;
     }
 
-    const parts =
-      alert.roomId.split(":");
+    const parts = alert.roomId.split(":");
 
     if (parts.length < 4) {
-      console.error(
-        "roomId format is incorrect:",
-        alert.roomId
-      );
+      console.error("roomId format is incorrect:", alert.roomId);
 
       removeNotification(alert.id);
 
@@ -62,16 +43,11 @@ export default function GlobalNotifications() {
     const user1 = parts[2];
     const user2 = parts[3];
 
-    const newOtherUserId =
-      user1 === user._id
-        ? user2
-        : user1;
+    const newOtherUserId = user1 === user._id ? user2 : user1;
 
     // OPEN SPECIFIC CHAT
 
-    navigate(
-      `/chats?user=${newOtherUserId}`
-    );
+    navigate(`/chats?user=${newOtherUserId}`);
 
     removeNotification(alert.id);
   };
@@ -80,8 +56,7 @@ export default function GlobalNotifications() {
   // EMPTY
   // =========================================
 
-  if (notifications.length === 0)
-    return null;
+  if (notifications.length === 0) return null;
 
   return (
     <div
@@ -104,41 +79,33 @@ export default function GlobalNotifications() {
         md:w-[360px]
       "
     >
-
       <AnimatePresence>
-
         {notifications
           .slice()
           .reverse()
           .map((a) => (
-
             <motion.div
               key={a.id}
-
               initial={{
                 opacity: 0,
                 y: 50,
                 scale: 0.95,
               }}
-
               animate={{
                 opacity: 1,
                 y: 0,
                 scale: 1,
               }}
-
               exit={{
                 opacity: 0,
                 y: 50,
                 scale: 0.9,
               }}
-
               transition={{
                 type: "spring",
                 damping: 15,
                 stiffness: 120,
               }}
-
               className="
                 relative
                 w-full
@@ -166,18 +133,12 @@ export default function GlobalNotifications() {
 
                 active:scale-[0.98]
               "
-
-              onClick={() =>
-                handleNotificationClick(a)
-              }
+              onClick={() => handleNotificationClick(a)}
             >
-
               {/* TOP */}
 
               <div className="flex items-center justify-between mb-3">
-
                 <div className="flex items-center gap-2">
-
                   <div
                     className="
                       w-9 h-9
@@ -186,14 +147,10 @@ export default function GlobalNotifications() {
                       flex items-center justify-center
                     "
                   >
-                    <MessageCircle
-                      size={18}
-                      className="text-fuchsia-400"
-                    />
+                    <MessageCircle size={18} className="text-fuchsia-400" />
                   </div>
 
                   <div className="flex flex-col">
-
                     <span
                       className="
                         text-[11px]
@@ -214,7 +171,6 @@ export default function GlobalNotifications() {
                     >
                       Tap to open chat
                     </span>
-
                   </div>
                 </div>
 
@@ -222,13 +178,10 @@ export default function GlobalNotifications() {
 
                 <button
                   onClick={(e) => {
-
                     e.stopPropagation();
 
                     removeNotification(a.id);
-
                   }}
-
                   className="
                     p-1.5
                     rounded-lg
@@ -245,7 +198,6 @@ export default function GlobalNotifications() {
               {/* MESSAGE */}
 
               <div className="space-y-2">
-
                 {/* SENDER */}
 
                 <div
@@ -256,12 +208,7 @@ export default function GlobalNotifications() {
                     truncate
                   "
                 >
-                  {
-                    a.from ||
-                    a.senderName ||
-                    a.businessName ||
-                    "New Message"
-                  }
+                  {a.from || a.senderName || a.businessName || "New Message"}
                 </div>
 
                 {/* TEXT */}
@@ -277,7 +224,6 @@ export default function GlobalNotifications() {
                 >
                   {a.text}
                 </p>
-
               </div>
 
               {/* FOOTER */}
@@ -292,7 +238,6 @@ export default function GlobalNotifications() {
                   border-slate-700
                 "
               >
-
                 {/* TIME */}
 
                 <span
@@ -303,13 +248,10 @@ export default function GlobalNotifications() {
                   "
                 >
                   {a.timestamp instanceof Date
-                    ? a.timestamp.toLocaleTimeString(
-                        [],
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }
-                      )
+                    ? a.timestamp.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
                     : a.timestamp}
                 </span>
 
@@ -317,13 +259,10 @@ export default function GlobalNotifications() {
 
                 <button
                   onClick={(e) => {
-
                     e.stopPropagation();
 
                     handleNotificationClick(a);
-
                   }}
-
                   className="
                     flex items-center gap-1
 
@@ -337,14 +276,9 @@ export default function GlobalNotifications() {
                   "
                 >
                   Respond
-
-                  <ArrowUpRight
-                    size={14}
-                  />
+                  <ArrowUpRight size={14} />
                 </button>
-
               </div>
-
             </motion.div>
           ))}
       </AnimatePresence>
