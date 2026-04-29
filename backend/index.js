@@ -75,40 +75,47 @@ io.on("connection", (socket) => {
     console.log(`👥 Socket ${socket.id} joined room ${roomId}`);
   });
 
-  socket.on("send_message", async (data) => {
-    try {
-      if (!socket.userId || socket.userId !== data.sender) {
-        console.error(
-          `❌ Security alert: Sender ID mismatch or unregistered user. Expected: ${socket.userId}, Received: ${data.sender}`,
-        );
-        return;
-      }
+  // ... baaki imports same rahenge
 
-      const message = new Chat({
-        roomId: data.roomId,
-        text: data.text,
-        sender: data.sender,
-        receiver: data.receiver,
-        senderName: data.senderName,
-      });
-      await message.save();
-
-      io.to(data.roomId).emit("message_received", message);
-
-      const receiverSocketId = connectedUsers.get(data.receiver);
-      if (receiverSocketId && receiverSocketId !== socket.id) {
-        io.to(receiverSocketId).emit("inbox_ping", {
-          id: Date.now(),
-          text: data.text,
-          from: data.senderName,
-          roomId: data.roomId,
-        });
-        console.log(`📨 Inbox ping sent to ${data.receiver}`);
-      }
-    } catch (error) {
-      console.error("❌ Error sending message:", error);
+socket.on("send_message", async (data) => {
+  try {
+    // Basic Security Check
+    if (!socket.userId) {
+      console.error("❌ Socket not registered with a UserId");
+      return;
     }
-  });
+
+    const message = new Chat({
+      roomId: data.roomId,
+      text: data.text,
+      sender: data.sender, 
+      receiver: data.receiver,
+      senderName: data.senderName,
+      createdAt: new Date()
+    });
+
+    await message.save();
+
+    io.to(data.roomId).emit("message_received", message);
+
+    const receiverSocketId = connectedUsers.get(data.receiver);
+    if (receiverSocketId) {
+  
+      io.to(receiverSocketId).emit("message_received", message);
+      
+      io.to(receiverSocketId).emit("inbox_ping", {
+        id: message._id || Date.now(),
+        text: data.text,
+        from: data.senderName,
+        roomId: data.roomId,
+      });
+    }
+
+    console.log(`📨 Message sent in room ${data.roomId} and personally to ${data.receiver}`);
+  } catch (error) {
+    console.error("❌ Error sending message:", error);
+  }
+});
 
   socket.on("disconnect", () => {
     console.log(`⚠️ Socket disconnected: ${socket.id}`);
