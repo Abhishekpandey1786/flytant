@@ -7,8 +7,8 @@ const path = require("path");
 const connectDB = require("./config/db");
 const helmet = require("helmet");
 const chatRoutes = require("./routes/chatRoutes");
-const Chat = require("./models/Chat"); 
-const User = require("./models/User"); 
+const Chat = require("./models/Chat");
+const User = require("./models/User");
 const newsRoutes = require("./routes/news");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -71,37 +71,24 @@ io.on("connection", (socket) => {
   });
 
   socket.on("join_room", (roomId) => {
+    const rooms = [...socket.rooms];
 
-  const rooms = [...socket.rooms];
+    if (!rooms.includes(roomId)) {
+      socket.join(roomId);
 
-  if (!rooms.includes(roomId)) {
-
-    socket.join(roomId);
-
-    console.log(
-      `👥 ${socket.id} joined ${roomId}`
-    );
-  }
-});
+      console.log(`👥 ${socket.id} joined ${roomId}`);
+    }
+  });
 
   socket.on("send_message", async (data) => {
     try {
-     
-      if (
-        !socket.userId ||
-        socket.userId !== data.sender
-      ) {
+      if (!socket.userId || socket.userId !== data.sender) {
         console.log("❌ Unauthorized sender");
 
         return;
       }
 
-      if (
-        !data.roomId ||
-        !data.text ||
-        !data.sender ||
-        !data.receiver
-      ) {
+      if (!data.roomId || !data.text || !data.sender || !data.receiver) {
         console.log("❌ Invalid message payload");
 
         return;
@@ -122,50 +109,40 @@ io.on("connection", (socket) => {
       });
 
       await message.save();
-      io.to(data.roomId).emit(
-        "message_received",
-        message
-      );
-      const receiverSocketId =
-        connectedUsers.get(data.receiver);
+      io.to(data.roomId).emit("message_received", message);
+      const receiverSocketId = connectedUsers.get(data.receiver);
 
-      if (
-        receiverSocketId &&
-        receiverSocketId !== socket.id
-      ) {
-        io.to(receiverSocketId).emit(
-          "inbox_ping",
-          {
-            id: message._id,
+      if (receiverSocketId && receiverSocketId !== socket.id) {
+        // GET ACTUAL USER DATA
 
-            text: data.text,
+        const senderUser = await User.findById(data.sender);
 
-            from: data.senderName,
+        io.to(receiverSocketId).emit("inbox_ping", {
+          id: message._id,
 
-            senderId: data.sender,
+          text: data.text,
 
-            roomId: data.roomId,
+          from:
+            senderUser?.name ||
+            senderUser?.businessName ||
+            data.senderName ||
+            "New Message",
 
-            createdAt: message.createdAt,
-          }
-        );
+          senderId: data.sender,
 
-        console.log(
-          `📨 Notification sent to ${data.receiver}`
-        );
+          roomId: data.roomId,
+
+          createdAt: message.createdAt,
+        });
+
+        console.log(`📨 Notification sent to ${data.receiver}`);
       }
 
-      console.log(
-        `💬 Message sent: ${data.sender} -> ${data.receiver}`
-      );
+      console.log(`💬 Message sent: ${data.sender} -> ${data.receiver}`);
     } catch (error) {
-      console.error(
-        "❌ Chat Send Error:",
-        error
-      );
+      console.error("❌ Chat Send Error:", error);
     }
   });
-
 
   socket.on("disconnect", () => {
     console.log(`⚠️ Socket disconnected: ${socket.id}`);
