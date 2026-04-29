@@ -1,4 +1,3 @@
-// src/components/ChatList.jsx
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -7,93 +6,113 @@ import { AuthContext } from "./AuthContext.jsx";
 const api = axios.create({
   baseURL: "https://vistafluence.onrender.com/api",
 });
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
   return config;
 });
 
 export default function ChatList() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const { user } = useContext(AuthContext);
+
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchChattableUsers = async () => {
-      if (!user) {
-        console.log("User not found in AuthContext");
-        return;
-      }
+    const fetchUsers = async () => {
+      if (!user?._id) return;
 
       setLoading(true);
+
       try {
-        const [brandsRes, influencersRes] = await Promise.all([
-          api.get("/advertiser/brands"),
-          api.get("/users/influencers"),
-        ]);
+        const [brandsRes, influencersRes] =
+          await Promise.all([
+            api.get("/advertiser/brands"),
+            api.get("/users/influencers"),
+          ]);
 
-        let combined = [...brandsRes.data, ...influencersRes.data];
-        combined = combined.filter((u) => u._id !== user._id);
+        let combined = [
+          ...brandsRes.data,
+          ...influencersRes.data,
+        ];
 
-        console.log("Fetched users:", combined);
+        combined = combined.filter(
+          (u) => u._id !== user._id
+        );
+
         setUsers(combined);
       } catch (error) {
         console.error(
           "Failed to fetch users:",
-          error.response?.data || error.message
+          error
         );
       } finally {
         setLoading(false);
       }
     };
 
-    fetchChattableUsers();
+    fetchUsers();
   }, [user]);
 
   const handleUserClick = (otherUser) => {
-    if (!user || !otherUser) return;
-    const campaignId = [user._id, otherUser._id].sort().join("_");
-
-    navigate(`/chats`);
+    navigate("/chats", {
+      state: {
+        selectedUser: otherUser,
+      },
+    });
   };
 
-  if (loading)
-    return <div className="text-center p-4">Loading chat list...</div>;
-
-  if (users.length === 0)
+  if (loading) {
     return (
-      <div className="text-center p-4">
-        Koi user chat ke liye available nahi hai.
+      <div className="text-center text-white p-6">
+        Loading chats...
       </div>
     );
+  }
 
   return (
-    <div className="flex flex-col h-full max-w-xl mx-auto border rounded-lg shadow bg-white relative">
-      <div className="p-3 border-b font-semibold bg-gray-50">
-        Conversations
+    <div className="max-w-2xl mx-auto bg-slate-900 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
+      <div className="p-5 border-b border-slate-800">
+        <h2 className="text-2xl font-bold text-white">
+          Conversations
+        </h2>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+
+      <div className="p-4 space-y-3">
         {users.map((otherUser) => (
           <div
             key={otherUser._id}
-            onClick={() => handleUserClick(otherUser)}
-            className="flex items-center space-x-4 p-3 hover:bg-gray-100 cursor-pointer rounded-lg transition"
+            onClick={() =>
+              handleUserClick(otherUser)
+            }
+            className="flex items-center gap-4 p-4 rounded-2xl bg-slate-800 hover:bg-slate-700 cursor-pointer transition-all"
           >
             <img
               src={
                 otherUser.avatar ||
                 otherUser.logo ||
-                "https://placehold.co/50x50"
+                "https://placehold.co/50"
               }
-              alt={otherUser.name}
-              className="w-12 h-12 rounded-full object-cover"
+              alt=""
+              className="w-14 h-14 rounded-full object-cover border border-fuchsia-500"
             />
+
             <div>
-              <div className="font-bold">{otherUser.name}</div>
-              <div className="text-sm text-gray-500">
-                Chat shuru karne ke liye click karein
-              </div>
+              <h3 className="text-white font-semibold">
+                {otherUser.name ||
+                  otherUser.businessName}
+              </h3>
+
+              <p className="text-sm text-slate-400">
+                Click to start chat
+              </p>
             </div>
           </div>
         ))}

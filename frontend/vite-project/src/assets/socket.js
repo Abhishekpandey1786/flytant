@@ -4,6 +4,12 @@ const socket = io(
   "https://vistafluence.onrender.com",
   {
     transports: ["websocket"],
+
+    reconnection: true,
+
+    reconnectionAttempts: 5,
+
+    reconnectionDelay: 1000,
   }
 );
 
