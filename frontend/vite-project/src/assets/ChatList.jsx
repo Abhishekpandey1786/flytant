@@ -14,7 +14,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Chats.jsx से मैचिंग फॉर्मेट
 const getRoomId = (id1, id2) => {
   const sorted = [id1, id2].sort().join(":");
   return `camp:general:${sorted}`;
@@ -36,7 +35,16 @@ export default function ChatList() {
           api.get("/advertiser/brands"),
           api.get("/users/influencers"),
         ]);
-        let combined = [...brandsRes.data, ...influencersRes.data].filter(u => u._id !== user._id);
+        
+        // CRITICAL FIX: डेटाबेस से आने वाले lastMessageAt के आधार पर सॉर्टिंग
+        let combined = [...brandsRes.data, ...influencersRes.data]
+          .filter(u => u._id !== user._id)
+          .sort((a, b) => {
+            const dateA = new Date(a.lastMessageAt || a.createdAt);
+            const dateB = new Date(b.lastMessageAt || b.createdAt);
+            return dateB - dateA; // लेटेस्ट बातचीत सबसे ऊपर
+          });
+
         setUsers(combined);
       } catch (error) {
         console.error("Fetch failed:", error);
@@ -56,13 +64,13 @@ export default function ChatList() {
       setLastMessages(prev => ({ ...prev, [otherId]: msg.text }));
       if (msg.sender !== user._id) setUnread(prev => ({ ...prev, [otherId]: true }));
 
-      // WHATSAPP SORTING LOGIC
+      // Real-time sorting: जैसे ही मैसेज आए, उसे तुरंत लिस्ट में सबसे ऊपर ले आएं
       setUsers((prevUsers) => {
         const updated = [...prevUsers];
         const index = updated.findIndex(u => u._id === otherId);
         if (index !== -1) {
           const [target] = updated.splice(index, 1);
-          return [target, ...updated]; // उसे टॉप पर ले आएं
+          return [target, ...updated]; 
         }
         return updated;
       });

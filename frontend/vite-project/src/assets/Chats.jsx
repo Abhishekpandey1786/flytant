@@ -11,13 +11,10 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// CRITICAL: यह ID फॉर्मेट ChatList.jsx से मैच होना चाहिए
 function getRoomId(me, other) {
   const pair = [me, other].sort().join(":");
   return `camp:general:${pair}`;
@@ -38,7 +35,7 @@ export default function Chats() {
   const boxRef = useRef(null);
   const inputRef = useRef(null);
 
-  // 1. FETCH USERS
+  // 1. FETCH USERS WITH SORTING
   useEffect(() => {
     const fetchUsers = async () => {
       if (!user?._id) return;
@@ -47,9 +44,16 @@ export default function Chats() {
           api.get("/advertiser/brands"),
           api.get("/users/influencers"),
         ]);
-        const combined = [...brandsRes.data, ...influencersRes.data].filter(
-          (u) => u._id !== user._id
-        );
+        
+        // CRITICAL: डेटाबेस के lastMessageAt के हिसाब से सॉर्ट करें ताकि रिफ्रेश के बाद अभिषेक पांडे ऊपर रहे
+        const combined = [...brandsRes.data, ...influencersRes.data]
+          .filter((u) => u._id !== user._id)
+          .sort((a, b) => {
+            const dateA = new Date(a.lastMessageAt || a.createdAt);
+            const dateB = new Date(b.lastMessageAt || b.createdAt);
+            return dateB - dateA;
+          });
+
         setUsers(combined);
       } catch (error) {
         console.error("Failed to fetch users:", error);
@@ -72,31 +76,28 @@ export default function Chats() {
     const handleMessage = (msg) => {
       const currentRoomId = activeChat ? getRoomId(user._id, activeChat._id) : null;
 
-      // अगर मैसेज खुले हुए चैट रूम का है
       if (msg.roomId === currentRoomId) {
         setMessages((prev) => {
           if (prev.some((m) => m._id === msg._id)) return prev;
           return [...prev, msg];
         });
-
         if (msg.sender !== user._id) {
           api.put(`/chats/read-messages/${currentRoomId}`).catch(() => {});
         }
       }
 
-      // SIDEBAR SORTING & UNREAD STATUS
       const otherId = msg.sender === user._id ? msg.receiver : msg.sender;
-
       if (msg.receiver === user._id && (!activeChat || msg.sender !== activeChat._id)) {
         setUnread((prev) => ({ ...prev, [msg.sender]: true }));
       }
 
+      // SIDEBAR LIVE SORTING
       setUsers((prevUsers) => {
         const updated = [...prevUsers];
         const index = updated.findIndex((u) => u._id === otherId);
         if (index !== -1) {
           const [target] = updated.splice(index, 1);
-          return [target, ...updated]; // Move to top
+          return [target, ...updated];
         }
         return updated;
       });
@@ -106,22 +107,17 @@ export default function Chats() {
     return () => socket.off("message_received", handleMessage);
   }, [user, activeChat]);
 
-  // 4. LOAD HISTORY & MARK READ
+  // 4. LOAD HISTORY
   useEffect(() => {
     if (!activeChat || !user?._id) return;
-
     const roomId = getRoomId(user._id, activeChat._id);
     setMessages([]);
     setLoading(true);
     socket.emit("join_room", roomId);
-
     setUnread((prev) => ({ ...prev, [activeChat._id]: false }));
     api.put(`/chats/read-messages/${roomId}`).catch(() => {});
-  
     inputRef.current?.focus();
-    api.get(`/chats/${roomId}`)
-      .then((res) => setMessages(res.data))
-      .finally(() => setLoading(false));
+    api.get(`/chats/${roomId}`).then((res) => setMessages(res.data)).finally(() => setLoading(false));
   }, [activeChat, user]);
 
   useEffect(() => {
@@ -145,6 +141,7 @@ export default function Chats() {
 
   return (
     <div className="flex h-[85vh] rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl">
+      {/* Sidebar */}
       <div className={`flex flex-col border-r border-slate-800 w-full md:w-[340px] ${activeChat ? "hidden md:flex" : "flex"}`}>
         <div className="p-5 border-b border-slate-800 bg-slate-950 text-white text-xl font-bold">Messages</div>
         <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-900">
@@ -167,6 +164,7 @@ export default function Chats() {
           ))}
         </div>
       </div>
+      {/* Chat Area */}
       <div className={`flex-1 flex flex-col bg-slate-950 ${activeChat ? "flex" : "hidden md:flex"}`}>
         {activeChat ? (
           <>
