@@ -1,47 +1,24 @@
 const express = require("express");
-
 const router = express.Router();
-
 const Chat = require("../models/Chat");
-
 const authMiddleware = require("../middleware/chats");
-
-// =======================================
-// GET CHAT HISTORY
-// =======================================
-
 router.get(
   "/:roomId",
   authMiddleware,
   async (req, res) => {
     try {
       const { roomId } = req.params;
-
-      // =========================
-      // VALIDATION
-      // =========================
-
       if (!roomId) {
         return res.status(400).json({
           success: false,
           message: "Room ID is required",
         });
       }
-
-      // =========================
-      // FETCH CHATS
-      // =========================
-
       const chats = await Chat.find({
         roomId,
       })
         .sort({ createdAt: 1 })
         .lean();
-
-      // =========================
-      // RESPONSE
-      // =========================
-
       return res.status(200).json(chats);
 
     } catch (error) {
@@ -57,11 +34,6 @@ router.get(
     }
   }
 );
-
-// =======================================
-// DELETE CHAT ROOM (OPTIONAL)
-// =======================================
-
 router.delete(
   "/:roomId",
   authMiddleware,
@@ -96,5 +68,25 @@ router.delete(
     }
   }
 );
+
+router.put("/read-messages/:roomId", authMiddleware, async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const currentUserId = req.user._id; 
+
+    await Chat.updateMany(
+      { 
+        roomId: roomId, 
+        receiver: currentUserId, 
+        isRead: false 
+      },
+      { $set: { isRead: true } }
+    );
+
+    res.status(200).json({ success: true, message: "Messages marked as read" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 module.exports = router;
