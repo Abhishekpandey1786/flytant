@@ -13,18 +13,22 @@ function Footer() {
           <div className="space-y-6">
             <div className="flex items-center gap-3">
               {/* CSS LOGO (Same as Navbar) */}
-              <div className="relative flex items-center justify-center w-8 h-8 shrink-0">
-                <div className="absolute w-5 h-7 bg-gradient-to-br from-blue-500 to-blue-700 rounded-tr-xl rounded-bl-sm transform skew-x-[-20deg] translate-x-1.5"></div>
-                <div className="absolute w-5 h-7 bg-gradient-to-tr from-pink-500 to-magenta-600 rounded-tl-xl rounded-br-sm transform skew-x-[20deg] -translate-x-1.5"></div>
-              </div>
-              <Link to="/"><span className="text-xl font-black tracking-tighter text-white uppercase">
-                Vistafluence
-              </span></Link>
-            </div>
-            
-            <p className="text-sm leading-relaxed max-w-xs">
-              No Middlemen. Just Real Collaborations.</p>
-
+              <div className="relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10">
+                          <div className="absolute w-5 h-7 md:w-6 md:h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-tr-xl rounded-bl-sm transform skew-x-[-20deg] translate-x-1.5 md:translate-x-2"></div>
+                          <div className="absolute w-5 h-7 md:w-6 md:h-8 bg-gradient-to-tr from-pink-500 to-magenta-600 rounded-tl-xl rounded-br-sm transform skew-x-[20deg] -translate-x-1.5 md:-translate-x-2"></div>
+                        </div>
+                        <div className="flex flex-col leading-tight">
+                          <Link to="/">
+                            {" "}
+                            <span className="text-lg md:text-2xl font-black tracking-tighter bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent uppercase">
+                              Vistafluence
+                            </span>
+                          </Link>
+                          <span className=" md:block md:text-[9px] text-[7px] tracking-[0.2em] text-slate-400 font-bold uppercase">
+                            No Middlemen. Just Real Collaborations.
+                          </span>
+                        </div>
+                        </div>
             <div className="flex space-x-4">
               <a href="mailto:information@vistafluence.com" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-pink-500 hover:text-white transition-all duration-300">
                 <FaEnvelope size={18} />
