@@ -1,35 +1,48 @@
 const express = require("express");
 const router = express.Router();
-const Article = require("../models/Article"); // Model ko import karein
+const Article = require("../models/Article");
 
-// 1. Get all articles
 router.get("/", async (req, res) => {
   try {
-    const articles = await Article.find().sort({ _id: -1 });
-    res.json(articles);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    const articles = await Article.find().sort({ createdAt: -1 });
+    res.status(200).json(articles);
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch articles",
+      error: error.message,
+    });
   }
 });
 
-// 2. Post a new article
 router.post("/", async (req, res) => {
   try {
-    const newArticle = new Article(req.body);
-    await newArticle.save();
-    res.json({ message: "Article Added Successfully!" });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+    const article = new Article(req.body);
+    await article.save();
+
+    res.status(201).json({
+      message: "Article Added Successfully",
+      article,
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: "Error creating article",
+      error: error.message,
+    });
   }
 });
 
-// 3. Delete an article
 router.delete("/:id", async (req, res) => {
   try {
     await Article.findByIdAndDelete(req.params.id);
-    res.json({ message: "Article Deleted!" });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+
+    res.json({
+      message: "Article Deleted Successfully",
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: "Delete Failed",
+      error: error.message,
+    });
   }
 });
 

@@ -1,12 +1,35 @@
 const mongoose = require("mongoose");
 
-const articleSchema = new mongoose.Schema({
-  title: String,
-  description: String,
-  image: String,
-  author: String,
-  category: String,
-  date: { type: String, default: new Date().toLocaleDateString() }
-});
+const articleSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true,
+    },
+
+    description: {
+      type: String,
+      required: true,
+    },
+
+    image: {
+      type: String,
+      required: true,
+    },
+
+    author: {
+      type: String,
+      required: true,
+    },
+
+    category: {
+      type: String,
+      required: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
 module.exports = mongoose.model("Article", articleSchema);
