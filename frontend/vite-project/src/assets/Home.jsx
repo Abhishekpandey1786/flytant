@@ -3,25 +3,34 @@ import { Link } from "react-router-dom";
 import Footer from "./Footer";
 import img1 from "./image/banner2.png";
 import img2 from "./image/allinone.png";
-import img5 from "./image/in1.avif";
-import img6 from "./image/in2.avif";
-import img7 from "./image/in3.avif";
-import img8 from "./image/in4.avif";
+import img5 from "./image/olivia.png";
+import img6 from "./image/bhavya.png";
+import img7 from "./image/malni.png";
+import img8 from "./image/kunal.png";
 import img9 from "./image/in5.avif";
-import img10 from "./image/in6.avif";
+import img10 from "./image/in6.png";
 import img11 from "./image/in7.avif";
 import img12 from "./image/in8.avif";
 import img13 from "./image/in9.avif";
-import img14 from "./image/in10.avif";
+import img14 from "./image/sonia.png";
 import img15 from "./image/in11.avif";
 import img16 from "./image/in12.avif";
 import img17 from "./image/in13.avif";
 import img18 from "./image/in14.avif";
+import img31 from "./image/in15.png";
 import img19 from "./image/air1.jpg";
 import img20 from "./image/air2.jpg";
 import img21 from "./image/new1.jpg";
 import img22 from "./image/new2.jpg";
-import vidoe1 from "./image/w.mp4"
+import img23 from "./image/a.png";
+import img24 from "./image/b.png";
+import img25 from "./image/h.png";
+import img26 from "./image/d.png";
+import img27 from "./image/e.png";
+import img28 from "./image/f.png";
+import img29 from "./image/g.png";
+import img30 from "./image/h.png";
+import vidoe1 from "./image/w.mp4";
 const Home = () => {
   const [showVideo, setShowVideo] = useState(false);
   const [influencerOffset, setInfluencerOffset] = useState(0);
@@ -34,25 +43,25 @@ const Home = () => {
   const brandRef = useRef(null);
   const influencers = [
     {
-      name: "Olivia Fox",
+      // name: "Olivia Fox",
       category: "Fashion",
       followers: "378k",
       img: img5,
     },
     {
-      name: "Bhavya Shah",
+      // name: "Bhavya Shah",
       category: "Travel",
-      followers: "491k",
+      followers: "491k subscribers sanpchat",
       img: img6,
     },
     {
-      name: "Malini",
+      // name: "Malini",
       category: "Beauty",
-      followers: "210k",
+      followers: "357k",
       img: img7,
     },
     {
-      name: "Kunal",
+      // name: "Kunal",
       category: "Fitness",
       followers: "1.2M",
       img: img8,
@@ -64,8 +73,8 @@ const Home = () => {
       img: img9,
     },
     {
-      name: "Rohan Verma",
-      category: "Tech",
+      name: "Andy",
+      category: "Actor",
       followers: "150k",
       img: img10,
     },
@@ -76,7 +85,7 @@ const Home = () => {
       img: img11,
     },
     {
-      name: "Vikram Singh",
+      name: "Jhonsen",
       category: "Gaming",
       followers: "2.5M",
       img: img12,
@@ -88,8 +97,8 @@ const Home = () => {
       img: img13,
     },
     {
-      name: "Arjun Mehta",
-      category: "Tech & AI",
+      // name: "Handery",
+      category: "Lifestyle",
       followers: "235k",
       img: img14,
     },
@@ -100,7 +109,7 @@ const Home = () => {
       img: img15,
     },
     {
-      name: "Kabir Das",
+      name: "Evelyn",
       category: "Fitness",
       followers: "1.5M",
       img: img16,
@@ -119,13 +128,7 @@ const Home = () => {
     },
   ];
 
-  const brands = [
-    "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg",
-    "https://upload.wikimedia.org/wikipedia/commons/2/24/Adidas_logo.png",
-    "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg",
-    "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg",
-    "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg",
-  ];
+  const brands = [img23, img24, img25, img26, img27, img28,img29, img30,];
 
   const articles = [
     {
@@ -374,7 +377,8 @@ const Home = () => {
                 >
                   <img
                     src={logo}
-                    className="w-8 h-8 md:w-12 md:h-12 object-contain brightness-0 invert opacity-70"
+                    alt="brand"
+                    className="w-12 h-12 md:w-16 md:h-16 object-contain"
                   />
                 </div>
               ))}
@@ -491,9 +495,11 @@ const Home = () => {
             <p className="text-slate-400 text-xs md:text-sm mb-6">
               Access the latest insights from the industry.
             </p>
-           <Link to="/Latestarticles"><button className="w-full sm:w-fit border neno-button shadow-xl hover:shadow-fuchsia-800/50 bg-fuchsia-700 text-white hover:bg-fuchsia-700 border-fuchsia-700 transition  px-6 py-2 rounded-full text-xs md:text-sm font-bold">
-              Read More
-            </button></Link>
+            <Link to="/Latestarticles">
+              <button className="w-full sm:w-fit border neno-button shadow-xl hover:shadow-fuchsia-800/50 bg-fuchsia-700 text-white hover:bg-fuchsia-700 border-fuchsia-700 transition  px-6 py-2 rounded-full text-xs md:text-sm font-bold">
+                Read More
+              </button>
+            </Link>
           </div>
         </div>
 
@@ -595,11 +601,7 @@ const Home = () => {
               &times;
             </button>
             <div className="aspect-video w-full">
-              <iframe
-                src={vidoe1}
-                className="w-full h-full"
-                allow="autoplay"
-              />
+              <iframe src={vidoe1} className="w-full h-full" allow="autoplay" />
             </div>
           </div>
         </div>
