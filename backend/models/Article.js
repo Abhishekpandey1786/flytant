@@ -32,4 +32,7 @@ const articleSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Article", articleSchema);
+module.exports = mongoose.model(
+  "Article",
+  articleSchema
+);
