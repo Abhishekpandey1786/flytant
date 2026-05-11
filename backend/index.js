@@ -21,6 +21,7 @@ const contactRoutes = require("./routes/contact");
 const instamojoRoutes = require("./routes/instamojoRoutes");
 const publicRoutes = require("./routes/notifications");
 const academyRoutes = require("./routes/academyRoutes");
+const articleRoutes = require("./routes/articleRoutes");
 dotenv.config();
 
 const app = express();
@@ -59,6 +60,7 @@ app.use("/api", publicRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/instamojo", instamojoRoutes);
 app.use("/api/academy", academyRoutes);
+app.use("/api/articles", articleRoutes);
 const connectedUsers = new Map();
 
 io.on("connection", (socket) => {
