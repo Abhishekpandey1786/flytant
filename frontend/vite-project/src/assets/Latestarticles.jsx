@@ -161,16 +161,6 @@ function LatestArticles() {
               Read premium articles about technology, startups, business,
               design, AI and modern internet culture.
             </p>
-
-            <div className="flex gap-5 mt-10">
-              <Link
-                to="/add"
-                className="bg-gradient-to-r from-fuchsia-600 to-cyan-500 px-8 py-4 rounded-2xl font-bold hover:scale-105 transition duration-300 flex items-center gap-3 shadow-2xl shadow-fuchsia-500/20"
-              >
-                <FaPlus />
-                Publish Article
-              </Link>
-            </div>
           </div>
         </div>
       </section>
