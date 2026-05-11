@@ -24,7 +24,7 @@ import img21 from "./image/new1.jpg";
 import img22 from "./image/new2.jpg";
 import img23 from "./image/a.png";
 import img24 from "./image/b.png";
-import img25 from "./image/h.png";
+import img25 from "./image/i.webp";
 import img26 from "./image/d.png";
 import img27 from "./image/e.png";
 import img28 from "./image/f.png";

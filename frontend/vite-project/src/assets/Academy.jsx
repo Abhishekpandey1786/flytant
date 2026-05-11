@@ -20,13 +20,11 @@ const Academy = () => {
         setIsLoggedIn(true);
       }
     } catch (err) {
-      alert("Ghalat details! Admin se password maango.");
+      alert("Wrong details! Please ask the admin for the password.");
     } finally {
       setLoading(false);
     }
   };
-
-  // Course Data with Video and PDF links
   const courses = [
     { 
       title: "Beginner Course", 
