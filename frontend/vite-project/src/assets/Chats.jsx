@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useContext } from "react";
 import axios from "axios";
-import socket from "../socket";
+import socket from "./socket.js";
 import { AuthContext } from "./AuthContext.jsx";
 import { FaPaperPlane, FaArrowLeft } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
