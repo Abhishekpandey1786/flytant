@@ -33,12 +33,11 @@ export default function Chats() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [unread, setUnread] = useState({});
-  const [lastMessages, setLastMessages] = useState({});
 
   const boxRef = useRef(null);
   const inputRef = useRef(null);
 
-  // 1. FETCH CAMPAIGN-BASED CONNECTIONS + JOIN ALL ROOMS + SEED UNREAD
+  // 1. FETCH CAMPAIGN-BASED CONNECTIONS + JOIN ALL ROOMS
   useEffect(() => {
     const fetchConnections = async () => {
       if (!user?._id) return;
@@ -53,18 +52,7 @@ export default function Chats() {
 
         setConnections(sorted);
 
-        // 👇 Server se aaya unreadCount seed karo — persistent hai, refresh pe nahi udega
-        const initialUnread = {};
-        const initialLastMsgs = {};
-        sorted.forEach((c) => {
-          const entryKey = getEntryKey(c);
-          if (c.unreadCount > 0) initialUnread[entryKey] = true;
-          if (c.lastMessageText) initialLastMsgs[entryKey] = c.lastMessageText;
-        });
-        setUnread(initialUnread);
-        setLastMessages(initialLastMsgs);
-
-        // Sabhi connections ke rooms turant join kar do
+        // 👇 Sabhi connections ke rooms turant join kar do
         sorted.forEach((conn) => {
           const roomId = getRoomId(user._id, conn._id, conn.campaignId);
           socket.emit("join_room", roomId);
@@ -85,7 +73,7 @@ export default function Chats() {
     if (found) setActiveChat(found);
   }, [urlCampaignId, urlUserId, connections]);
 
-  // 3. REALTIME MESSAGE & LIVE SORTING & UNREAD
+  // 3. REALTIME MESSAGE & LIVE SORTING
   useEffect(() => {
     if (!user?._id) return;
 
@@ -93,12 +81,6 @@ export default function Chats() {
       const currentRoomId = activeChat
         ? getRoomId(user._id, activeChat._id, activeChat.campaignId)
         : null;
-
-      const otherId = msg.sender === user._id ? msg.receiver : msg.sender;
-      const campaignId = msg.campaignId;
-      const entryKey = `${otherId}-${campaignId}`;
-
-      setLastMessages((prev) => ({ ...prev, [entryKey]: msg.text }));
 
       if (msg.roomId === currentRoomId) {
         setMessages((prev) => {
@@ -108,10 +90,10 @@ export default function Chats() {
         if (msg.sender !== user._id) {
           api.put(`/chats/read-messages/${currentRoomId}`).catch(() => {});
         }
-      } else if (msg.sender !== user._id) {
-        // is chat pe nahi hoon abhi -> unread badge lagao
-        setUnread((prev) => ({ ...prev, [entryKey]: true }));
       }
+
+      const otherId = msg.sender === user._id ? msg.receiver : msg.sender;
+      const campaignId = msg.campaignId;
 
       setConnections((prev) => {
         const updated = [...prev];
@@ -196,7 +178,6 @@ export default function Chats() {
               const isActive =
                 activeChat?._id === u._id &&
                 activeChat?.campaignId === u.campaignId;
-              const isUnread = unread[entryKey];
               return (
                 <div
                   key={entryKey}
@@ -204,51 +185,21 @@ export default function Chats() {
                   className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all border ${
                     isActive
                       ? "bg-fuchsia-600/10 border-fuchsia-600/50"
-                      : isUnread
-                      ? "bg-slate-800/80 border-fuchsia-500/30"
                       : "bg-transparent border-transparent hover:bg-slate-800"
                   }`}
                 >
-                  <div className="relative">
-                    <img
-                      src={u.avatar || u.logo || "https://placehold.co/50"}
-                      className={`w-12 h-12 rounded-full object-cover border ${
-                        isActive ? "border-fuchsia-500" : "border-slate-700"
-                      }`}
-                    />
-                    {isUnread && !isActive && (
-                      <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-                        <span className="animate-ping absolute h-full w-full rounded-full bg-fuchsia-400 opacity-75"></span>
-                        <span className="relative h-3.5 w-3.5 rounded-full bg-fuchsia-600 border-2 border-slate-900"></span>
-                      </span>
-                    )}
-                  </div>
+                  <img
+                    src={u.avatar || u.logo || "https://placehold.co/50"}
+                    className={`w-12 h-12 rounded-full object-cover border ${
+                      isActive ? "border-fuchsia-500" : "border-slate-700"
+                    }`}
+                  />
                   <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center gap-2">
-                      <h3
-                        className={`font-semibold truncate ${
-                          isUnread && !isActive ? "text-fuchsia-400" : "text-white"
-                        }`}
-                      >
-                        {u.name || u.businessName}
-                      </h3>
-                      {isUnread && !isActive && (
-                        <span className="text-[9px] bg-fuchsia-600 text-white px-1.5 py-0.5 rounded-full font-black shrink-0">
-                          NEW
-                        </span>
-                      )}
-                    </div>
+                    <h3 className="font-semibold truncate text-white">
+                      {u.name || u.businessName}
+                    </h3>
                     <p className="text-[11px] text-fuchsia-400/80 truncate">
                       {u.campaignName}
-                    </p>
-                    <p
-                      className={`truncate text-xs mt-0.5 ${
-                        isUnread && !isActive
-                          ? "text-slate-200 font-medium"
-                          : "text-slate-500"
-                      }`}
-                    >
-                      {lastMessages[entryKey] || "Tap to chat"}
                     </p>
                   </div>
                 </div>

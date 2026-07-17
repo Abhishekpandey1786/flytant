@@ -29,7 +29,6 @@ export default function ChatList() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // 1. FETCH CONNECTIONS + SEED UNREAD/LAST-MESSAGE FROM SERVER (persistent!)
   useEffect(() => {
     const fetchConnections = async () => {
       if (!user?._id) return;
@@ -44,19 +43,7 @@ export default function ChatList() {
 
         setConnections(sorted);
 
-        // 👇 Server se aaya unreadCount ab yahan seed hota hai.
-        // Isliye app band karke reopen karne pe bhi unread badge dikhega.
-        const initialUnread = {};
-        const initialLastMsgs = {};
-        sorted.forEach((c) => {
-          const entryKey = getEntryKey(c);
-          if (c.unreadCount > 0) initialUnread[entryKey] = true;
-          if (c.lastMessageText) initialLastMsgs[entryKey] = c.lastMessageText;
-        });
-        setUnread(initialUnread);
-        setLastMessages(initialLastMsgs);
-
-        // Sabhi connections ke rooms ko turant join kar do
+        // 👇 Sabhi connections ke rooms ko turant join kar do
         // taaki list view mein bhi real-time updates milte rahein
         sorted.forEach((conn) => {
           const roomId = getRoomId(user._id, conn._id, conn.campaignId);
@@ -71,7 +58,6 @@ export default function ChatList() {
     fetchConnections();
   }, [user]);
 
-  // 2. LIVE UPDATES WHILE APP IS OPEN
   useEffect(() => {
     if (!user?._id) return;
 
