@@ -30,6 +30,7 @@ export default function GlobalNotifications() {
       return;
     }
 
+    // roomId format: camp:<campaignId>:<userId1>:<userId2>
     const parts = alert.roomId.split(":");
 
     if (parts.length < 4) {
@@ -40,14 +41,14 @@ export default function GlobalNotifications() {
       return;
     }
 
+    const campaignId = parts[1];
     const user1 = parts[2];
     const user2 = parts[3];
 
     const newOtherUserId = user1 === user._id ? user2 : user1;
 
-    // OPEN SPECIFIC CHAT
-
-    navigate(`/chats?user=${newOtherUserId}`);
+    // OPEN SPECIFIC CHAT — route Chats.jsx ke useParams() se match karta hai
+    navigate(`/chats/campaign/${campaignId}/user/${newOtherUserId}`);
 
     removeNotification(alert.id);
   };
