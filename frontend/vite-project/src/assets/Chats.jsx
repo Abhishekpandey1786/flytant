@@ -137,7 +137,7 @@ export default function Chats() {
 
   const handleSelectChat = (conn) => {
     setActiveChat(conn);
-    navigate(`/chats/campaign/${conn.campaignId}/user/${conn._id}`);
+    // navigate(`/chats/campaign/${conn.campaignId}/user/${conn._id}`);
   };
 
   const send = (e) => {
