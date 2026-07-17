@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import socket from "../socket";
+import socket from "./socket";
 import { AuthContext } from "./AuthContext.jsx";
 
 const api = axios.create({
