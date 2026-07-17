@@ -1,16 +1,13 @@
 import { io } from "socket.io-client";
 
-const socket = io(
-  "https://vistafluence.onrender.com",
-  {
-    transports: ["websocket"],
+const SOCKET_URL = "https://vistafluence.onrender.com";
 
-    reconnection: true,
-
-    reconnectionAttempts: 5,
-
-    reconnectionDelay: 1000,
-  }
-);
+const socket = io(SOCKET_URL, {
+  autoConnect: false,
+  transports: ["websocket"],
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 1000,
+});
 
 export default socket;

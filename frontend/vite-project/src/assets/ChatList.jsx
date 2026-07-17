@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import socket from "./socket";
+import socket from "../socket";
 import { AuthContext } from "./AuthContext.jsx";
 
 const api = axios.create({
@@ -43,8 +43,6 @@ export default function ChatList() {
 
         setConnections(sorted);
 
-        // 👇 Sabhi connections ke rooms ko turant join kar do
-        // taaki list view mein bhi real-time updates milte rahein
         sorted.forEach((conn) => {
           const roomId = getRoomId(user._id, conn._id, conn.campaignId);
           socket.emit("join_room", roomId);
@@ -57,6 +55,21 @@ export default function ChatList() {
     };
     fetchConnections();
   }, [user]);
+
+  // REJOIN ON RECONNECT
+  useEffect(() => {
+    if (!user?._id) return;
+
+    const rejoinRooms = () => {
+      connections.forEach((conn) => {
+        const roomId = getRoomId(user._id, conn._id, conn.campaignId);
+        socket.emit("join_room", roomId);
+      });
+    };
+
+    socket.on("connect", rejoinRooms);
+    return () => socket.off("connect", rejoinRooms);
+  }, [user, connections]);
 
   useEffect(() => {
     if (!user?._id) return;
@@ -71,7 +84,6 @@ export default function ChatList() {
         setUnread((prev) => ({ ...prev, [entryKey]: true }));
       }
 
-      // REAL-TIME REORDERING
       setConnections((prev) => {
         const updated = [...prev];
         const index = updated.findIndex(

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useContext } from "react";
 import axios from "axios";
-import socket from "./socket";
+import socket from "../socket";
 import { AuthContext } from "./AuthContext.jsx";
 import { FaPaperPlane, FaArrowLeft } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
@@ -32,7 +32,6 @@ export default function Chats() {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
-  const [unread, setUnread] = useState({});
 
   const boxRef = useRef(null);
   const inputRef = useRef(null);
@@ -52,7 +51,6 @@ export default function Chats() {
 
         setConnections(sorted);
 
-        // 👇 Sabhi connections ke rooms turant join kar do
         sorted.forEach((conn) => {
           const roomId = getRoomId(user._id, conn._id, conn.campaignId);
           socket.emit("join_room", roomId);
@@ -63,6 +61,22 @@ export default function Chats() {
     };
     fetchConnections();
   }, [user]);
+
+  // 1b. REJOIN ALL ROOMS ON SOCKET RECONNECT
+  useEffect(() => {
+    if (!user?._id) return;
+
+    const rejoinRooms = () => {
+      connections.forEach((conn) => {
+        const roomId = getRoomId(user._id, conn._id, conn.campaignId);
+        socket.emit("join_room", roomId);
+      });
+      console.log("🔄 Rejoined rooms after reconnect");
+    };
+
+    socket.on("connect", rejoinRooms);
+    return () => socket.off("connect", rejoinRooms);
+  }, [user, connections]);
 
   // 2. AUTO SELECT FROM URL PARAMS
   useEffect(() => {
@@ -116,12 +130,10 @@ export default function Chats() {
   useEffect(() => {
     if (!activeChat || !user?._id) return;
     const roomId = getRoomId(user._id, activeChat._id, activeChat.campaignId);
-    const entryKey = getEntryKey(activeChat);
 
     setMessages([]);
     setLoading(true);
     socket.emit("join_room", roomId);
-    setUnread((prev) => ({ ...prev, [entryKey]: false }));
     api.put(`/chats/read-messages/${roomId}`).catch(() => {});
     inputRef.current?.focus();
 
@@ -158,7 +170,6 @@ export default function Chats() {
 
   return (
     <div className="flex h-[85vh] rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl">
-      {/* Sidebar */}
       <div
         className={`flex flex-col border-r border-slate-800 w-full md:w-[340px] ${
           activeChat ? "hidden md:flex" : "flex"
@@ -209,7 +220,6 @@ export default function Chats() {
         </div>
       </div>
 
-      {/* Main Chat Area */}
       <div
         className={`flex-1 flex flex-col bg-slate-950 ${
           activeChat ? "flex" : "hidden md:flex"
