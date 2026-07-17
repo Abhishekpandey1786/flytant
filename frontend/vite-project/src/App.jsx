@@ -67,7 +67,7 @@ function App() {
                 path="/chats/campaign/:campaignId/user/:userId"
                 element={<Chats />}
               />
-              <Route path="/subscription" element={Subscription} />
+              <Route path="/subscription" element={<Subscription/>} />
               <Route path="/chat/:influencerId" element={<Chats />} />
               <Route path="/applied-campaigns" element={<AppliedCampaigns />} />
               <Route path="/chatslist" element={<ChatList />} />
@@ -75,6 +75,7 @@ function App() {
               <Route path="/UserNotifications" element={<UserNotifications />}/>
               <Route path="/my-orders" element={<MyOrders />} />
               <Route path="/chats" element={<Chats />} />
+<Route path="/chats/campaign/:campaignId/user/:userId" element={<Chats />} /> {/* 👈 YE NAYI LINE ADD KARO */}
               
             </Route>
           </Routes>

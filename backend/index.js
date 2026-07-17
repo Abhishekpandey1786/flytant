@@ -95,6 +95,7 @@ io.on("connection", (socket) => {
 
       const message = new Chat({
         roomId: data.roomId,
+         campaignId: data.campaignId, // 👈 ADD KIYA
         text: data.text,
         sender: data.sender,
         receiver: data.receiver,

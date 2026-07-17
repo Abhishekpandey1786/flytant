@@ -238,4 +238,59 @@ router.post("/:campaignId/apply", auth, async (req, res) => {
   }
 });
 
+// new route adding 17-07-2026
+router.get("/my-connections", auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userDoc = await User.findById(userId);
+    if (!userDoc) return res.status(404).json({ msg: "User not found" });
+
+    let connections = [];
+
+    if (userDoc.userType === "advertiser") {
+      const campaigns = await Campaign.find({ createdBy: userId })
+        .populate(
+          "applicants.user",
+          "name email avatar instagram youtube facebook lastMessageAt createdAt"
+        )
+        .sort({ createdAt: -1 });
+
+      campaigns.forEach((campaign) => {
+        campaign.applicants.forEach((applicant) => {
+          const u = applicant.user;
+          if (u) {
+            connections.push({
+              ...u.toObject(),
+              campaignId: campaign._id.toString(),
+              campaignName: campaign.name,
+            });
+          }
+        });
+      });
+    } else if (userDoc.userType === "influencer") {
+      const campaigns = await Campaign.find({ "applicants.user": userId })
+        .populate("createdBy", "name email avatar logo lastMessageAt createdAt")
+        .sort({ createdAt: -1 });
+
+      campaigns.forEach((campaign) => {
+        const adv = campaign.createdBy;
+        if (adv) {
+          connections.push({
+            ...adv.toObject(),
+            campaignId: campaign._id.toString(),
+            campaignName: campaign.name,
+          });
+        }
+      });
+    } else {
+      return res.json([]);
+    }
+
+    res.json(connections);
+  } catch (err) {
+    console.error("Error fetching connections:", err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
 module.exports = router;
