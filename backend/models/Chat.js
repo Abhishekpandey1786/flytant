@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const chatSchema = new mongoose.Schema({
   roomId: { type: String, required: true },
   campaignId: { type: mongoose.Schema.Types.ObjectId, ref: "Campaign" }, // 👈 YE LINE ADD KARO
