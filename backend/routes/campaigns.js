@@ -238,14 +238,15 @@ router.post("/:campaignId/apply", auth, async (req, res) => {
   }
 });
 
+// new route adding 17-07-2026
 router.get("/my-connections", auth, async (req, res) => {
   try {
     const userId = req.user.id;
     const userDoc = await User.findById(userId);
     if (!userDoc) return res.status(404).json({ msg: "User not found" });
- 
+
     let connections = [];
- 
+
     if (userDoc.userType === "advertiser") {
       const campaigns = await Campaign.find({ createdBy: userId })
         .populate(
@@ -253,7 +254,7 @@ router.get("/my-connections", auth, async (req, res) => {
           "name email avatar instagram youtube facebook lastMessageAt createdAt"
         )
         .sort({ createdAt: -1 });
- 
+
       campaigns.forEach((campaign) => {
         campaign.applicants.forEach((applicant) => {
           const u = applicant.user;
@@ -270,7 +271,7 @@ router.get("/my-connections", auth, async (req, res) => {
       const campaigns = await Campaign.find({ "applicants.user": userId })
         .populate("createdBy", "name email avatar logo lastMessageAt createdAt")
         .sort({ createdAt: -1 });
- 
+
       campaigns.forEach((campaign) => {
         const adv = campaign.createdBy;
         if (adv) {
@@ -284,62 +285,12 @@ router.get("/my-connections", auth, async (req, res) => {
     } else {
       return res.json([]);
     }
- 
-    // ---- UNREAD COUNT: DB se seedha nikalo, socket pe depend mat karo ----
-    if (connections.length > 0) {
-      const roomIds = connections.map((c) =>
-        getRoomId(userId, c._id.toString(), c.campaignId)
-      );
- 
-      const unreadCounts = await Chat.aggregate([
-        {
-          $match: {
-            roomId: { $in: roomIds },
-            receiver: new mongoose.Types.ObjectId(userId),
-            isRead: false,
-          },
-        },
-        { $group: { _id: "$roomId", count: { $sum: 1 } } },
-      ]);
- 
-      const unreadMap = {};
-      unreadCounts.forEach((u) => {
-        unreadMap[u._id] = u.count;
-      });
- 
-      // last message text bhi de do taaki list mein preview turant dikhe
-      const lastMsgs = await Chat.aggregate([
-        { $match: { roomId: { $in: roomIds } } },
-        { $sort: { createdAt: -1 } },
-        {
-          $group: {
-            _id: "$roomId",
-            text: { $first: "$text" },
-            createdAt: { $first: "$createdAt" },
-          },
-        },
-      ]);
-      const lastMsgMap = {};
-      lastMsgs.forEach((m) => {
-        lastMsgMap[m._id] = { text: m.text, createdAt: m.createdAt };
-      });
- 
-      connections = connections.map((c) => {
-        const roomId = getRoomId(userId, c._id.toString(), c.campaignId);
-        return {
-          ...c,
-          unreadCount: unreadMap[roomId] || 0,
-          lastMessageText: lastMsgMap[roomId]?.text || null,
-        };
-      });
-    }
- 
+
     res.json(connections);
   } catch (err) {
     console.error("Error fetching connections:", err.message);
     res.status(500).send("Server Error");
   }
 });
- 
 
 module.exports = router;
