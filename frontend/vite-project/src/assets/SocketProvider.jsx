@@ -1,5 +1,5 @@
 import { useEffect, useContext, useRef } from "react";
-import socket from "../socket";
+import socket from "./socket";
 import { AuthContext } from "./AuthContext.jsx";
 
 export default function SocketProvider() {
