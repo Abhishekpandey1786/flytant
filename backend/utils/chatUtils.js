@@ -1,5 +1,3 @@
-// D:\my company work\day 6\backend\utils\chatUtils.js
-
 /**
  * Creates a unique and consistent Room ID for two users.
  * The IDs are sorted to ensure the same Room ID is generated regardless of who initiates the chat.

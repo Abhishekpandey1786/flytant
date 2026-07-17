@@ -37,17 +37,26 @@ export default function Chats() {
   const boxRef = useRef(null);
   const inputRef = useRef(null);
 
+  // 1. FETCH CAMPAIGN-BASED CONNECTIONS + JOIN ALL ROOMS
   useEffect(() => {
     const fetchConnections = async () => {
       if (!user?._id) return;
       try {
         const res = await api.get("/campaigns/my-connections");
+
         const sorted = [...res.data].sort((a, b) => {
           const dateA = new Date(a.lastMessageAt || a.createdAt);
           const dateB = new Date(b.lastMessageAt || b.createdAt);
           return dateB - dateA;
         });
+
         setConnections(sorted);
+
+        // 👇 Sabhi connections ke rooms turant join kar do
+        sorted.forEach((conn) => {
+          const roomId = getRoomId(user._id, conn._id, conn.campaignId);
+          socket.emit("join_room", roomId);
+        });
       } catch (error) {
         console.error("Failed to fetch connections:", error);
       }
@@ -55,6 +64,7 @@ export default function Chats() {
     fetchConnections();
   }, [user]);
 
+  // 2. AUTO SELECT FROM URL PARAMS
   useEffect(() => {
     if (!urlCampaignId || !urlUserId || connections.length === 0) return;
     const found = connections.find(
@@ -63,6 +73,7 @@ export default function Chats() {
     if (found) setActiveChat(found);
   }, [urlCampaignId, urlUserId, connections]);
 
+  // 3. REALTIME MESSAGE & LIVE SORTING
   useEffect(() => {
     if (!user?._id) return;
 
@@ -101,6 +112,7 @@ export default function Chats() {
     return () => socket.off("message_received", handleMessage);
   }, [user, activeChat]);
 
+  // 4. LOAD HISTORY
   useEffect(() => {
     if (!activeChat || !user?._id) return;
     const roomId = getRoomId(user._id, activeChat._id, activeChat.campaignId);
@@ -146,6 +158,7 @@ export default function Chats() {
 
   return (
     <div className="flex h-[85vh] rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl">
+      {/* Sidebar */}
       <div
         className={`flex flex-col border-r border-slate-800 w-full md:w-[340px] ${
           activeChat ? "hidden md:flex" : "flex"
@@ -196,6 +209,7 @@ export default function Chats() {
         </div>
       </div>
 
+      {/* Main Chat Area */}
       <div
         className={`flex-1 flex flex-col bg-slate-950 ${
           activeChat ? "flex" : "hidden md:flex"

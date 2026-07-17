@@ -34,12 +34,21 @@ export default function ChatList() {
       if (!user?._id) return;
       try {
         const res = await api.get("/campaigns/my-connections");
+
         const sorted = [...res.data].sort((a, b) => {
           const dateA = new Date(a.lastMessageAt || a.createdAt);
           const dateB = new Date(b.lastMessageAt || b.createdAt);
           return dateB - dateA;
         });
+
         setConnections(sorted);
+
+        // 👇 Sabhi connections ke rooms ko turant join kar do
+        // taaki list view mein bhi real-time updates milte rahein
+        sorted.forEach((conn) => {
+          const roomId = getRoomId(user._id, conn._id, conn.campaignId);
+          socket.emit("join_room", roomId);
+        });
       } catch (error) {
         console.error("Fetch failed:", error);
       } finally {
@@ -62,6 +71,7 @@ export default function ChatList() {
         setUnread((prev) => ({ ...prev, [entryKey]: true }));
       }
 
+      // REAL-TIME REORDERING
       setConnections((prev) => {
         const updated = [...prev];
         const index = updated.findIndex(
@@ -103,7 +113,8 @@ export default function ChatList() {
   if (connections.length === 0) {
     return (
       <div className="h-[300px] flex items-center justify-center text-slate-500 text-center px-4">
-        Koi campaign-based conversation nahi mili.
+        Koi campaign-based conversation nahi mili. Pehle kisi campaign par
+        apply karo ya kisi ki application accept karo.
       </div>
     );
   }
