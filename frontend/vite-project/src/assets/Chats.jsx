@@ -37,11 +37,16 @@ export default function Chats() {
 
   const boxRef = useRef(null);
   const inputRef = useRef(null);
-  const activeChatRef = useRef(null); // 👈 stale closure se bachne ke liye
+  const activeChatRef = useRef(null);
+  const connectionsRef = useRef([]);
 
   useEffect(() => {
     activeChatRef.current = activeChat;
   }, [activeChat]);
+
+  useEffect(() => {
+    connectionsRef.current = connections;
+  }, [connections]);
 
   // 1. FETCH CAMPAIGN-BASED CONNECTIONS + JOIN ALL ROOMS
   useEffect(() => {
@@ -58,7 +63,6 @@ export default function Chats() {
 
         setConnections(sorted);
 
-        // 👇 backend se aaya hua unreadCount / lastMessage state me daalo
         const initUnread = {};
         const initLast = {};
         sorted.forEach((conn) => {
@@ -87,7 +91,28 @@ export default function Chats() {
     if (found) setActiveChat(found);
   }, [urlCampaignId, urlUserId, connections]);
 
-  // 3. REALTIME MESSAGE, UNREAD BUBBLE, LIVE SORTING
+  // 3. RECONNECT HONE PAR SABHI ROOMS DOBARA JOIN KARO
+  useEffect(() => {
+    if (!user?._id) return;
+
+    const rejoinAllRooms = () => {
+      connectionsRef.current.forEach((conn) => {
+        const roomId = getRoomId(user._id, conn._id, conn.campaignId);
+        socket.emit("join_room", roomId);
+      });
+      const currentActive = activeChatRef.current;
+      if (currentActive) {
+        const roomId = getRoomId(user._id, currentActive._id, currentActive.campaignId);
+        socket.emit("join_room", roomId);
+      }
+      console.log("🔄 Rejoined all rooms after reconnect");
+    };
+
+    socket.on("connect", rejoinAllRooms);
+    return () => socket.off("connect", rejoinAllRooms);
+  }, [user]);
+
+  // 4. REALTIME MESSAGE, UNREAD BUBBLE, LIVE SORTING
   useEffect(() => {
     if (!user?._id) return;
 
@@ -101,26 +126,28 @@ export default function Chats() {
       const campaignId = msg.campaignId;
       const entryKey = `${otherId}-${campaignId}`;
 
-      // apna khud ka optimistic msg replace karo
-      if (msg.tempId) {
-        setMessages((prev) =>
-          prev.map((m) => (m._id === msg.tempId ? msg : m))
-        );
-        return;
-      }
+      // 👇 FIXED — ab receiver ka msg silently drop nahi hoga
+      setMessages((prev) => {
+        if (prev.some((m) => m._id === msg._id)) return prev;
 
-      if (msg.roomId === currentRoomId) {
-        setMessages((prev) => {
-          if (prev.some((m) => m._id === msg._id)) return prev;
+        if (msg.tempId && prev.some((m) => m._id === msg.tempId)) {
+          return prev.map((m) => (m._id === msg.tempId ? msg : m));
+        }
+
+        if (msg.roomId === currentRoomId) {
           return [...prev, msg];
-        });
-        if (msg.sender !== user._id) {
+        }
+
+        return prev;
+      });
+
+      if (msg.sender !== user._id) {
+        if (msg.roomId === currentRoomId) {
           api.put(`/chats/read-messages/${currentRoomId}`).catch(() => {});
           socket.emit("messages_seen", { roomId: currentRoomId, seenBy: user._id });
+        } else {
+          setUnread((prev) => ({ ...prev, [entryKey]: true }));
         }
-      } else if (msg.sender !== user._id) {
-        // koi doosri chat hai ya koi chat khuli hi nahi — bubble dikhao
-        setUnread((prev) => ({ ...prev, [entryKey]: true }));
       }
 
       setLastMessages((prev) => ({ ...prev, [entryKey]: msg.text }));
@@ -138,7 +165,6 @@ export default function Chats() {
       });
     };
 
-    // 👇 sender ko "seen" ka pata chalna
     const handleSeenAck = ({ roomId, seenBy }) => {
       const currentActive = activeChatRef.current;
       if (!currentActive) return;
@@ -161,7 +187,7 @@ export default function Chats() {
     };
   }, [user]);
 
-  // 4. LOAD HISTORY
+  // 5. LOAD HISTORY
   useEffect(() => {
     if (!activeChat || !user?._id) return;
     const roomId = getRoomId(user._id, activeChat._id, activeChat.campaignId);
@@ -172,7 +198,7 @@ export default function Chats() {
     socket.emit("join_room", roomId);
     setUnread((prev) => ({ ...prev, [entryKey]: false }));
     api.put(`/chats/read-messages/${roomId}`).catch(() => {});
-    socket.emit("messages_seen", { roomId, seenBy: user._id }); // 👈 sender ko batao
+    socket.emit("messages_seen", { roomId, seenBy: user._id });
     inputRef.current?.focus();
 
     api
@@ -191,13 +217,17 @@ export default function Chats() {
 
   const send = (e) => {
     e.preventDefault();
-    if (!text.trim() || !activeChat || !socket.connected) return;
+    if (!text.trim() || !activeChat) return;
+
+    if (!socket.connected) {
+      alert("Connection lost hai, dobara connect ho raha hai... thodi der me try karo.");
+      return;
+    }
 
     const roomId = getRoomId(user._id, activeChat._id, activeChat.campaignId);
     const tempId = `temp-${Date.now()}`;
     const trimmedText = text.trim();
 
-    // 👇 OPTIMISTIC UI — turant dikhao, wait mat karo
     const optimisticMsg = {
       _id: tempId,
       roomId,
@@ -356,9 +386,7 @@ export default function Chats() {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
-                        {isMe && (
-                          <span>{m.isRead ? "✓✓" : "✓"}</span>
-                        )}
+                        {isMe && <span>{m.isRead ? "✓✓" : "✓"}</span>}
                       </div>
                     </div>
                   </div>
