@@ -39,8 +39,6 @@ const CampaignSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-
-    // --- 🔥 APPROVAL SYSTEM FIELDS ---
     approvalStatus: {
         type: String,
         enum: ['pending', 'approved', 'rejected'],
@@ -50,18 +48,14 @@ const CampaignSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    
-    // --- 🚨 REJECTION & AUTO-DELETE FIELDS ---
     feedback: { 
         type: String, 
-        default: "" // Admin yahan rejection reason likhega
+        default: "" 
     },
     rejectedAt: { 
         type: Date, 
-        default: null // Jab admin reject karega tab yahan timestamp aayega
+        default: null 
     },
-    // ----------------------------------------------
-
     createdAt: {
         type: Date,
         default: Date.now

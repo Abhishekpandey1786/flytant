@@ -33,9 +33,15 @@ export default function Chats() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [unread, setUnread] = useState({});
+  const [lastMessages, setLastMessages] = useState({});
 
   const boxRef = useRef(null);
   const inputRef = useRef(null);
+  const activeChatRef = useRef(null); // 👈 stale closure se bachne ke liye
+
+  useEffect(() => {
+    activeChatRef.current = activeChat;
+  }, [activeChat]);
 
   // 1. FETCH CAMPAIGN-BASED CONNECTIONS + JOIN ALL ROOMS
   useEffect(() => {
@@ -52,11 +58,19 @@ export default function Chats() {
 
         setConnections(sorted);
 
-        // 👇 Sabhi connections ke rooms turant join kar do
+        // 👇 backend se aaya hua unreadCount / lastMessage state me daalo
+        const initUnread = {};
+        const initLast = {};
         sorted.forEach((conn) => {
+          const key = getEntryKey(conn);
+          if (conn.unreadCount > 0) initUnread[key] = true;
+          if (conn.lastMessage) initLast[key] = conn.lastMessage;
+
           const roomId = getRoomId(user._id, conn._id, conn.campaignId);
           socket.emit("join_room", roomId);
         });
+        setUnread(initUnread);
+        setLastMessages(initLast);
       } catch (error) {
         console.error("Failed to fetch connections:", error);
       }
@@ -73,14 +87,27 @@ export default function Chats() {
     if (found) setActiveChat(found);
   }, [urlCampaignId, urlUserId, connections]);
 
-  // 3. REALTIME MESSAGE & LIVE SORTING
+  // 3. REALTIME MESSAGE, UNREAD BUBBLE, LIVE SORTING
   useEffect(() => {
     if (!user?._id) return;
 
     const handleMessage = (msg) => {
-      const currentRoomId = activeChat
-        ? getRoomId(user._id, activeChat._id, activeChat.campaignId)
+      const currentActive = activeChatRef.current;
+      const currentRoomId = currentActive
+        ? getRoomId(user._id, currentActive._id, currentActive.campaignId)
         : null;
+
+      const otherId = msg.sender === user._id ? msg.receiver : msg.sender;
+      const campaignId = msg.campaignId;
+      const entryKey = `${otherId}-${campaignId}`;
+
+      // apna khud ka optimistic msg replace karo
+      if (msg.tempId) {
+        setMessages((prev) =>
+          prev.map((m) => (m._id === msg.tempId ? msg : m))
+        );
+        return;
+      }
 
       if (msg.roomId === currentRoomId) {
         setMessages((prev) => {
@@ -89,11 +116,14 @@ export default function Chats() {
         });
         if (msg.sender !== user._id) {
           api.put(`/chats/read-messages/${currentRoomId}`).catch(() => {});
+          socket.emit("messages_seen", { roomId: currentRoomId, seenBy: user._id });
         }
+      } else if (msg.sender !== user._id) {
+        // koi doosri chat hai ya koi chat khuli hi nahi — bubble dikhao
+        setUnread((prev) => ({ ...prev, [entryKey]: true }));
       }
 
-      const otherId = msg.sender === user._id ? msg.receiver : msg.sender;
-      const campaignId = msg.campaignId;
+      setLastMessages((prev) => ({ ...prev, [entryKey]: msg.text }));
 
       setConnections((prev) => {
         const updated = [...prev];
@@ -108,9 +138,28 @@ export default function Chats() {
       });
     };
 
+    // 👇 sender ko "seen" ka pata chalna
+    const handleSeenAck = ({ roomId, seenBy }) => {
+      const currentActive = activeChatRef.current;
+      if (!currentActive) return;
+      const currentRoomId = getRoomId(user._id, currentActive._id, currentActive.campaignId);
+      if (roomId !== currentRoomId) return;
+      if (seenBy === user._id) return;
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          (m.sender?._id || m.sender) === user._id ? { ...m, isRead: true } : m
+        )
+      );
+    };
+
     socket.on("message_received", handleMessage);
-    return () => socket.off("message_received", handleMessage);
-  }, [user, activeChat]);
+    socket.on("messages_seen_ack", handleSeenAck);
+    return () => {
+      socket.off("message_received", handleMessage);
+      socket.off("messages_seen_ack", handleSeenAck);
+    };
+  }, [user]);
 
   // 4. LOAD HISTORY
   useEffect(() => {
@@ -123,6 +172,7 @@ export default function Chats() {
     socket.emit("join_room", roomId);
     setUnread((prev) => ({ ...prev, [entryKey]: false }));
     api.put(`/chats/read-messages/${roomId}`).catch(() => {});
+    socket.emit("messages_seen", { roomId, seenBy: user._id }); // 👈 sender ko batao
     inputRef.current?.focus();
 
     api
@@ -137,23 +187,40 @@ export default function Chats() {
 
   const handleSelectChat = (conn) => {
     setActiveChat(conn);
-    // navigate(`/chats/campaign/${conn.campaignId}/user/${conn._id}`);
   };
 
   const send = (e) => {
     e.preventDefault();
     if (!text.trim() || !activeChat || !socket.connected) return;
+
     const roomId = getRoomId(user._id, activeChat._id, activeChat.campaignId);
+    const tempId = `temp-${Date.now()}`;
+    const trimmedText = text.trim();
+
+    // 👇 OPTIMISTIC UI — turant dikhao, wait mat karo
+    const optimisticMsg = {
+      _id: tempId,
+      roomId,
+      campaignId: activeChat.campaignId,
+      text: trimmedText,
+      sender: user._id,
+      receiver: activeChat._id,
+      createdAt: new Date().toISOString(),
+      isRead: false,
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
+    setText("");
+
     socket.emit("send_message", {
       roomId,
       campaignId: activeChat.campaignId,
-      text: text.trim(),
+      text: trimmedText,
       sender: user._id,
       receiver: activeChat._id,
       senderName: user.name,
       senderAvatar: user.avatar,
+      tempId,
     });
-    setText("");
   };
 
   return (
@@ -178,6 +245,7 @@ export default function Chats() {
               const isActive =
                 activeChat?._id === u._id &&
                 activeChat?.campaignId === u.campaignId;
+              const isUnread = unread[entryKey] && !isActive;
               return (
                 <div
                   key={entryKey}
@@ -185,22 +253,52 @@ export default function Chats() {
                   className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all border ${
                     isActive
                       ? "bg-fuchsia-600/10 border-fuchsia-600/50"
+                      : isUnread
+                      ? "bg-slate-800/80 border-fuchsia-500/40"
                       : "bg-transparent border-transparent hover:bg-slate-800"
                   }`}
                 >
-                  <img
-                    src={u.avatar || u.logo || "https://placehold.co/50"}
-                    className={`w-12 h-12 rounded-full object-cover border ${
-                      isActive ? "border-fuchsia-500" : "border-slate-700"
-                    }`}
-                  />
+                  <div className="relative">
+                    <img
+                      src={u.avatar || u.logo || "https://placehold.co/50"}
+                      className={`w-12 h-12 rounded-full object-cover border ${
+                        isActive ? "border-fuchsia-500" : "border-slate-700"
+                      }`}
+                    />
+                    {isUnread && (
+                      <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                        <span className="animate-ping absolute h-full w-full rounded-full bg-fuchsia-400 opacity-75"></span>
+                        <span className="relative h-3.5 w-3.5 rounded-full bg-fuchsia-600 border-2 border-slate-900"></span>
+                      </span>
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate text-white">
-                      {u.name || u.businessName}
-                    </h3>
+                    <div className="flex justify-between items-center">
+                      <h3
+                        className={`font-semibold truncate ${
+                          isUnread ? "text-fuchsia-400" : "text-white"
+                        }`}
+                      >
+                        {u.name || u.businessName}
+                      </h3>
+                      {isUnread && (
+                        <span className="text-[9px] bg-fuchsia-600 text-white px-1.5 py-0.5 rounded-full font-black">
+                          NEW
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[11px] text-fuchsia-400/80 truncate">
                       {u.campaignName}
                     </p>
+                    {lastMessages[entryKey] && (
+                      <p
+                        className={`truncate text-xs mt-0.5 ${
+                          isUnread ? "text-slate-100 font-semibold" : "text-slate-500"
+                        }`}
+                      >
+                        {lastMessages[entryKey]}
+                      </p>
+                    )}
                   </div>
                 </div>
               );
@@ -253,11 +351,14 @@ export default function Chats() {
                       }`}
                     >
                       <p>{m.text}</p>
-                      <div className="text-[10px] opacity-50 text-right mt-1">
+                      <div className="text-[10px] opacity-50 text-right mt-1 flex justify-end items-center gap-1">
                         {new Date(m.createdAt).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
+                        {isMe && (
+                          <span>{m.isRead ? "✓✓" : "✓"}</span>
+                        )}
                       </div>
                     </div>
                   </div>

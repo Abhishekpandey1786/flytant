@@ -61,6 +61,7 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/instamojo", instamojoRoutes);
 app.use("/api/academy", academyRoutes);
 app.use("/api/articles", articleRoutes);
+
 const connectedUsers = new Map();
 
 io.on("connection", (socket) => {
@@ -74,10 +75,8 @@ io.on("connection", (socket) => {
 
   socket.on("join_room", (roomId) => {
     const rooms = [...socket.rooms];
-
     if (!rooms.includes(roomId)) {
       socket.join(roomId);
-
       console.log(`👥 ${socket.id} joined ${roomId}`);
     }
   });
@@ -95,7 +94,7 @@ io.on("connection", (socket) => {
 
       const message = new Chat({
         roomId: data.roomId,
-         campaignId: data.campaignId, // 👈 ADD KIYA
+        campaignId: data.campaignId,
         text: data.text,
         sender: data.sender,
         receiver: data.receiver,
@@ -103,33 +102,57 @@ io.on("connection", (socket) => {
         senderAvatar: data.senderAvatar,
       });
       await message.save();
+
       await User.updateMany(
-      { _id: { $in: [data.sender, data.receiver] } },
-      { $set: { lastMessageAt: new Date() } }
-    );
-      io.to(data.roomId).emit("message_received", message);
+        { _id: { $in: [data.sender, data.receiver] } },
+        { $set: { lastMessageAt: new Date() } }
+      );
+
+      // 👇 tempId wapas bhej rahe hain taaki frontend optimistic msg ko replace kar sake
+      const payload = {
+        ...message.toObject(),
+        tempId: data.tempId || null,
+      };
+
+      io.to(data.roomId).emit("message_received", payload);
 
       const receiverSocketId = connectedUsers.get(data.receiver);
-    if (receiverSocketId && receiverSocketId !== socket.id) {
-
+      if (receiverSocketId && receiverSocketId !== socket.id) {
         const senderUser = await User.findById(data.sender);
 
-       io.to(receiverSocketId).emit("inbox_ping", {
-        id: message._id,
-        text: data.text,
-        from: senderUser?.name || senderUser?.businessName || data.senderName || "New Message",
-        senderId: data.sender,
-        roomId: data.roomId,
-        createdAt: message.createdAt,
-      });
+        io.to(receiverSocketId).emit("inbox_ping", {
+          id: message._id,
+          text: data.text,
+          from: senderUser?.name || senderUser?.businessName || data.senderName || "New Message",
+          senderId: data.sender,
+          roomId: data.roomId,
+          createdAt: message.createdAt,
+        });
 
         console.log(`📨 Notification sent to ${data.receiver}`);
-    }
+      }
 
-    console.log(`💬 Message sent: ${data.sender} -> ${data.receiver} (LastMessageAt updated)`);
-  } catch (error) {
-    console.error("❌ Chat Send Error:", error);
-  }
+      console.log(`💬 Message sent: ${data.sender} -> ${data.receiver}`);
+    } catch (error) {
+      console.error("❌ Chat Send Error:", error);
+    }
+  });
+
+  // 👇 NAYA — jab receiver chat khole/dekhe, sender ko "seen" batao
+  socket.on("messages_seen", async ({ roomId, seenBy }) => {
+    try {
+      if (!roomId || !seenBy) return;
+
+      await Chat.updateMany(
+        { roomId, receiver: seenBy, isRead: false },
+        { $set: { isRead: true } }
+      );
+
+      io.to(roomId).emit("messages_seen_ack", { roomId, seenBy });
+      console.log(`👀 Messages seen in ${roomId} by ${seenBy}`);
+    } catch (error) {
+      console.error("❌ Seen Update Error:", error);
+    }
   });
 
   socket.on("disconnect", () => {

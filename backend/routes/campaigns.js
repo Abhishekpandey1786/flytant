@@ -5,6 +5,7 @@ const { Readable } = require("stream");
 const cloudinary = require("cloudinary").v2;
 require("dotenv").config();
 const Campaign = require("../models/Campaign");
+const Chat = require("../models/Chat");
 const User = require("../models/User");
 const auth = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
@@ -17,6 +18,11 @@ cloudinary.config({
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
+
+const getRoomId = (id1, id2, campaignId) => {
+  const sorted = [id1, id2].sort().join(":");
+  return `camp:${campaignId}:${sorted}`;
+};
 
 const uploadToCloudinary = (buffer, folder = "campaign_images") => {
   return new Promise((resolve, reject) => {
@@ -286,7 +292,69 @@ router.get("/my-connections", auth, async (req, res) => {
       return res.json([]);
     }
 
-    res.json(connections);
+    if (connections.length === 0) return res.json([]);
+
+    // 👇 NAYA — har connection ke liye roomId nikalo
+    const roomIds = connections.map((c) =>
+      getRoomId(userId, c._id.toString(), c.campaignId)
+    );
+
+    // 👇 Ek hi query me sabke last message nikalo (N+1 se bachne ke liye)
+    const lastMessagesAgg = await Chat.aggregate([
+      { $match: { roomId: { $in: roomIds } } },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: "$roomId",
+          text: { $first: "$text" },
+          createdAt: { $first: "$createdAt" },
+          sender: { $first: "$sender" },
+        },
+      },
+    ]);
+    const lastMsgMap = {};
+    lastMessagesAgg.forEach((m) => {
+      lastMsgMap[m._id] = m;
+    });
+
+    // 👇 Ek hi query me sabke unread counts nikalo
+    const unreadAgg = await Chat.aggregate([
+      {
+        $match: {
+          roomId: { $in: roomIds },
+          receiver: userDoc._id,
+          isRead: false,
+        },
+      },
+      {
+        $group: {
+          _id: "$roomId",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    const unreadMap = {};
+    unreadAgg.forEach((u) => {
+      unreadMap[u._id] = u.count;
+    });
+
+    // 👇 Connections me merge karo
+    const enriched = connections.map((c) => {
+      const roomId = getRoomId(userId, c._id.toString(), c.campaignId);
+      const lastMsg = lastMsgMap[roomId];
+      return {
+        ...c,
+        roomId,
+        lastMessage: lastMsg?.text || null,
+        lastMessageAt: lastMsg?.createdAt || c.lastMessageAt || c.createdAt,
+        unreadCount: unreadMap[roomId] || 0,
+      };
+    });
+
+    // 👇 Ab real last message time se sort karo (sirf createdAt se nahi)
+    enriched.sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+
+    res.json(enriched);
   } catch (err) {
     console.error("Error fetching connections:", err.message);
     res.status(500).send("Server Error");
