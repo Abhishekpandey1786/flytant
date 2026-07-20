@@ -37,16 +37,11 @@ export default function Chats() {
 
   const boxRef = useRef(null);
   const inputRef = useRef(null);
-  const activeChatRef = useRef(null);
-  const connectionsRef = useRef([]);
+  const activeChatRef = useRef(null); // 👈 stale closure se bachne ke liye
 
   useEffect(() => {
     activeChatRef.current = activeChat;
   }, [activeChat]);
-
-  useEffect(() => {
-    connectionsRef.current = connections;
-  }, [connections]);
 
   // 1. FETCH CAMPAIGN-BASED CONNECTIONS + JOIN ALL ROOMS
   useEffect(() => {
@@ -63,6 +58,7 @@ export default function Chats() {
 
         setConnections(sorted);
 
+        // 👇 backend se aaya hua unreadCount / lastMessage state me daalo
         const initUnread = {};
         const initLast = {};
         sorted.forEach((conn) => {
@@ -91,29 +87,7 @@ export default function Chats() {
     if (found) setActiveChat(found);
   }, [urlCampaignId, urlUserId, connections]);
 
-  // 3. RECONNECT HONE PAR SABHI ROOMS DOBARA JOIN KARO
-  useEffect(() => {
-    if (!user?._id) return;
-
-    const rejoinAllRooms = () => {
-      connectionsRef.current.forEach((conn) => {
-        const roomId = getRoomId(user._id, conn._id, conn.campaignId);
-        socket.emit("join_room", roomId);
-      });
-      // agar koi chat khuli hai, uska room bhi zaroor join karo
-      const currentActive = activeChatRef.current;
-      if (currentActive) {
-        const roomId = getRoomId(user._id, currentActive._id, currentActive.campaignId);
-        socket.emit("join_room", roomId);
-      }
-      console.log("🔄 Rejoined all rooms after reconnect");
-    };
-
-    socket.on("connect", rejoinAllRooms);
-    return () => socket.off("connect", rejoinAllRooms);
-  }, [user]);
-
-  // 4. REALTIME MESSAGE, UNREAD BUBBLE, LIVE SORTING
+  // 3. REALTIME MESSAGE, UNREAD BUBBLE, LIVE SORTING
   useEffect(() => {
     if (!user?._id) return;
 
@@ -132,7 +106,6 @@ export default function Chats() {
         setMessages((prev) =>
           prev.map((m) => (m._id === msg.tempId ? msg : m))
         );
-        setLastMessages((prev) => ({ ...prev, [entryKey]: msg.text }));
         return;
       }
 
@@ -146,6 +119,7 @@ export default function Chats() {
           socket.emit("messages_seen", { roomId: currentRoomId, seenBy: user._id });
         }
       } else if (msg.sender !== user._id) {
+        // koi doosri chat hai ya koi chat khuli hi nahi — bubble dikhao
         setUnread((prev) => ({ ...prev, [entryKey]: true }));
       }
 
@@ -164,6 +138,7 @@ export default function Chats() {
       });
     };
 
+    // 👇 sender ko "seen" ka pata chalna
     const handleSeenAck = ({ roomId, seenBy }) => {
       const currentActive = activeChatRef.current;
       if (!currentActive) return;
@@ -186,7 +161,7 @@ export default function Chats() {
     };
   }, [user]);
 
-  // 5. LOAD HISTORY
+  // 4. LOAD HISTORY
   useEffect(() => {
     if (!activeChat || !user?._id) return;
     const roomId = getRoomId(user._id, activeChat._id, activeChat.campaignId);
@@ -197,7 +172,7 @@ export default function Chats() {
     socket.emit("join_room", roomId);
     setUnread((prev) => ({ ...prev, [entryKey]: false }));
     api.put(`/chats/read-messages/${roomId}`).catch(() => {});
-    socket.emit("messages_seen", { roomId, seenBy: user._id });
+    socket.emit("messages_seen", { roomId, seenBy: user._id }); // 👈 sender ko batao
     inputRef.current?.focus();
 
     api
@@ -216,17 +191,13 @@ export default function Chats() {
 
   const send = (e) => {
     e.preventDefault();
-    if (!text.trim() || !activeChat) return;
-
-    if (!socket.connected) {
-      alert("Connection lost hai, dobara connect ho raha hai... thodi der me try karo.");
-      return;
-    }
+    if (!text.trim() || !activeChat || !socket.connected) return;
 
     const roomId = getRoomId(user._id, activeChat._id, activeChat.campaignId);
     const tempId = `temp-${Date.now()}`;
     const trimmedText = text.trim();
 
+    // 👇 OPTIMISTIC UI — turant dikhao, wait mat karo
     const optimisticMsg = {
       _id: tempId,
       roomId,
@@ -385,7 +356,9 @@ export default function Chats() {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
-                        {isMe && <span>{m.isRead ? "✓✓" : "✓"}</span>}
+                        {isMe && (
+                          <span>{m.isRead ? "✓✓" : "✓"}</span>
+                        )}
                       </div>
                     </div>
                   </div>
