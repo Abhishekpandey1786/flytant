@@ -35,21 +35,17 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
     };
-
-    // 🛑 नया फ़ंक्शन: सब्सक्रिप्शन डेटा को अपडेट करने के लिए 🛑
     const updateUserSubscription = (newSubscriptionData) => {
         setUser(prevUser => {
-            if (!prevUser) return null; // अगर यूजर लॉग इन नहीं है तो कुछ न करें
+            if (!prevUser) return null;
 
             const updatedUser = {
                 ...prevUser,
                 subscription: {
                     ...prevUser.subscription,
-                    ...newSubscriptionData, // नए डेटा से overwrite करें (जैसे applications_made_this_month)
+                    ...newSubscriptionData,
                 },
             };
-
-            // लोकल स्टोरेज को भी अपडेट करें
             localStorage.setItem("user", JSON.stringify(updatedUser));
             return updatedUser;
         });

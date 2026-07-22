@@ -31,8 +31,6 @@ import UserNotifications from "./UserNotifications";
 import { FiBell } from "react-icons/fi";
 import { FiMessageCircle, FiHome, FiTrendingUp,FiTag,FiFileText } from "react-icons/fi";
 
-
-
 import p1 from "./image/p1.webp";
 import p2 from "./image/p2.webp";
 import p3 from "./image/p3.webp";

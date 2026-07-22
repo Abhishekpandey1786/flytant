@@ -42,7 +42,7 @@ const userSchema = new mongoose.Schema(
         default: "Free",
         enum: ["Free", "Basic", "Standard", "Advance", "Premium"],
       },
-      maxApplications: { type: Number, default: 3 },
+      maxApplications: { type: Number, default: 1 },
       applications_made_this_month: { type: Number, default: 0 },
       expiryDate: { type: Date, default: null },
       status: { type: String, default: "Inactive" },
