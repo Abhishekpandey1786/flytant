@@ -28,11 +28,7 @@ const resolveAssetUrl = (assetPath) => {
 const resolveSocialLink = (url, platform) => {
   if (!url) return "#";
   let cleanUrl = url.trim();
-
-  // Agar pura link hai (http/https), toh wahi return kar do
   if (cleanUrl.startsWith("http")) return cleanUrl;
-
-  // Agar sirf username hai, toh link banao
   const username = cleanUrl.replace(/^@/, "");
   const baseUrls = {
     instagram: "https://www.instagram.com/",
@@ -106,7 +102,7 @@ function Campaigns() {
 
     const userSubscription = user?.subscription;
     const userPlan = userSubscription?.plan || "Free";
-    const maxApplications = userSubscription?.maxApplications || 3;
+    const maxApplications = userSubscription?.maxApplications || 1;
     const applicationsMade =
       userSubscription?.applications_made_this_month || 0;
 
@@ -174,7 +170,7 @@ function Campaigns() {
   const isInfluencer = user?.userType === "influencer";
   const planName = userSubscription?.plan || "Free";
   const appsMade = userSubscription?.applications_made_this_month || 0;
-  const maxApps = userSubscription?.maxApplications || 3;
+  const maxApps = userSubscription?.maxApplications || 1;
 
   const isLimitReached = appsMade >= maxApps && maxApps < 9999;
   const maxAppsDisplay = maxApps >= 9999 ? "Unlimited" : maxApps;
