@@ -48,7 +48,7 @@ const checkAndResetSubscription = (user) => {
     user.subscription = {
       plan: "Free",
       status: "Active",
-      maxApplications: 3,
+      maxApplications: 1,
       applications_made_this_month: 0,
       last_reset_date: now,
     };
@@ -62,7 +62,7 @@ const checkAndResetSubscription = (user) => {
   if (expiryDate && now > expiryDate) {
     user.subscription.status = "Inactive";
     user.subscription.plan = "Free";
-    user.subscription.maxApplications = 3;
+    user.subscription.maxApplications = 1;
 
     user.subscription.applications_made_this_month = 0;
     user.subscription.last_reset_date = now;
@@ -77,7 +77,7 @@ const checkAndResetSubscription = (user) => {
     user.subscription.last_reset_date = now;
     shouldSave = true;
     if (!user.subscription.maxApplications) {
-      user.subscription.maxApplications = 3;
+      user.subscription.maxApplications = 1;
       shouldSave = true;
     }
   }

@@ -113,8 +113,7 @@ export default function ChatList() {
   if (connections.length === 0) {
     return (
       <div className="h-[300px] flex items-center justify-center text-slate-500 text-center px-4">
-        Koi campaign-based conversation nahi mili. Pehle kisi campaign par
-        apply karo ya kisi ki application accept karo.
+        No campaign-based conversation found. Please apply to a campaign first or accept an application.
       </div>
     );
   }

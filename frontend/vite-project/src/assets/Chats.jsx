@@ -126,7 +126,7 @@ export default function Chats() {
       const campaignId = msg.campaignId;
       const entryKey = `${otherId}-${campaignId}`;
 
-      // 👇 FIXED — ab receiver ka msg silently drop nahi hoga
+    
       setMessages((prev) => {
         if (prev.some((m) => m._id === msg._id)) return prev;
 
@@ -336,8 +336,6 @@ export default function Chats() {
           )}
         </div>
       </div>
-
-      {/* Main Chat Area */}
       <div
         className={`flex-1 flex flex-col bg-slate-950 ${
           activeChat ? "flex" : "hidden md:flex"
