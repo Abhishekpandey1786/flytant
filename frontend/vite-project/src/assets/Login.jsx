@@ -181,7 +181,7 @@ function Signup() {
           {userType === "advertiser" && (
             <>
               <div>
-                <label className="block mb-1 text-gray-300">Contact</label>
+                <label className="block mb-1 text-gray-300">Name</label>
                 <input
                   type="text"
                   required

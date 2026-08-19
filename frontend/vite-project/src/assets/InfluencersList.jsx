@@ -79,7 +79,7 @@ const InfluencersList = () => {
     return (
       <div className="text-center text-red-400 p-4 md:p-6 bg-red-900 rounded-lg shadow-md border border-red-700">
         <p className="text-lg md:text-xl font-semibold mb-2">
-          Error Loading Influencers!
+          
         </p>
         <p className="text-sm md:text-base">{error}</p>
       </div>

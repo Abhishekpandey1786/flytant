@@ -88,7 +88,7 @@ const Profile = () => {
     fetchProfile();
   }, [token, setUser]);
 
-  // NEW: Feature to change image directly from outside
+  // NEW: Feature to change image directl
   const handleDirectFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -311,7 +311,7 @@ const Profile = () => {
                   )}
                   {user.userType === "advertiser" && (
                     <>
-                      <InputField label="Contact Person" name="contactPerson" value={formData.contactPerson} onChange={handleInputChange} />
+                      <InputField label="Name" name="contactPerson" value={formData.contactPerson} onChange={handleInputChange} />
                       <InputField label="Industry/Niche" name="industry" value={formData.industry} onChange={handleInputChange} />
                       <InputField label="Budget ₹" name="budget" type="number" value={formData.budget} onChange={handleInputChange} />
                     </>
@@ -441,7 +441,7 @@ const Profile = () => {
                       )}
                       {user.contactPerson && (
                         <div className="flex items-center space-x-3">
-                          <FaRegAddressCard className="text-fuchsia-500" /><span>Contact: {user.contactPerson}</span>
+                          <FaRegAddressCard className="text-fuchsia-500" /><span>Name: {user.contactPerson}</span>
                         </div>
                       )}
                       {user.industry && (

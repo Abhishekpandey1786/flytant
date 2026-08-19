@@ -267,7 +267,7 @@ export default function Chats() {
         <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-900">
           {connections.length === 0 ? (
             <p className="text-slate-500 text-sm text-center mt-6 px-4">
-              Koi campaign-based conversation nahi hai abhi.
+              No connections found. Start a campaign to connect with users and begin messaging.
             </p>
           ) : (
             connections.map((u) => {
