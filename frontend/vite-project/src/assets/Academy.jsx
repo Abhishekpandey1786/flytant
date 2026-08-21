@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Lock, ArrowRight, X, ChevronDown } from "lucide-react";
+
 import chapter1Pdf from "./image/Chapter-1-Beginner-Influencer.pdf";
 import chapter2Pdf from "./image/HowToPickNiche.pdf";
 import chapter3Pdf from "./image/ProfileOptimization.pdf";
@@ -97,7 +98,6 @@ const courseData = [
 const PdfViewer = ({ url,}) => {
   const containerRef = useRef(null);
   const [loading, setLoading] = useState(true);
-  const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -114,66 +114,48 @@ const PdfViewer = ({ url,}) => {
         document.body.appendChild(script);
       });
 
-    const renderPageToCanvas = async (page, scale) => {
-      const viewport = page.getViewport({ scale });
-      const canvas = document.createElement("canvas");
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      canvas.style.width = "100%";
-      canvas.style.height = "auto";
-      canvas.style.maxWidth = "900px";
-      canvas.style.display = "block";
-      canvas.style.margin = "0 auto 12px auto";
-      canvas.style.borderRadius = "12px";
-      canvas.style.boxShadow = "0 4px 20px rgba(0,0,0,0.4)";
-      canvas.oncontextmenu = (e) => e.preventDefault();
-      canvas.ondragstart = (e) => e.preventDefault();
-
-      const ctx = canvas.getContext("2d");
-      await page.render({ canvasContext: ctx, viewport }).promise;
-      return canvas;
-    };
-
     const render = async () => {
       setLoading(true);
       setError(null);
-      setProgress({ done: 0, total: 0 });
       try {
         const pdfjsLib = await loadPdfJs();
         pdfjsLib.GlobalWorkerOptions.workerSrc =
           "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-        const pdf = await pdfjsLib.getDocument({
-          url,
-          rangeChunkSize: 65536,
-          disableAutoFetch: true,
-        }).promise;
+
+        const pdf = await pdfjsLib.getDocument(url).promise;
         if (cancelled) return;
 
         const container = containerRef.current;
         if (!container) return;
         container.innerHTML = "";
-
         const w = window.innerWidth;
         const scale = w < 400 ? 0.9 : w < 640 ? 1.1 : w < 1024 ? 1.4 : 1.6;
 
-        setProgress({ done: 0, total: pdf.numPages });
-        const firstPage = await pdf.getPage(1);
-        if (cancelled) return;
-        const firstCanvas = await renderPageToCanvas(firstPage, scale);
-        if (cancelled) return;
-        container.appendChild(firstCanvas);
-        setLoading(false);
-        setProgress({ done: 1, total: pdf.numPages });
-
-        for (let i = 2; i <= pdf.numPages; i++) {
+        for (let i = 1; i <= pdf.numPages; i++) {
           if (cancelled) return;
           const page = await pdf.getPage(i);
-          if (cancelled) return;
-          const canvas = await renderPageToCanvas(page, scale);
-          if (cancelled) return;
-          container.appendChild(canvas);
-          setProgress({ done: i, total: pdf.numPages });
+          const viewport = page.getViewport({ scale });
+
+          const canvas = document.createElement("canvas");
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          canvas.style.width = "100%";
+          canvas.style.height = "auto";
+          canvas.style.maxWidth = "900px";
+          canvas.style.display = "block";
+          canvas.style.margin = "0 auto 12px auto";
+          canvas.style.borderRadius = "12px";
+          canvas.style.boxShadow = "0 4px 20px rgba(0,0,0,0.4)";
+          canvas.oncontextmenu = (e) => e.preventDefault();
+          canvas.ondragstart = (e) => e.preventDefault();
+
+          const ctx = canvas.getContext("2d");
+          await page.render({ canvasContext: ctx, viewport }).promise;
+
+          if (!cancelled) container.appendChild(canvas);
         }
+
+        setLoading(false);
       } catch (err) {
         if (!cancelled) {
           setError(
@@ -209,9 +191,6 @@ const PdfViewer = ({ url,}) => {
     };
   }, []);
 
-  const stillStreaming =
-    !loading && !error && progress.total > 0 && progress.done < progress.total;
-
   return (
     <div className="relative w-full">
       <div
@@ -231,11 +210,6 @@ const PdfViewer = ({ url,}) => {
           {error}
         </p>
       )}
-      {stillStreaming && (
-        <p className="text-slate-500 text-center text-xs pb-6">
-          Loading page {progress.done + 1} of {progress.total}…
-        </p>
-      )}
       {!loading && !error && (
         <div
           className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden opacity-[0.06]"
@@ -253,12 +227,15 @@ const PdfViewer = ({ url,}) => {
   );
 };
 
+// ------------------------------------------------------------------
+// CHAPTER GROUP — chapter header + its parts, connected by a spine
+// ------------------------------------------------------------------
 const ChapterGroup = ({ chapter, index, onOpen }) => {
   const [open, setOpen] = useState(true);
 
   return (
     <section className="relative">
-     
+      {/* Chapter header card */}
       <div
         onClick={() => onOpen(chapter)}
         className="group relative flex items-center gap-3 sm:gap-6 p-4 sm:p-8 bg-gradient-to-br from-fuchsia-950/40 to-slate-900/60 border border-fuchsia-500/20 rounded-2xl sm:rounded-[1.75rem] cursor-pointer hover:border-fuchsia-500/50 transition-all shadow-lg"
@@ -307,6 +284,8 @@ const ChapterGroup = ({ chapter, index, onOpen }) => {
           </button>
         </div>
       </div>
+
+      {/* Parts, connected to the chapter with a vertical spine */}
       <div
         className={`grid transition-all duration-300 ease-in-out ${
           open ? "grid-rows-[1fr] opacity-100 mt-4" : "grid-rows-[0fr] opacity-0"
@@ -349,6 +328,9 @@ const ChapterGroup = ({ chapter, index, onOpen }) => {
   );
 };
 
+// ------------------------------------------------------------------
+// MAIN COMPONENT
+// ------------------------------------------------------------------
 const Academy = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [credentials, setCredentials] = useState({ email: "", password: "" });
@@ -374,6 +356,7 @@ const Academy = () => {
     }
   };
 
+  // --- LOGIN UI ---
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 sm:p-6 text-white">
@@ -449,6 +432,8 @@ const Academy = () => {
             like.
           </p>
         </header>
+
+        {/* Chapter -> Parts roadmap */}
         <div className="flex flex-col">
           {courseData.map((chapter, i) => (
             <ChapterGroup
@@ -460,6 +445,8 @@ const Academy = () => {
           ))}
         </div>
       </main>
+
+      {/* --- MODULE VIEWER MODAL (PDF) --- */}
       {selectedModule && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 md:p-10">
           <div
