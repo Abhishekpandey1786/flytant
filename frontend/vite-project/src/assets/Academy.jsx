@@ -95,6 +95,9 @@ const courseData = [
   },
 ];
 
+// ------------------------------------------------------------------
+// PDF VIEWER
+// ------------------------------------------------------------------
 const PdfViewer = ({ url,}) => {
   const containerRef = useRef(null);
   const [loading, setLoading] = useState(true);
@@ -128,6 +131,9 @@ const PdfViewer = ({ url,}) => {
         const container = containerRef.current;
         if (!container) return;
         container.innerHTML = "";
+
+        // Pick a render scale based on viewport width so pages stay
+        // crisp on phones without over-rendering huge canvases.
         const w = window.innerWidth;
         const scale = w < 400 ? 0.9 : w < 640 ? 1.1 : w < 1024 ? 1.4 : 1.6;
 
