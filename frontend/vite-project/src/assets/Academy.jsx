@@ -98,7 +98,7 @@ const courseData = [
 // ------------------------------------------------------------------
 // PDF VIEWER
 // ------------------------------------------------------------------
-const PdfViewer = ({ url,}) => {
+const PdfViewer = ({ url, watermarkText = "Vistafluence Academy" }) => {
   const containerRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
