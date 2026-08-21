@@ -3,7 +3,7 @@ import axios from "axios";
 import { Lock, ArrowRight, X, ChevronDown } from "lucide-react";
 
 import chapter1Pdf from "./image/Chapter-1-Beginner-Influencer.pdf";
-import chapter2Pdf from "./image/HowtoPickNiche.pdf";
+import chapter2Pdf from "./image/HowToPickNiche.pdf";
 import chapter3Pdf from "./image/ProfileOptimization.pdf";
 import chapter4Pdf from "./image/0-10K.pptx.pdf";
 import chapter5Pdf from "./image/Chapter-2-Monetization.pdf";
@@ -14,10 +14,6 @@ import chapter9Pdf from "./image/Chapter_3ContentMastery.pdf";
 import chapter10Pdf from "./image/EditingTricks.pdf";
 import chapter11Pdf from "./image/Storytelling.pdf";
 import chapter12Pdf from "./image/ViralHooks.pdf";
-
-// ------------------------------------------------------------------
-// COURSE DATA — grouped as Chapter -> Parts (1, 1.1, 1.2, 1.3 / 2, 2.1...)
-// ------------------------------------------------------------------
 const courseData = [
   {
     id: "1",
