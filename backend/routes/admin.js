@@ -9,7 +9,7 @@ const cloudinary = require("cloudinary").v2;
 const User = require("../models/User");
 const Notification = require("../models/Notification");
 const Campaign = require("../models/Campaign");
-const { verifyAdmin } = require("../middleware/auth");
+const { verifyAdmin } = require("../middleware/adminAuth");
 
 const router = express.Router();
 
